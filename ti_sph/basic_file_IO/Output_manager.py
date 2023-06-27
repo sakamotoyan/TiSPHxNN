@@ -59,12 +59,11 @@ class Output_manager:
     def export_to_numpy(self, index:int=0, path:str=".", truncate:bool = False, truncate_num:int = 0):
         
         for data_name in self.data_name_list:
-            data = getattr(self.obj, data_name)
             file_name = f"{path}/{data_name}_i{index}"
 
             for channel in range(self.data_channel_list[self.data_name_list.index(data_name)]):
                 file_name_channel = f"{file_name}_c{channel}"
-                np_data = data.to_numpy()[:, channel]
+                np_data = getattr(self.obj, data_name).to_numpy()[:, channel]
                 if self.format_type is self.type.SEQ and not truncate:
                     np.save(file_name_channel, np_data)
                 elif self.format_type is self.type.SEQ and truncate:

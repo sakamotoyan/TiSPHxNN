@@ -79,8 +79,8 @@ sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.g
 sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, val_f(sense_grid_part.get_part_size()[None]**world.g_dim[None]))
 sense_grid_part.close_stack()
 # print(sense_cube_data.index.size)
-np.save("./output/pos_np.npy", sense_cube_data.pos)
-np.save("./output/index_np.npy", sense_cube_data.index)
+# np.save("./output/pos_np.npy", sense_cube_data.pos)
+# np.save("./output/index_np.npy", sense_cube_data.index)
 # np.savetxt("pos_np.txt", sense_cube_data.index, fmt='%i')
 
 
@@ -124,7 +124,6 @@ world.neighb_search()
 sense_output = Output_manager(format_type = Output_manager.type.SEQ, data_source = sense_grid_part)
 sense_output.add_output_dataType("pos",2)
 sense_output.add_output_dataType("node_index",2)
-sense_output.export_to_numpy(index=0,path='./output')
 
 # print('DEBUG sense_output', sense_output.np_node_index_organized)
 # save as numpy file
@@ -191,10 +190,11 @@ def run(loop):
             if(sim_time > timer*inv_fps):
                 if gui.op_save_img:
                     gui.window.save_image('output/'+str(timer)+'.png')
+                sense_output.export_to_numpy(index=timer,path='./output')
                 timer += 1
 
             gui.window.show()
-    
+        
         if timer > 660:
             break
 
