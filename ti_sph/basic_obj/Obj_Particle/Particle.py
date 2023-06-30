@@ -69,6 +69,7 @@ class Particle(Obj):
     close_stack = data_op.close_stack
     clear = data_op.clear
     set_from_numpy = data_op.set_from_numpy
+    copy_attr = data_op.copy_attr
     set_val = data_op.set_val
     has_negative = data_op.has_negative
     has_positive = data_op.has_positive

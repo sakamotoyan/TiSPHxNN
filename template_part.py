@@ -14,6 +14,7 @@ def part_template(part_obj, verbose=False):
     part_obj.add_array("volume", ti.field(ti.f32))
     part_obj.add_array("rest_density", ti.field(ti.f32))
     part_obj.add_array("acc", vecxf(part_obj.m_world.g_dim[None]).field())
+    part_obj.add_array("rgb", vecxf(3).field())
 
     ''' Optional arrays'''
     # part_obj.add_array("volume_fraction", ti.field(ti.f32), bundle=2)

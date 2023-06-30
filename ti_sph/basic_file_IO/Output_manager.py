@@ -36,8 +36,9 @@ class Output_manager:
     def add_output_dataType(self, name:str, channel:int = 1):
         if not hasattr(self.obj, name):
             raise ValueError(f"{name} is not in {self.obj.__class__.__name__}.")
-        if channel > self.obj.__dict__[name].n or channel < 1:
-            raise ValueError(f"Channel {channel} is out of range of {name}({self.obj.__dict__[name].n} channels in total).")
+        if channel > 1:
+            if channel > self.obj.__dict__[name].n:
+                raise ValueError(f"Channel {channel} is out of range of {name}({self.obj.__dict__[name].n} channels in total).")
         self.data_name_list.append(name)
         self.data_channel_list.append(channel)
     
@@ -56,18 +57,24 @@ class Output_manager:
         return B_organized
             
 
-    def export_to_numpy(self, index:int=0, path:str=".", truncate:bool = False, truncate_num:int = 0):
+    def export_to_numpy(self, index:int=0, path:str=".", truncate_num:int = 0):
         
         for data_name in self.data_name_list:
             file_name = f"{path}/{data_name}_i{index}"
 
-            for channel in range(self.data_channel_list[self.data_name_list.index(data_name)]):
-                file_name_channel = f"{file_name}_c{channel}"
-                np_data = getattr(self.obj, data_name).to_numpy()[:, channel]
-                if self.format_type is self.type.SEQ and not truncate:
+            if self.data_channel_list[self.data_name_list.index(data_name)] == 1:
+                file_name_channel = f"{file_name}_c0"
+                np_data = getattr(self.obj, data_name).to_numpy()[:]
+                if self.format_type is self.type.SEQ:
                     np.save(file_name_channel, np_data)
-                elif self.format_type is self.type.SEQ and truncate:
-                    np.save(file_name_channel, np_data[:truncate_num])
-                elif self.format_type is self.type.GRID:
-                    np_data_reshape = self.reshape_data(np_data)
-                    np.save(file_name_channel, np_data_reshape)
+            else:
+                for channel in range(self.data_channel_list[self.data_name_list.index(data_name)]):
+                    file_name_channel = f"{file_name}_c{channel}"
+                    np_data = getattr(self.obj, data_name).to_numpy()[:, channel]
+                    if self.format_type is self.type.SEQ:
+                        np.save(file_name_channel, np_data)
+                    # elif self.format_type is self.type.SEQ and truncate:
+                    #     np.save(file_name_channel, np_data[:truncate_num])
+                    # elif self.format_type is self.type.GRID:
+                    #     np_data_reshape = self.reshape_data(np_data)
+                    #     np.save(file_name_channel, np_data_reshape)

@@ -53,8 +53,20 @@ class SPH_solver:
         cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
         self.obj.sph[part_id].density += neighb_obj.mass[neighb_part_id] * cached_W
     
+    @ti.func
+    def inloop_avg_velocity(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        self.obj.vel[part_id] += neighb_obj.vel[neighb_part_id] * neighb_obj.volume[neighb_part_id] * cached_W
+
     def sph_compute_density(self, neighb_pool):
         self.obj.clear(self.obj.sph.density)
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_density)
+    
+    def sph_avg_velocity(self, neighb_pool):
+        self.obj.clear(self.obj.vel)
+        for neighb_obj in neighb_pool.neighb_obj_list:
+            ''' Compute Average Velocity '''
+            self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)

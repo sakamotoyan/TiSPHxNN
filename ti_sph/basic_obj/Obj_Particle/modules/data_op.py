@@ -68,6 +68,11 @@ def clear(self: ti.template(), attr_: ti.template()):
     for i in range (self.m_stack_top[None]):
         attr_[i] *= 0
 
+@ti.kernel
+def copy_attr(self: ti.template(), from_attr: ti.template(), to_attr: ti.template()):
+    for i in range(self.m_stack_top[None]):
+        to_attr[i] = from_attr[i]
+
 def set_from_numpy(self, to: ti.template(), data: ti.types.ndarray()):
     num = data.shape[0]
     arr = to.to_numpy()

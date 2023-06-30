@@ -10,6 +10,9 @@ def grid_template(part_obj, verbose=False):
     part_obj.add_array("rgb", vecxf(3).field())
     part_obj.add_array("node_index", vecxi(part_obj.m_world.g_dim[None]).field())
 
+    part_obj.add_array("sensed_density", ti.field(ti.f32))
+    part_obj.add_array("vel", vecxf(part_obj.m_world.g_dim[None]).field())
+
     sph = ti.types.struct(
         h=ti.f32,
         sig=ti.f32,

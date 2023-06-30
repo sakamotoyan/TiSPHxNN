@@ -26,8 +26,14 @@ class Grid_Data_manager:
             self.raw_data.append(single_frame_data)
     
     def export_data(self, name:str='data'):
-        exported_data = np.array(self.processed_data)
+        exported_data = self.processed_data
         np.save(os.path.join(self.output_folder_path, name+'.npy'), exported_data)
+        return exported_data
+    
+    def export_single_frame_data(self, name:str='data'):
+        exported_data = self.processed_data
+        for i in range(self.start_index, self.end_index+1):
+            np.save(os.path.join(self.output_folder_path, name+'_'+str(i)+'.npy'), exported_data[i-self.start_index])
         return exported_data
 
 
@@ -68,6 +74,8 @@ class Grid_Data_manager:
             for c in range(self.channel_num):
                 single_frame_processed_data.append(self.reshape_data_with_index_2d(self.raw_data[i-self.start_index][c], index_arr))
             self.processed_data.append(single_frame_processed_data)
+        self.processed_data = np.array(self.processed_data)
+        return self.processed_data
 
     def get_index_arr_2d(self, index_attr:str, i:int):
         index_path = []
