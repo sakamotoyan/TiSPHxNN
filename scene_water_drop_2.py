@@ -13,6 +13,11 @@ ti.init(arch=ti.cuda, device_memory_GB=3) # Use GPU
 # ti.init(arch=ti.cpu) # Use CPU
 
 ''' GLOBAL SETTINGS '''
+fps = 60
+output_frame_num = 2000
+sense_res = 128
+output_shift = 2000
+
 part_size = 0.01
 max_time_step = part_size/100
 world = World(dim=2)
@@ -21,8 +26,8 @@ world.set_dt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, 0), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-2.5, 0.5), rt=vec2f(-0.5, 2.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
@@ -61,8 +66,8 @@ bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[No
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 bound_part.close_stack()
 
-sense_cell_size = val_f(0.1)
-sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(64,64),grid_center=vec2f(0,0))
+sense_cell_size = val_f(0.1/sense_res*64)
+sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 sense_grid_part = world.add_part_obj(part_num=sense_cube_data.num, size=sense_cell_size, is_dynamic=False)
 sense_grid_part.instantiate_from_template(grid_template)
 sense_grid_part.open_stack(val_i(sense_cube_data.num))
@@ -141,7 +146,6 @@ def loop():
 
 
 def run(loop):
-    fps = 60
     inv_fps = 1/fps
     timer = 0
     sim_time = 0
@@ -152,44 +156,52 @@ def run(loop):
         loop_count += 1
         sim_time += world.g_dt[None]
         if(sim_time > timer*inv_fps):
-            sense_output.export_to_numpy(index=timer,path='./output')
+            sense_output.export_to_numpy(index=output_shift+timer,path='./output')
             timer += 1
-        if timer > 1200:
+        if timer > output_frame_num:
             break
 
-    # while gui.window.running:
+def vis_run(loop):
+    inv_fps = 1/fps
+    timer = 0
+    sim_time = 0
+    loop_count = 0
 
-    #     gui.monitor_listen()
+    gui = Gui3d()
+    while gui.window.running:
 
-    #     if gui.op_system_run:
-    #         loop()
-    #         loop_count += 1
-    #         sim_time += world.g_dt[None]
-    #         # print('loop count', loop_count, 'compressible ratio', 'incompressible iter', fluid_part_1.m_solver_df.incompressible_iter[None], ' ', fluid_part_2.m_solver_df.incompressible_iter[None])
-    #         # print('comp ratio', fluid_part_1.m_solver_df.compressible_ratio[None], ' ', fluid_part_2.m_solver_df.compressible_ratio[None])
-    #         # print('dt', world.g_dt[None])
+        gui.monitor_listen()
+
+        if gui.op_system_run:
+            loop()
+            loop_count += 1
+            sim_time += world.g_dt[None]
+            # print('loop count', loop_count, 'compressible ratio', 'incompressible iter', fluid_part_1.m_solver_df.incompressible_iter[None], ' ', fluid_part_2.m_solver_df.incompressible_iter[None])
+            # print('comp ratio', fluid_part_1.m_solver_df.compressible_ratio[None], ' ', fluid_part_2.m_solver_df.compressible_ratio[None])
+            # print('dt', world.g_dt[None])
+            if(sim_time > timer*inv_fps):
+                if gui.op_write_file:
+                    sense_output.export_to_numpy(index=output_shift+timer,path='./output')
+                timer += 1
         
-    #     if gui.op_refresh_window:
-    #         gui.scene_setup()
-    #         if gui.show_bound:
-    #             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-    #             gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
-    #         else:
-    #             gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
+        if gui.op_refresh_window:
+            gui.scene_setup()
+            if gui.show_bound:
+                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+            else:
+                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
             
-    #         gui.canvas.scene(gui.scene)  # Render the scene
+            gui.canvas.scene(gui.scene)  # Render the scene
 
-    #         if(sim_time > timer*inv_fps):
-    #             if gui.op_save_img:
-    #                 gui.window.save_image('output/'+str(timer)+'.png')
-    #             if gui.op_write_file:
-    #                 sense_output.export_to_numpy(index=timer,path='./output')
-    #             timer += 1
+            if(sim_time > (timer-1)*inv_fps):
+                if gui.op_save_img:
+                    gui.window.save_image('output/'+str(timer)+'.png')
 
-    #         gui.window.show()
+            gui.window.show()
         
-    #     if timer > 660:
-    #         break
+        if timer > output_frame_num:
+            break
 
 loop()
 run(loop)

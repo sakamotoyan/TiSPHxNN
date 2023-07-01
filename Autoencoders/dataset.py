@@ -12,11 +12,14 @@ class CustomDataset(Dataset):
         self.data = data
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) - num_forecast_steps  # subtract 1 to avoid index error
 
     def __getitem__(self, idx):
-        sample = self.data[idx]
-        return sample
+        sample_current = self.data[idx]  # current frame
+        next_frames = []
+        for i in range(num_forecast_steps):
+            next_frames.append(self.data[idx + i + 1])  # next frame
+        return sample_current, next_frames  # returns current frame and next frame
 
 numpy_data_list_channel_1_density = []
 numpy_data_list_channel_2n3_velocity = []
@@ -24,8 +27,8 @@ numpy_data_list_channel_2n3_velocity = []
 def get_dataset():
 
     for i in range(begin_index, end_index+1):
-        numpy_data_channel_1_density = np.load(os.path.join(data_path,f'density_{i}.npy'))[:,0:res,0:res]
-        numpy_data_channel_2n3_velocity = np.load(os.path.join(data_path,f'velocity_{i}.npy'))[:,0:res,0:res]
+        numpy_data_channel_1_density = np.load(os.path.join(training_data_path,f'density_{i}.npy'))[:,0:res,0:res]
+        numpy_data_channel_2n3_velocity = np.load(os.path.join(training_data_path,f'velocity_{i}.npy'))[:,0:res,0:res]
         numpy_data_list_channel_1_density.append(numpy_data_channel_1_density)
         numpy_data_list_channel_2n3_velocity.append(numpy_data_channel_2n3_velocity)
 

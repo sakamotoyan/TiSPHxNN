@@ -1,4 +1,4 @@
-from ConvNN import ConvAutoencoder
+from ConvAE import ConvAutoencoder
 from settings import *
 from dataset import get_dataset
 
@@ -10,39 +10,40 @@ from torch.utils.data import DataLoader
 import numpy as np
 import os
 from PIL import Image
-
-output_test_path = os.path.join(os.getcwd(),'test_result')
+from torchsummary import summary
 
 autoencoder = ConvAutoencoder()
-autoencoder.to('cuda')
-autoencoder.load_state_dict(torch.load(os.path.join(model_path,'autoencoder.pth')))
+autoencoder.to(PLATFORM)
+autoencoder.load_state_dict(torch.load(os.path.join(network_model_path,state_dict_name)))
 autoencoder.eval()
 
 test_results = []
 
 dataset = get_dataset()
-test_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+# test_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+initial_input = dataset.data[0].to(PLATFORM).unsqueeze(0)
+current_input = initial_input
+generated_sequence = [current_input.cpu().numpy()]
+# print(current_input.cpu().numpy().shape)
 
 with torch.no_grad():
-    for batch in test_loader:
-        # Move the batch to the device (e.g., GPU)
-        inputs = batch.to('cuda')
+    for _ in range(num_test_steps):
+        # Generate prediction
+        output = autoencoder(current_input)
 
-        # Generate predictions
-        outputs = autoencoder(inputs)
+        # Use the output as the next input
+        current_input = output
         
-        # Append the predictions to our results list
-        # Detach the tensor from the computation graph and convert to numpy
-        test_results.append(outputs.detach().cpu().numpy())
+        # Store the output
+        generated_sequence.append(output.detach().cpu().numpy())
 
-for i in range(len(test_results)):
-    for j in range(test_results[i].shape[0]):
-        singe_density_frame = test_results[i][j,0]
+for i in range(len(generated_sequence)):
+    singe_density_frame = generated_sequence[i][0,0]
 
-        frame_data = np.flipud(np.transpose(singe_density_frame))
-        normalized_array = ((frame_data - frame_data.min()) * (255 - 0) / (frame_data.max() - frame_data.min())).astype(np.uint8)
-        img = Image.fromarray(normalized_array, 'L')
-        img.save(os.path.join(output_test_path,f'frame_density_{i*batch_size+j}.jpg'))
+    frame_data = np.flipud(np.transpose(singe_density_frame))
+    normalized_array = ((frame_data - frame_data.min()) * (255 - 0) / (frame_data.max() - frame_data.min())).astype(np.uint8)
+    img = Image.fromarray(normalized_array, 'L')
+    img.save(os.path.join(output_test_path,f'frame_density_{i}.jpg'))
         # print(singe_density_frame.shape)
 # Save the results list to disk as a numpy object
 # np.save('test_results.npy', np.array(test_results))
