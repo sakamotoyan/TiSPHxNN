@@ -21,7 +21,7 @@ test_results = []
 
 dataset = get_dataset()
 # test_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-initial_input = dataset.data[0].to(PLATFORM).unsqueeze(0)
+initial_input = dataset.data[start_frame].to(PLATFORM).unsqueeze(0)
 current_input = initial_input
 generated_sequence = [current_input.cpu().numpy()]
 # print(current_input.cpu().numpy().shape)
@@ -36,7 +36,6 @@ with torch.no_grad():
         
         # Store the output
         generated_sequence.append(output.detach().cpu().numpy())
-
 for i in range(len(generated_sequence)):
     singe_density_frame = generated_sequence[i][0,0]
 

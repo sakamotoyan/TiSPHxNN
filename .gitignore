@@ -3,3 +3,8 @@
 imgui.ini
 *.npy
 *.jpg
+*.npy
+Autoencoders/NN_models/autoencoder_4.pth
+Autoencoders/NN_models/model.gv
+*.pth
+*.zip

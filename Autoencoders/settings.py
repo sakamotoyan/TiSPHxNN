@@ -4,16 +4,20 @@ state_dict_name='autoencoder_4.pth'
 PLATFORM = 'cuda'
 
 # Training
-begin_index = 0
-end_index = 1200
 channel_num = 3
-res = 64
+res = 128
 batch_size = 32
-num_epochs = 1000
+num_epochs = 100
+num_rounds = 200
 num_forecast_steps = 5
 
 # Testing
+start_frame = 0
 num_test_steps = 500
+
+# Training & Testing
+begin_index = 2001
+end_index = 2012
 
 # Path
 training_data_path = os.path.join(os.getcwd(),'training_data')

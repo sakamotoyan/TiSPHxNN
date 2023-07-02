@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 
-start_index = 0
-end_index = 10
+start_index = 2000
+end_index = 2056
 
 dm_density = Grid_Data_manager('./output', './output_organised')
 dm_density.read_data(attr='sensed_density',start_index=start_index,end_index=end_index,channel_num=1)
