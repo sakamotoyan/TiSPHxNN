@@ -47,8 +47,9 @@ def get_dataset():
     return dataset
 
 def get_dataset2():
-
-    for i in range(0, 1999+1):
+    numpy_data_list_channel_1_density = []
+    numpy_data_list_channel_2n3_velocity = []
+    for i in range(0, 2000):
         numpy_data_channel_1_density = np.load(os.path.join(training_data_path,f'density_{i}.npy'))[:,0:res,0:res]
         numpy_data_channel_2n3_velocity = np.load(os.path.join(training_data_path,f'velocity_{i}.npy'))[:,0:res,0:res]
         numpy_data_list_channel_1_density.append(numpy_data_channel_1_density)
@@ -65,7 +66,9 @@ def get_dataset2():
     tensor_data = torch.tensor(stacked_data, dtype=torch.float32)
     dataset_1 = CustomDataset(tensor_data)
 
-    for i in range(2000, 3999+1):
+    numpy_data_list_channel_1_density = []
+    numpy_data_list_channel_2n3_velocity = []
+    for i in range(2001, 4000):
         numpy_data_channel_1_density = np.load(os.path.join(training_data_path,f'density_{i}.npy'))[:,0:res,0:res]
         numpy_data_channel_2n3_velocity = np.load(os.path.join(training_data_path,f'velocity_{i}.npy'))[:,0:res,0:res]
         numpy_data_list_channel_1_density.append(numpy_data_channel_1_density)

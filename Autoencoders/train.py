@@ -18,7 +18,7 @@ autoencoder.to(PLATFORM)
 if os.path.exists(os.path.join(network_model_path,state_dict_name)):
     autoencoder.load_state_dict(torch.load(os.path.join(network_model_path,state_dict_name)))
 criterion = nn.MSELoss()
-optimizer = optim.Adagrad(autoencoder.parameters(), lr=0.001)
+optimizer = optim.Adam(autoencoder.parameters(), lr=0.001)
 data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 for round in range(num_rounds):

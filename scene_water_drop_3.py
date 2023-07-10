@@ -28,9 +28,11 @@ world.set_dt(max_time_step)
 fluid_rest_density = val_f(1000)
 fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
 fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-2, -1.8), rt=vec2f(-0.5, 3.5), span=world.g_part_size[None]*1.001)
-fluid_cube_data_3 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(2, 3.5), span=world.g_part_size[None]*1.001)
+# fluid_cube_data_3 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(2, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
-fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num + fluid_cube_data_3.num)
+fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num 
+                    #    + fluid_cube_data_3.num
+                       )
 print("fluid_part_num", fluid_part_num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
 fluid_part.instantiate_from_template(part_template)
@@ -53,14 +55,14 @@ fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 fluid_part.close_stack()
 
-fluid_part.open_stack(val_i(fluid_cube_data_3.num))
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_3.pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
-fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-fluid_part.close_stack()
+# fluid_part.open_stack(val_i(fluid_cube_data_3.num))
+# fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_3.pos)
+# fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
+# fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
+# fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
+# fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
+# fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
+# fluid_part.close_stack()
 
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
