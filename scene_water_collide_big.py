@@ -18,7 +18,7 @@ output_frame_num = 2000
 sense_res = 128
 output_shift = 2000
 
-part_size = 0.01
+part_size = 0.02
 max_time_step = part_size/100
 world = World(dim=2)
 world.set_part_size(part_size)
@@ -26,8 +26,8 @@ world.set_dt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-2, -1.8), rt=vec2f(-0.5, 3.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1, 0.5), rt=vec2f(1,1.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1, -1.5), rt=vec2f(1,-0.5), span=world.g_part_size[None]*1.001)
 # fluid_cube_data_3 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(2, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num 
@@ -44,6 +44,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([0.0, -1.0]))
 fluid_part.close_stack()
 
 fluid_part.open_stack(val_i(fluid_cube_data_2.num))
@@ -53,6 +54,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([0.0, 1.0]))
 fluid_part.close_stack()
 
 # fluid_part.open_stack(val_i(fluid_cube_data_3.num))
@@ -66,17 +68,17 @@ fluid_part.close_stack()
 
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
-box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
-bound_rest_density = val_f(1000)
-bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
-bound_part.instantiate_from_template(part_template)
-bound_part.open_stack(val_i(box_data.num))
-bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
-bound_part.close_stack()
+# box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
+# bound_rest_density = val_f(1000)
+# bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
+# bound_part.instantiate_from_template(part_template)
+# bound_part.open_stack(val_i(box_data.num))
+# bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
+# bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
+# bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
+# bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
+# bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
+# bound_part.close_stack()
 
 sense_cell_size = val_f(0.1/sense_res*64)
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
@@ -93,15 +95,18 @@ sense_grid_part.close_stack()
 
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
-neighb_list=[fluid_part, bound_part]
+neighb_list=[
+    fluid_part, 
+    # bound_part
+             ]
 
 
 fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
+# bound_part.add_module_neighb_search()
 sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part.get_part_num()[None]*32))
 
 fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+# bound_part.add_neighb_objs(neighb_list)
 sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_cell_size[None]*2))
 
 
@@ -109,8 +114,8 @@ fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=2e-4)
 
-bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4)
+# bound_part.add_solver_sph()
+# bound_part.add_solver_df(div_free_threshold=2e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -135,7 +140,6 @@ def loop():
     world.step_sph_compute_density()
     world.step_df_compute_alpha()
     world.step_df_div()
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     # Sense grid operation
     sense_grid_part.clamp_val_to_arr(sense_grid_part.sph.density, 0, 1000, sense_grid_part.rgb)
@@ -143,11 +147,11 @@ def loop():
     sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
 
     world.clear_acc()
-    world.add_acc_gravity()
+    # world.add_acc_gravity()
     world.acc2vel_adv()
 
     world.step_df_incomp()
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    print(fluid_part.pos[0], fluid_part.pos[1])
 
     world.update_pos_from_vel()
 
@@ -180,6 +184,7 @@ def vis_run(loop):
     loop_count = 0
 
     gui = Gui3d()
+    save_img=False
     while gui.window.running:
 
         gui.monitor_listen()
@@ -195,20 +200,21 @@ def vis_run(loop):
                 if gui.op_write_file:
                     sense_output.export_to_numpy(index=output_shift+timer,path='./output')
                 timer += 1
+                save_img = True
         
         if gui.op_refresh_window:
             gui.scene_setup()
             if gui.show_bound:
                 gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+                # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
             else:
                 gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 
-            if(sim_time > (timer-1)*inv_fps):
-                if gui.op_save_img:
-                    gui.window.save_image('output/'+str(timer)+'.png')
+            if gui.op_save_img and save_img:
+                gui.window.save_image('output/'+str(timer)+'.png')
+                save_img = False
 
             gui.window.show()
         
@@ -216,7 +222,7 @@ def vis_run(loop):
             break
 
 loop()
-run(loop)
+vis_run(loop)
 
 
 

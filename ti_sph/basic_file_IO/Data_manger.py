@@ -30,10 +30,14 @@ class Grid_Data_manager:
         np.save(os.path.join(self.output_folder_path, name+'.npy'), exported_data)
         return exported_data
     
-    def export_single_frame_data(self, name:str='data'):
+    def export_single_frame_data(self, name:str='data', from_zero:bool=False):
         exported_data = self.processed_data
-        for i in range(self.start_index, self.end_index+1):
-            np.save(os.path.join(self.output_folder_path, name+'_'+str(i)+'.npy'), exported_data[i-self.start_index])
+        if from_zero:
+            for i in range(self.start_index, self.end_index+1):
+                np.save(os.path.join(self.output_folder_path, name+'_'+str(i-self.start_index)+'.npy'), exported_data[i-self.start_index])
+        else:
+            for i in range(self.start_index, self.end_index+1):
+                np.save(os.path.join(self.output_folder_path, name+'_'+str(i)+'.npy'), exported_data[i-self.start_index])
         return exported_data
 
 

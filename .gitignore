@@ -8,3 +8,5 @@ imgui.ini
 *.zip
 *.gv
 *.mp4
+*.png
+*.npy
