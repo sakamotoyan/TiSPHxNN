@@ -5,7 +5,7 @@ from .Data_generator import Data_generator
 
 @ti.data_oriented
 class Box_data(Data_generator):
-    def __init__(self, lb: ti.Vector, rt: ti.Vector, span: float, layers: int):
+    def __init__(self, lb: ti.Vector, rt: ti.Vector, span: ti.f32, layers: ti.i32):
         self.lb = lb
         self.rt = rt
         self.span = span

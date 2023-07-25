@@ -24,15 +24,14 @@ world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
+# Object position
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3, -1), rt=vec2f(1, 1), span=world.g_part_size[None]*1.001)
+wing_data = Wing2412_data_2D(span=world.g_part_size[None]*1.001, chord_length=7.0, pos=vec2f(1.1,0))
+
 '''BASIC SETTINGS FOR FLUID'''
-fluid_rest_density = val_f(100)
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1, 0.5), rt=vec2f(1,1.5), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1, -1.5), rt=vec2f(1,-0.5), span=world.g_part_size[None]*1.001)
-fluid_wing_data = Wing2412_data_2D(span=world.g_part_size[None]*1.001, chord_length=5.0, pos=vec2f(-0,0))
-# fluid_cube_data_3 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(2, 3.5), span=world.g_part_size[None]*1.001)
+fluid_rest_density = val_f(1000)
 '''INIT AN FLUID PARTICLE OBJECT'''
-fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num + fluid_wing_data.num
-                    #    + fluid_cube_data_3.num
+fluid_part_num = val_i(fluid_cube_data_1.num
                        )
 print("fluid_part_num", fluid_part_num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
@@ -45,51 +44,21 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
-fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([0.0, -1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([1.0, 0.0]))
 fluid_part.close_stack()
-
-fluid_part.open_stack(val_i(fluid_cube_data_2.num))
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
-fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([0.0, 1.0]))
-fluid_part.close_stack()
-
-fluid_part.open_stack(val_i(fluid_wing_data.num))
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_wing_data.pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
-fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([0.0, 1.0]))
-fluid_part.close_stack()
-
-# fluid_part.open_stack(val_i(fluid_cube_data_3.num))
-# fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_3.pos)
-# fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
-# fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-# fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
-# fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
-# fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-# fluid_part.close_stack()
 
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
-# box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
-# bound_rest_density = val_f(1000)
-# bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
-# bound_part.instantiate_from_template(part_template)
-# bound_part.open_stack(val_i(box_data.num))
-# bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
-# bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-# bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-# bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
-# bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
-# bound_part.close_stack()
+bound_rest_density = val_f(1000)
+bound_part = world.add_part_obj(part_num=wing_data.num, size=world.g_part_size, is_dynamic=False)
+bound_part.instantiate_from_template(part_template)
+bound_part.open_stack(val_i(wing_data.num))
+bound_part.fill_open_stack_with_nparr(bound_part.pos, wing_data.pos)
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
+bound_part.close_stack()
 
 sense_cell_size = val_f(0.1/sense_res*64)
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
@@ -102,31 +71,29 @@ sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.g
 sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, val_f(sense_grid_part.get_part_size()[None]**world.g_dim[None]))
 sense_grid_part.close_stack()
 
-
-
-
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[
     fluid_part, 
-    # bound_part
+    bound_part
              ]
 
 
 fluid_part.add_module_neighb_search()
-# bound_part.add_module_neighb_search()
+bound_part.add_module_neighb_search()
 sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part.get_part_num()[None]*32))
 
 fluid_part.add_neighb_objs(neighb_list)
-# bound_part.add_neighb_objs(neighb_list)
+bound_part.add_neighb_objs(neighb_list)
 sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_cell_size[None]*2))
+sense_grid_part.add_neighb_obj(neighb_obj=bound_part, search_range=val_f(sense_cell_size[None]*2))
 
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=2e-4)
 
-# bound_part.add_solver_sph()
-# bound_part.add_solver_df(div_free_threshold=2e-4)
+bound_part.add_solver_sph()
+bound_part.add_solver_df(div_free_threshold=2e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -217,7 +184,7 @@ def vis_run(loop):
             gui.scene_setup()
             if gui.show_bound:
                 gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
             else:
                 gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
             

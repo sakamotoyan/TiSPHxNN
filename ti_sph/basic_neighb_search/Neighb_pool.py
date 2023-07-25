@@ -149,7 +149,7 @@ class Neighb_pool:
         self.m_neighb_search_range_list.append(search_range)
 
         ''' generate search template '''
-        search_cell_range = ti.ceil(search_range[None] / neighb_obj.m_neighb_search.neighb_cell.cell_size[None])
+        search_cell_range = int(ti.ceil(search_range[None] / neighb_obj.m_neighb_search.neighb_cell.cell_size[None]))
         neighb_search_template = Neighb_search_template(self.obj.m_world.g_dim[None], search_cell_range)
         self.m_neighb_search_template_list.append(neighb_search_template)
 

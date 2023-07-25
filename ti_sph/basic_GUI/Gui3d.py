@@ -24,7 +24,6 @@ class Gui3d:
         self.op_system_run = False
         self.op_write_file = False
         self.op_refresh_window = True
-        self.op_write_file = False
         self.op_save_img = False
 
         self.env_set_up()
@@ -100,10 +99,6 @@ class Gui3d:
             if self.window.event.key == "h":
                 self.show_help = not self.show_help
                 print("show help:", self.show_help)
-
-            if self.window.event.key == "l":
-                self.op_write_file = not self.op_write_file
-                print("write file:", self.op_write_file)
             
             if self.window.event.key == "c":
                 self.op_refresh_window = not self.op_refresh_window
