@@ -9,7 +9,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, kernel_profiler=True) 
-ti.init(arch=ti.cuda, device_memory_GB=3) # Use GPU
+ti.init(arch=ti.cuda, device_memory_GB=5) # Use GPU
 # ti.init(arch=ti.cpu) # Use CPU
 
 ''' GLOBAL SETTINGS '''
@@ -24,21 +24,21 @@ world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
-# Object position
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3, -1), rt=vec2f(1, 1), span=world.g_part_size[None]*1.001)
-wing_data = Wing2412_data_2D(span=world.g_part_size[None]*1.001, chord_length=7.0, pos=vec2f(1.1,0))
+''' Object position '''
+wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*1.001, chord_length=2.0, pos=vec2f(0,0), cube_lb=vec2f(-3, -1), cube_rt=vec2f(3, 1))
+sense_cell_size = val_f(0.1/sense_res*64)
+sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
 '''INIT AN FLUID PARTICLE OBJECT'''
-fluid_part_num = val_i(fluid_cube_data_1.num
-                       )
+fluid_part_num = val_i(wing_data.cube_num)
 print("fluid_part_num", fluid_part_num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
 fluid_part.instantiate_from_template(part_template)
 '''PUSH PARTICLES TO THE OBJECT'''
-fluid_part.open_stack(val_i(fluid_cube_data_1.num))
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
+fluid_part.open_stack(val_i(wing_data.cube_num))
+fluid_part.fill_open_stack_with_nparr(fluid_part.pos, wing_data.cube_pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
 fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
@@ -50,18 +50,16 @@ fluid_part.close_stack()
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
 bound_rest_density = val_f(1000)
-bound_part = world.add_part_obj(part_num=wing_data.num, size=world.g_part_size, is_dynamic=False)
+bound_part = world.add_part_obj(part_num=wing_data.wing_num, size=world.g_part_size, is_dynamic=False)
 bound_part.instantiate_from_template(part_template)
-bound_part.open_stack(val_i(wing_data.num))
-bound_part.fill_open_stack_with_nparr(bound_part.pos, wing_data.pos)
+bound_part.open_stack(val_i(wing_data.wing_num))
+bound_part.fill_open_stack_with_nparr(bound_part.pos, wing_data.wing_pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
 bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 bound_part.close_stack()
 
-sense_cell_size = val_f(0.1/sense_res*64)
-sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 sense_grid_part = world.add_part_obj(part_num=sense_cube_data.num, size=sense_cell_size, is_dynamic=False)
 sense_grid_part.instantiate_from_template(grid_template)
 sense_grid_part.open_stack(val_i(sense_cube_data.num))
@@ -129,13 +127,11 @@ def loop():
     world.acc2vel_adv()
 
     world.step_df_incomp()
-    print(fluid_part.pos[0], fluid_part.pos[1])
 
     world.update_pos_from_vel()
 
     world.cfl_dt(0.5, max_time_step)
 
-    print(' ')
 
 
 
