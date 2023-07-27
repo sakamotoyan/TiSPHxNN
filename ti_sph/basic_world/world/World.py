@@ -11,14 +11,14 @@ from ...basic_obj.Obj_Particle import Particle
 
 @ti.data_oriented
 class World:
-    def __init__(self, dim=3):
+    def __init__(self, dim=3, lb = -8, rt = 8):
         ''' GLOBAL CONFIGURATION '''
         self.g_dim = val_i(dim)
         self.g_space_lb = vecx_f(self.g_dim[None])
         self.g_space_rt = vecx_f(self.g_dim[None])
         self.g_gravity = vecx_f(self.g_dim[None])
-        self.g_space_lb.fill(-8)
-        self.g_space_rt.fill(8)
+        self.g_space_lb.fill(lb)
+        self.g_space_rt.fill(rt)
         self.g_gravity[None][1] = -9.8
         self.g_dt = val_f(0.001)
         self.g_inv_dt = val_f(1/self.g_dt[None])

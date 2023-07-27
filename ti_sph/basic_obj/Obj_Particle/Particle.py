@@ -108,3 +108,10 @@ class Particle(Obj):
     # TODO
     def move(original: ti.i32, to: ti.i32):
         pass
+
+    @ti.kernel
+    def color_code_part(self: ti.template(), arr: ti.template(), lower: ti.f32, upper: ti.f32):
+        for i in range(self.ti_get_stack_top()[None]):
+            val = ti.min(ti.max(ti.math.length(arr[i]) / (upper - lower), 0), 1)
+            self.rgb[i][0] = val
+            self.rgb[i][1] = val

@@ -13,21 +13,23 @@ ti.init(arch=ti.cuda, device_memory_GB=5) # Use GPU
 # ti.init(arch=ti.cpu) # Use CPU
 
 ''' GLOBAL SETTINGS '''
-fps = 60
-output_frame_num = 2000
-sense_res = 128
-output_shift = 2000
+fps = 240
+output_frame_num = 5000
+sense_res = 256
+output_shift = 0
 
-part_size = 0.02
+part_size = 0.05
 max_time_step = part_size/100
-world = World(dim=2)
+world = World(dim=2, lb = -15, rt = 15)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
+mov_vel = vec2_f([-1.0, 0.0])
+
 ''' Object position '''
-wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*1.001, chord_length=2.0, pos=vec2f(0,0), cube_lb=vec2f(-3, -1), cube_rt=vec2f(3, 1))
-sense_cell_size = val_f(0.1/sense_res*64)
-sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
+wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*1.0005, chord_length=2.0, pos=vec2f(0,0), cube_lb=vec2f(-8, -1), cube_rt=vec2f(3, 1))
+sense_cell_size = val_f(0.05/sense_res*64)
+sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(1.5,0))
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
@@ -44,7 +46,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
-fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([1.0, 0.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.vel, mov_vel)
 fluid_part.close_stack()
 
 
@@ -58,9 +60,9 @@ wing_part.fill_open_stack_with_val(wing_part.size, wing_part.get_part_size())
 wing_part.fill_open_stack_with_val(wing_part.volume, val_f(wing_part.get_part_size()[None]**world.g_dim[None]))
 wing_part.fill_open_stack_with_val(wing_part.mass, val_f(bound_rest_density[None]*wing_part.get_part_size()[None]**world.g_dim[None]))
 wing_part.fill_open_stack_with_val(wing_part.rest_density, bound_rest_density)
-wing_part.fill_open_stack_with_val(wing_part.vel, vec2_f([-0.5, 0.0]))
-wing_part.fill_open_stack_with_val(wing_part.vel_adv, vec2_f([-0.5, 0.0]))
-wing_part.fill_open_stack_with_val(wing_part.sph_df.vel_adv, vec2_f([-0.5, 0.0]))
+# wing_part.fill_open_stack_with_val(wing_part.vel, vec2_f([-0.5, 0.0]))
+# wing_part.fill_open_stack_with_val(wing_part.vel_adv, vec2_f([-0.5, 0.0]))
+# wing_part.fill_open_stack_with_val(wing_part.sph_df.vel_adv, vec2_f([-0.5, 0.0]))
 wing_part.close_stack()
 
 bound_part = world.add_part_obj(part_num=wing_data.bound_num, size=world.g_part_size, is_dynamic=False)
@@ -71,7 +73,7 @@ bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
 bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
-bound_part.fill_open_stack_with_val(bound_part.acc, vec2_f([1.0, 0.0]))
+# bound_part.fill_open_stack_with_val(bound_part.acc, vec2_f([1.0, 0.0]))
 # bound_part.fill_open_stack_with_val(bound_part.vel, vec2_f([1.0, 0.0]))
 # bound_part.fill_open_stack_with_val(bound_part.vel_adv, vec2_f([1.0, 0.0]))
 bound_part.close_stack()
@@ -130,8 +132,9 @@ sense_output.add_output_dataType("vel",2)
 # print('DEBUG sense_output', sense_output.np_node_index_organized)
 # save as numpy file
 # np.save("pos_np.npy", sense_output.np_node_index_organized)
-bound_part.set(bound_part.vel, vec2_f([1.0, 0.0]))
+bound_part.set(bound_part.vel, mov_vel)
 bound_part.copy_attr(from_attr=bound_part.vel, to_attr=bound_part.vel_adv)
+bound_part.copy_attr(from_attr=bound_part.vel, to_attr=bound_part.sph_df.vel_adv)
 def loop():
     world.update_pos_in_neighb_search()
 
@@ -139,6 +142,8 @@ def loop():
     world.step_sph_compute_density()
     world.step_df_compute_alpha()
     world.step_df_div()
+
+    fluid_part.color_code_part(fluid_part.vel, 0, 5)
 
     # Sense grid operation
     sense_grid_part.clamp_val_to_arr(sense_grid_part.sph.density, 0, fluid_rest_density[None], sense_grid_part.rgb)
@@ -208,7 +213,7 @@ def vis_run(loop):
             gui.scene_setup()
             if gui.show_bound:
                 gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=wing_part.pos, obj_color=(0,0.5,1),index_count=wing_part.get_stack_top()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=wing_part.pos, obj_color=(1,0.5,0),index_count=wing_part.get_stack_top()[None],size=world.g_part_size[None])
                 gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,1,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
             else:
                 gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)

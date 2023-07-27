@@ -22,14 +22,17 @@ def step_df_incomp(self):
 
         part_obj.m_solver_df.incompressible_iter[None] = 0
 
-        # if part_obj.m_is_dynamic:
-        part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
-        self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
-        # else:
-        #     self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
+        if part_obj.m_is_dynamic:
+            part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
+            self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
+        else:
+            self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
         
     while True:
         for part_obj in self.df_solver_list:
+            if not part_obj.m_is_dynamic:
+                continue
+            
             part_obj.m_solver_df.incompressible_iter[None] += 1
 
             part_obj.m_solver_df.compute_delta_density()
@@ -62,14 +65,17 @@ def step_df_div(self):
 
         part_obj.m_solver_df.div_free_iter[None] = 0
 
-        # if part_obj.m_is_dynamic:
-        part_obj.m_solver_df.get_vel_adv(part_obj.vel)
-        self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
-        # else:
-        #     self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
+        if part_obj.m_is_dynamic:
+            part_obj.m_solver_df.get_vel_adv(part_obj.vel)
+            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
+        else:
+            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
         
     while True:
         for part_obj in self.df_solver_list:
+            if not part_obj.m_is_dynamic:
+                continue
+
             part_obj.m_solver_df.div_free_iter[None] += 1
 
             part_obj.m_solver_df.compute_delta_density()

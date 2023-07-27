@@ -5,19 +5,19 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 
-start_index = 2001
-end_index = 4000
+start_index = 0
+end_index = 105
 
 dm_density = Grid_Data_manager('./output', './output_organised')
 dm_density.read_data(attr='sensed_density',start_index=start_index,end_index=end_index,channel_num=1)
 dm_density.reshape_data_to_2d(index_attr='node_index')
-dm_density.processed_data = dm_density.processed_data[:,:,:128,:128]
+dm_density.processed_data = dm_density.processed_data[:,:,:256,:256]
 data_density = dm_density.export_single_frame_data('density', from_zero=True)
 
 dm_vel = Grid_Data_manager('./output', './output_organised')
 dm_vel.read_data(attr='vel',start_index=start_index,end_index=end_index,channel_num=2)
 dm_vel.reshape_data_to_2d(index_attr='node_index')
-dm_vel.processed_data = dm_vel.processed_data[:,:,:128,:128]
+dm_vel.processed_data = dm_vel.processed_data[:,:,:256,:256]
 data_vel = dm_vel.export_single_frame_data('velocity', from_zero=True)
 
 # dm_momentum = Grid_Data_manager('./output', './output_organised')
