@@ -8,8 +8,6 @@ def init_neighb_search(self):
 
 def update_pos_in_neighb_search(self):
     for part_obj in self.neighb_search_list:
-        if not part_obj.m_is_dynamic:
-            continue
         part_obj.m_neighb_search.update_self()
 
 def update_neighbs(self):

@@ -85,6 +85,11 @@ def set_val(self: ti.template(), to_arr: ti.template(), num: ti.i32, val: ti.tem
         to_arr[i+self.m_stack_top[None]] = val[None]
 
 @ti.kernel
+def set(self: ti.template(), to_arr: ti.template(), val: ti.template()):
+    for i in range(self.ti_get_stack_top()[None]):
+        to_arr[i] = val[None]
+
+@ti.kernel
 def clamp_val_to_arr(self: ti.template(), arr: ti.template(), lower: ti.f32, upper: ti.f32, to: ti.template()):
     for i in range(self.ti_get_stack_top()[None]):
         for j in range(ti.static(to.n)):
@@ -93,4 +98,9 @@ def clamp_val_to_arr(self: ti.template(), arr: ti.template(), lower: ti.f32, upp
 @ti.kernel
 def clamp_val(self: ti.template(), arr: ti.template(), lower: ti.f32, upper: ti.f32, to: ti.template()):
     for i in range(self.ti_get_stack_top()[None]):
-            to[i] = ti.min(ti.max(arr[i] / (upper - lower),0),1)
+        to[i] = ti.min(ti.max(arr[i] / (upper - lower),0),1)
+
+@ti.kernel
+def integ(self: ti.template(), arr: ti.template(), int_val: ti.f32, to: ti.template()):
+    for i in range(self.ti_get_stack_top()[None]):
+        to[i] += arr[i] * int_val

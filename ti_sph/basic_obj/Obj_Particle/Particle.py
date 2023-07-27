@@ -75,6 +75,8 @@ class Particle(Obj):
     has_positive = data_op.has_positive
     clamp_val = data_op.clamp_val
     clamp_val_to_arr = data_op.clamp_val_to_arr 
+    integ = data_op.integ
+    set = data_op.set
 
     # Functions: Data access for single values
     get_stack_top = get.get_stack_top

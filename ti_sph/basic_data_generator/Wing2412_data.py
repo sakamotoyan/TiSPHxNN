@@ -95,8 +95,8 @@ class Wing2412_data_2D_with_cube(Wing2412_data_2D):
         #  Output data
         self.wing_num = None
         self.wing_pos = None
-        self.cube_num = None
-        self.cube_pos = None
+        self.fluid_num = None
+        self.fluid_pos = None
 
         # Input parameters
         self.span = span
@@ -104,6 +104,8 @@ class Wing2412_data_2D_with_cube(Wing2412_data_2D):
         self.shift_pos = pos
         self.cube_lb = cube_lb
         self.cube_rt = cube_rt
+        self.bound_layer = 3
+        self.vacum_layer = 0
 
         # Derived parameters
         self.resolution = int(self.chord_length / self.span * 5)
@@ -127,27 +129,36 @@ class Wing2412_data_2D_with_cube(Wing2412_data_2D):
         self.grid_x, self.grid_y = np.mgrid[self.cube_lb[0]:self.cube_rt[0]:self.span, self.cube_lb[1]:self.cube_rt[1]:self.span]
 
         # Create a mask for points within the airfoil
-        self.mask = (self.grid_y >= np.interp(self.grid_x, self.x, self.yl)) & (self.grid_y <= np.interp(self.grid_x, self.x, self.yu)) & (self.grid_x <= self.c)
-
+        self.mask_wing = (self.grid_y >= np.interp(self.grid_x, self.x, self.yl)) & (self.grid_y <= np.interp(self.grid_x, self.x, self.yu)) & (self.grid_x <= self.c)
+        self.mask_bound = ~((self.grid_y < (self.cube_rt[1]-self.bound_layer*self.span)) & (self.grid_y > (self.cube_lb[1]+self.bound_layer*self.span))\
+              & (self.grid_x > (self.cube_lb[0]+self.bound_layer*self.span)) & (self.grid_x < (self.cube_rt[0]-self.bound_layer*self.span)))
+        self.mask_fluid = ~self.mask_wing & ~self.mask_bound & (self.grid_y < (self.cube_rt[1]-(self.bound_layer+self.vacum_layer)*self.span))
+        
         # Extract particle locations
-        self.particle_x = self.grid_x[self.mask]
-        self.particle_y = self.grid_y[self.mask]
+        self.wing_particle_x = self.grid_x[self.mask_wing]
+        self.wing_particle_y = self.grid_y[self.mask_wing]
 
         # Shift the airfoil to the given position
         self.x += self.shift_pos[0]
         self.yu += self.shift_pos[1]
         self.yl += self.shift_pos[1]
-        self.particle_x += self.shift_pos[0]
-        self.particle_y += self.shift_pos[1]
+        self.wing_particle_x += self.shift_pos[0]
+        self.wing_particle_y += self.shift_pos[1]
+
+        # Extracr boundary particle locations
+        self.bound_particle_x = self.grid_x[self.mask_bound]
+        self.bound_particle_y = self.grid_y[self.mask_bound]
 
         # Extract fluid cube locations
-        self.cube_x = self.grid_x[~self.mask]
-        self.cube_y = self.grid_y[~self.mask]
+        self.fluid_particle_x = self.grid_x[self.mask_fluid]
+        self.fluid_particle_y = self.grid_y[self.mask_fluid]
 
         # Output data
-        self.wing_num = self.particle_x.shape[0]
-        self.wing_pos = np.stack((self.particle_x.reshape(-1), self.particle_y.reshape(-1)), -1)
-        self.cube_num = self.cube_x.shape[0]
-        self.cube_pos = np.stack((self.cube_x.reshape(-1), self.cube_y.reshape(-1)), -1)
+        self.wing_num = self.wing_particle_x.shape[0]
+        self.wing_pos = np.stack((self.wing_particle_x.reshape(-1), self.wing_particle_y.reshape(-1)), -1)
+        self.fluid_num = self.fluid_particle_x.shape[0]
+        self.fluid_pos = np.stack((self.fluid_particle_x.reshape(-1), self.fluid_particle_y.reshape(-1)), -1)
+        self.bound_num = self.bound_particle_x.shape[0]
+        self.bound_pos = np.stack((self.bound_particle_x.reshape(-1), self.bound_particle_y.reshape(-1)), -1)
 
         print('Done!')

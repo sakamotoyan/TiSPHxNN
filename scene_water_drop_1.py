@@ -17,7 +17,7 @@ fps = 60
 output_frame_num = 2000
 sense_res = 128
 
-part_size = 0.01
+part_size = 0.05
 max_time_step = part_size/100
 world = World(dim=2)
 world.set_part_size(part_size)
@@ -203,7 +203,7 @@ def vis_run(loop):
             break
 
 loop()
-run(loop)
+vis_run(loop)
 
 
 

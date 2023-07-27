@@ -1,4 +1,5 @@
 import taichi as ti
+import numpy as np
 from typing import List
 from ....basic_obj.Obj_Particle import Particle
 
@@ -21,13 +22,11 @@ def step_df_incomp(self):
 
         part_obj.m_solver_df.incompressible_iter[None] = 0
 
-        if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
-            self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
-            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
-        else:
-            self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
-            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
+        # if part_obj.m_is_dynamic:
+        part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
+        self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
+        # else:
+        #     self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
         
     while True:
         for part_obj in self.df_solver_list:
@@ -63,11 +62,11 @@ def step_df_div(self):
 
         part_obj.m_solver_df.div_free_iter[None] = 0
 
-        if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.get_vel_adv(part_obj.vel)
-            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
-        else:
-            self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
+        # if part_obj.m_is_dynamic:
+        part_obj.m_solver_df.get_vel_adv(part_obj.vel)
+        self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
+        # else:
+        #     self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
         
     while True:
         for part_obj in self.df_solver_list:
