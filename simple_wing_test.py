@@ -18,13 +18,13 @@ output_frame_num = 5000
 sense_res = 256
 output_shift = 0
 
-part_size = 0.05
+part_size = 0.005
 max_time_step = part_size/100
 world = World(dim=2, lb = -15, rt = 15)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
-mov_vel = vec2_f([-1.0, 0.0])
+mov_vel = vec2_f([1.0, 0.0])
 
 ''' Object position '''
 wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*1.0005, chord_length=2.0, pos=vec2f(0,0), cube_lb=vec2f(-8, -1), cube_rt=vec2f(3, 1))
