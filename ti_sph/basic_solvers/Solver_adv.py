@@ -24,9 +24,20 @@ class Adv_slover:
             self.obj.acc[i] += self.gravity[None]
     
     @ti.kernel
-    def add_vis_acc(self, vis_coeff: ti.template()):
-        pass
+    def add_vis_acc(self, kinetic_vis_coeff: ti.template()):
+        for i in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.acc[i] += 0
     
+    @ti.func
+    def inloop_accumulate_vis_acc(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
+        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        if bigger_than_zero(cached_dist):
+            k_vis = (self.obj.k_vis[part_id] + neighb_obj.k_vis[neighb_part_id]) / 2
+            A_ij = self.obj.vel[part_id] - neighb_obj.vel[neighb_part_id]
+            x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
+            self.obj.acc[part_id] += k_vis*2*(2+self.obj.m_world.g_dim[None]) * neighb_obj.volume[neighb_part_id] * cached_grad_W * A_ij.dot(x_ij) / (cached_dist**2)
+
     # @ti.kernel
     # def acc2vel_adv(self, out_vel_adv: ti.template()):
     #     for i in range(self.obj.ti_get_stack_top()[None]):
