@@ -6,6 +6,7 @@ output_path = './output_video'
 
 # Frame rate (frames per second) of the output video
 frame_rate = 60
+stride = 1
 
 # Function to sort files numerically
 def numerical_sort(value):
@@ -14,8 +15,8 @@ def numerical_sort(value):
 
 # Get the list of image files sorted numerically
 image_files = []
-for i in range(0,3000):
-    image_files.append(f'./Autoencoders/test_result/vel_density_{i}.jpg')
+for i in range(4,128,stride):
+    image_files.append(f'./output/{i}.png')
 
 # image_files = sorted(
 #     [os.path.join(image_dir, file) for file in os.listdir(image_dir)],

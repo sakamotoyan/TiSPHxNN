@@ -89,7 +89,7 @@ class Wing2412_data_2D(Data_generator):
 
 @ti.data_oriented
 class Wing2412_data_2D_with_cube(Wing2412_data_2D):
-    def __init__(self, span: ti.f32, chord_length: ti.f32, pos: ti.types.vector(2, ti.f32), cube_lb: ti.types.vector(2, ti.f32), cube_rt: ti.types.vector(2, ti.f32)):
+    def __init__(self, span: ti.f32, chord_length: ti.f32, pos: ti.types.vector(2, ti.f32), cube_lb: ti.types.vector(2, ti.f32), cube_rt: ti.types.vector(2, ti.f32), attack_angle: ti.f32=0.0):
         print("creating Wing2412_data_2D_with_cube ...")
 
         #  Output data
@@ -106,9 +106,12 @@ class Wing2412_data_2D_with_cube(Wing2412_data_2D):
         self.cube_rt = cube_rt
         self.bound_layer = 3
         self.vacum_layer = 0
+        self.attack_angle = np.radians(-attack_angle)
 
         # Derived parameters
         self.resolution = int(self.chord_length / self.span * 5)
+        self.rotation_matrix = np.array([[np.cos(self.attack_angle), -np.sin(self.attack_angle)], 
+                            [np.sin(self.attack_angle), np.cos(self.attack_angle)]])
 
         # Airfoil parameters
         self.m = 0.02  # Maximum camber
@@ -125,11 +128,15 @@ class Wing2412_data_2D_with_cube(Wing2412_data_2D):
         self.yu = self.yc + self.yt
         self.yl = self.yc - self.yt
 
+        # Rotate the airfoil
+        self.x, self.yu = np.dot(self.rotation_matrix, np.array([self.x, self.yu]))
+        self.x, self.yl = np.dot(self.rotation_matrix, np.array([self.x, self.yl]))
+
         # Create a grid
         self.grid_x, self.grid_y = np.mgrid[self.cube_lb[0]:self.cube_rt[0]:self.span, self.cube_lb[1]:self.cube_rt[1]:self.span]
 
         # Create a mask for points within the airfoil
-        self.mask_wing = (self.grid_y >= np.interp(self.grid_x, self.x, self.yl)) & (self.grid_y <= np.interp(self.grid_x, self.x, self.yu)) & (self.grid_x <= self.c)
+        self.mask_wing = (self.grid_y >= np.interp(self.grid_x, self.x, self.yl)) & (self.grid_y <= np.interp(self.grid_x, self.x, self.yu)) & (self.grid_x <= (self.c*np.cos(self.attack_angle)))
         self.mask_bound = ~((self.grid_y < (self.cube_rt[1]-self.bound_layer*self.span)) & (self.grid_y > (self.cube_lb[1]+self.bound_layer*self.span))\
               & (self.grid_x > (self.cube_lb[0]+self.bound_layer*self.span)) & (self.grid_x < (self.cube_rt[0]-self.bound_layer*self.span)))
         self.mask_fluid = ~self.mask_wing & ~self.mask_bound & (self.grid_y < (self.cube_rt[1]-(self.bound_layer+self.vacum_layer)*self.span))

@@ -15,10 +15,10 @@ ti.init(arch=ti.cuda, device_memory_GB=5) # Use GPU
 ''' GLOBAL SETTINGS '''
 fps = 240
 output_frame_num = 5000
-sense_res = 256
+sense_res = 512
 output_shift = 0
 
-part_size = 0.005
+part_size = 0.01
 max_time_step = part_size/100
 world = World(dim=2, lb = -15, rt = 15)
 world.set_part_size(part_size)
@@ -27,9 +27,12 @@ world.set_dt(max_time_step)
 # Speciliazed coefficents for this scene
 mov_vel = vec2_f([15.0, 0.0])
 kinematic_viscosity_air = val_f(1.57e-5)
+world.g_gravity[None] = vec2f(0, -9.8) * 10
 
 ''' Object position '''
-wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*1.0005, chord_length=2.0, pos=vec2f(0,0), cube_lb=vec2f(-8, -2), cube_rt=vec2f(3, 2))
+# HINT: span=world.g_part_size[None]*(1+43e-5) can be more accurate but slower
+wing_data = Wing2412_data_2D_with_cube(span=world.g_part_size[None]*(1+43e-5), chord_length=2.0, pos=vec2f(0,0), 
+                                       cube_lb=vec2f(-8, -2), cube_rt=vec2f(3, 2), attack_angle=30)
 sense_cell_size = val_f(0.05/sense_res*64)
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(1.5,0))
 
@@ -48,6 +51,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.k_vis, kinematic_viscosity_air)
 fluid_part.fill_open_stack_with_val(fluid_part.vel, mov_vel)
 fluid_part.close_stack()
 
@@ -62,6 +66,7 @@ wing_part.fill_open_stack_with_val(wing_part.size, wing_part.get_part_size())
 wing_part.fill_open_stack_with_val(wing_part.volume, val_f(wing_part.get_part_size()[None]**world.g_dim[None]))
 wing_part.fill_open_stack_with_val(wing_part.mass, val_f(bound_rest_density[None]*wing_part.get_part_size()[None]**world.g_dim[None]))
 wing_part.fill_open_stack_with_val(wing_part.rest_density, bound_rest_density)
+wing_part.fill_open_stack_with_val(wing_part.k_vis, kinematic_viscosity_air)
 # wing_part.fill_open_stack_with_val(wing_part.vel, vec2_f([-0.5, 0.0]))
 # wing_part.fill_open_stack_with_val(wing_part.vel_adv, vec2_f([-0.5, 0.0]))
 # wing_part.fill_open_stack_with_val(wing_part.sph_df.vel_adv, vec2_f([-0.5, 0.0]))
@@ -75,6 +80,7 @@ bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
 bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
+bound_part.fill_open_stack_with_val(bound_part.k_vis, kinematic_viscosity_air)
 # bound_part.fill_open_stack_with_val(bound_part.acc, vec2_f([1.0, 0.0]))
 # bound_part.fill_open_stack_with_val(bound_part.vel, vec2_f([1.0, 0.0]))
 # bound_part.fill_open_stack_with_val(bound_part.vel_adv, vec2_f([1.0, 0.0]))
@@ -114,13 +120,13 @@ sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_c
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4)
+fluid_part.add_solver_df(div_free_threshold=2e-4, incompressible_iter_max=200)
 
 wing_part.add_solver_sph()
-wing_part.add_solver_df(div_free_threshold=2e-4)
+wing_part.add_solver_df(div_free_threshold=2e-4, incompressible_iter_max=200)
 
 bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4)
+bound_part.add_solver_df(div_free_threshold=2e-4, incompressible_iter_max=200)
 
 sense_grid_part.add_solver_sph()
 
