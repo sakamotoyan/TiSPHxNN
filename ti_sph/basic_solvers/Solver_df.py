@@ -79,6 +79,48 @@ class DF_solver(SPH_solver):
                 * ((self.obj.sph_df[part_id].delta_density * neighb_obj.mass[neighb_part_id] / self.obj.sph_df[part_id].alpha) \
                    + (neighb_obj.sph_df[neighb_part_id].delta_density * self.obj.mass[part_id] / neighb_obj.sph_df[neighb_part_id].alpha))
 
+    @ti.kernel
+    def compute_kappa_incomp_from_delta_density(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.sph_df[part_id].kappa_incomp = self.obj.sph_df[part_id].delta_density / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
+            self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_incomp
+    
+    @ti.kernel
+    def log_kappa_incomp(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.sph_df[part_id].kappa_incomp = self.obj.sph_df[part_id].alpha_2
+
+    @ti.kernel
+    def compute_kappa_div_from_delta_density(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.sph_df[part_id].kappa_div = self.obj.sph_df[part_id].delta_density / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
+            self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_div
+
+    @ti.kernel
+    def log_kappa_div(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.sph_df[part_id].kappa_div = self.obj.sph_df[part_id].alpha_2
+
+    @ti.func
+    def inloop_update_vel_adv_from_kappa_incomp(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
+        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        if bigger_than_zero(cached_dist):
+            self.obj.sph_df[part_id].vel_adv -= self.dt[None] * \
+                (neighb_obj.mass[neighb_part_id] / self.obj.mass[part_id] * self.obj.volume[part_id] * self.obj.sph_df[part_id].kappa_incomp + 
+                 neighb_obj.volume[neighb_part_id] * neighb_obj.sph_df[neighb_part_id].kappa_incomp) \
+            * cached_grad_W
+    
+    @ti.func
+    def inloop_update_vel_adv_from_kappa_div(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
+        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        if bigger_than_zero(cached_dist):
+            self.obj.sph_df[part_id].vel_adv -= self.dt[None] * \
+                (neighb_obj.mass[neighb_part_id] / self.obj.mass[part_id] * self.obj.volume[part_id] * self.obj.sph_df[part_id].kappa_div + 
+                 neighb_obj.volume[neighb_part_id] * neighb_obj.sph_df[neighb_part_id].kappa_div) \
+            * cached_grad_W
+
     @ti.kernel 
     def update_compressible_ratio(self):
         self.compressible_ratio[None] = 0

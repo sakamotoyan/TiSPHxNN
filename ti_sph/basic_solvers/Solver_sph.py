@@ -15,6 +15,7 @@ class SPH_solver:
         self.dt=obj.m_world.g_dt
         self.inv_dt = obj.m_world.g_inv_dt
         self.neg_inv_dt = obj.m_world.g_neg_inv_dt
+        self.inv_dt2 = obj.m_world.g_inv_dt2
 
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):

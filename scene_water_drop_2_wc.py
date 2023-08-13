@@ -25,7 +25,7 @@ world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
 kinematic_viscosity_air = val_f(1.57e-5)
-# kinematic_viscosity_air = val_f(0.001)
+kinematic_viscosity_bound = val_f(0.01)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
@@ -69,7 +69,7 @@ bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
 bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
-bound_part.fill_open_stack_with_val(bound_part.k_vis, kinematic_viscosity_air)
+bound_part.fill_open_stack_with_val(bound_part.k_vis, kinematic_viscosity_bound)
 bound_part.close_stack()
 
 sense_cell_size = val_f(0.1/sense_res*64)

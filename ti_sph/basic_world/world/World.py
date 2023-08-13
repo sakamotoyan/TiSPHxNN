@@ -24,6 +24,7 @@ class World:
         self.g_dt = val_f(0.001)
         self.g_inv_dt = val_f(1/self.g_dt[None])
         self.g_neg_inv_dt = val_f(-1/self.g_dt[None])
+        self.g_inv_dt2 = val_f(self.g_inv_dt[None] ** 2)
         self.g_part_size = val_f(0.1)
         self.g_avg_neighb_part_num = val_i(32)
         self.g_obj_num = val_i(3)
@@ -53,6 +54,7 @@ class World:
         self.g_dt[None] = dt
         self.g_inv_dt[None] = 1/dt
         self.g_neg_inv_dt[None] = -1/dt
+        self.g_inv_dt2[None] = self.g_inv_dt[None] ** 2
 
     def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
         obj = Particle(part_num, size, is_dynamic)
@@ -89,6 +91,8 @@ class World:
     step_df_compute_alpha = solver_df.step_df_compute_alpha
     step_df_incomp = solver_df.step_df_incomp
     step_df_div = solver_df.step_df_div
+    step_dfsph_incomp = solver_df.step_dfsph_incomp
+    step_dfsph_div = solver_df.step_dfsph_div
     
     # Functions: WCSPH
     step_wcsph_add_acc_pressure = solver_wcsph.step_wcsph_add_acc_pressure

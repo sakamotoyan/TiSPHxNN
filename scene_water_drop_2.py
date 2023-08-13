@@ -25,7 +25,8 @@ world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
-fluid_rest_density = val_f(1000)
+fluid_rest_density = val_f(10)
+fluid_rest_density_2 = val_f(1000)
 fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
 fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
@@ -38,8 +39,8 @@ fluid_part.open_stack(val_i(fluid_cube_data_1.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
 fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density_2)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
 fluid_part.close_stack()
 
@@ -122,7 +123,7 @@ def loop():
     world.neighb_search()
     world.step_sph_compute_density()
     world.step_df_compute_alpha()
-    world.step_df_div()
+    world.step_dfsph_div()
     print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     # Sense grid operation
@@ -134,12 +135,12 @@ def loop():
     world.add_acc_gravity()
     world.acc2vel_adv()
 
-    world.step_df_incomp()
+    world.step_dfsph_incomp()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     world.update_pos_from_vel()
 
-    world.cfl_dt(0.5, max_time_step)
+    world.cfl_dt(0.4, max_time_step)
 
     print(' ')
 
