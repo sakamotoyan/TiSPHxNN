@@ -5,6 +5,7 @@ from .modules import solver_sph
 from .modules import solver_adv
 from .modules import solver_df
 from .modules import cfl
+from .modules import solver_wcsph
 
 from ...basic_op.type import *
 from ...basic_obj.Obj_Particle import Particle
@@ -65,6 +66,7 @@ class World:
         solver_sph.init_solver_sph(self)
         solver_adv.init_solver_adv(self)
         solver_df.init_solver_df(self)
+        solver_wcsph.init_solver_wcsph(self)
         cfl.init_cfl(self)
 
     # Functions: neighbour search
@@ -76,6 +78,7 @@ class World:
     clear_acc = solver_adv.clear_acc
     add_acc_gravity = solver_adv.add_acc_gravity
     acc2vel_adv = solver_adv.acc2vel_adv
+    acc2vel = solver_adv.acc2vel
     vel_adv2vel = solver_adv.vel_adv2vel
     update_pos_from_vel = solver_adv.update_pos_from_vel
 
@@ -87,6 +90,10 @@ class World:
     step_df_incomp = solver_df.step_df_incomp
     step_df_div = solver_df.step_df_div
     
+    # Functions: WCSPH
+    step_wcsph_add_acc_pressure = solver_wcsph.step_wcsph_add_acc_pressure
+
     # Functions: CFL time step
     find_max_vec = cfl.find_max_vec
     cfl_dt = cfl.cfl_dt
+    get_cfl_dt_obj = cfl.get_cfl_dt_obj

@@ -18,7 +18,7 @@ output_frame_num = 5000
 sense_res = 256
 output_shift = 0
 
-part_size = 0.005
+part_size = 0.05
 max_time_step = part_size/100
 world = World(dim=2, lb = -15, rt = 15)
 world.set_part_size(part_size)

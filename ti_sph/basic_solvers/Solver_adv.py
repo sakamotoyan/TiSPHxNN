@@ -37,11 +37,6 @@ class Adv_slover:
             A_ij = self.obj.vel[part_id] - neighb_obj.vel[neighb_part_id]
             x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
             self.obj.acc[part_id] += k_vis*2*(2+self.obj.m_world.g_dim[None]) * neighb_obj.volume[neighb_part_id] * cached_grad_W * A_ij.dot(x_ij) / (cached_dist**2)
-
-    # @ti.kernel
-    # def acc2vel_adv(self, out_vel_adv: ti.template()):
-    #     for i in range(self.obj.ti_get_stack_top()[None]):
-    #         out_vel_adv[i] += self.obj.acc[i] * self.dt[None]
     
     @ti.kernel
     def add_acc_gravity(self):
@@ -52,6 +47,11 @@ class Adv_slover:
     def acc2vel_adv(self):
         for i in range(self.obj.ti_get_stack_top()[None]):
             self.obj.vel_adv[i] = self.obj.acc[i] * self.dt[None] + self.obj.vel[i]
+    
+    @ti.kernel
+    def acc2vel(self):
+        for i in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.vel[i] = self.obj.acc[i] * self.dt[None] + self.obj.vel[i]
 
     @ti.kernel
     def vel_adv2vel(self):

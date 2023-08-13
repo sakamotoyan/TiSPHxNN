@@ -18,6 +18,10 @@ def acc2vel_adv(self):
     for part_obj in self.adv_solver_list:
         part_obj.m_solver_adv.acc2vel_adv()
 
+def acc2vel(self):
+    for part_obj in self.adv_solver_list:
+        part_obj.m_solver_adv.acc2vel()
+
 def vel_adv2vel(self):
     for part_obj in self.adv_solver_list:
         part_obj.m_solver_adv.vel_adv2vel()

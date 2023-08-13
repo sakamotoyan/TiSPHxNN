@@ -45,13 +45,19 @@ def part_template(part_obj, verbose=False):
         alpha_1=vecxf(part_obj.m_world.g_dim[None]),
         alpha_2=ti.f32,
         alpha=ti.f32,
+        kappa_incomp=ti.f32,
+        kappa_div=ti.f32,
         delta_density=ti.f32,
         vel_adv=vecxf(part_obj.m_world.g_dim[None]),
+    )
+    sph_wc = ti.types.struct(
+        B=ti.f32,
     )
 
     # part_obj.add_struct("phases", fluid_phase, bundle=2)
     part_obj.add_struct("sph", sph)
     part_obj.add_struct("sph_df", sph_df)
+    part_obj.add_struct("sph_wc", sph_wc)
 
     if verbose:
         part_obj.verbose_attrs("fluid_part")

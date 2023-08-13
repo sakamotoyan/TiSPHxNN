@@ -19,10 +19,13 @@ sense_res = 128
 output_shift = 2000
 
 part_size = 0.05
-max_time_step = part_size/50
+max_time_step = part_size/100*0.4
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
+
+kinematic_viscosity_air = val_f(1.57e-5)
+# kinematic_viscosity_air = val_f(0.001)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
@@ -41,6 +44,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.k_vis, kinematic_viscosity_air)
 fluid_part.close_stack()
 
 fluid_part.open_stack(val_i(fluid_cube_data_2.num))
@@ -50,6 +54,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
+fluid_part.fill_open_stack_with_val(fluid_part.k_vis, kinematic_viscosity_air)
 fluid_part.close_stack()
 
 
@@ -64,6 +69,7 @@ bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
 bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
+bound_part.fill_open_stack_with_val(bound_part.k_vis, kinematic_viscosity_air)
 bound_part.close_stack()
 
 sense_cell_size = val_f(0.1/sense_res*64)
@@ -95,10 +101,12 @@ sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_c
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4)
+fluid_part.add_solver_wcsph()
+# fluid_part.add_solver_df(div_free_threshold=2e-4)
 
 bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4)
+bound_part.add_solver_wcsph()
+# bound_part.add_solver_df(div_free_threshold=2e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -121,25 +129,19 @@ def loop():
 
     world.neighb_search()
     world.step_sph_compute_density()
-    world.step_df_compute_alpha()
-    world.step_df_div()
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
-
-    # Sense grid operation
-    # sense_grid_part.clamp_val_to_arr(sense_grid_part.sph.density, 0, 1000, sense_grid_part.rgb)
-    # sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)
-    # sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
 
     world.clear_acc()
     world.add_acc_gravity()
-    world.acc2vel_adv()
+    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
+    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
+    world.step_wcsph_add_acc_pressure()
 
-    world.step_df_incomp()
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
-
+    world.acc2vel()
+    
     world.update_pos_from_vel()
 
-    world.cfl_dt(0.5, max_time_step)
+    # dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
+    # world.set_dt(dt)
 
     print(' ')
 
