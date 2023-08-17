@@ -35,6 +35,7 @@ def part_template(part_obj, verbose=False):
         sig=ti.f32,
         sig_inv_h=ti.f32,
         density=ti.f32,
+        compression_ratio=ti.f32,
         pressure=ti.f32,
         pressure_force=vecxf(part_obj.m_world.g_dim[None]),
         viscosity_force=vecxf(part_obj.m_world.g_dim[None]),
@@ -48,6 +49,7 @@ def part_template(part_obj, verbose=False):
         kappa_incomp=ti.f32,
         kappa_div=ti.f32,
         delta_density=ti.f32,
+        delta_compression_ratio=ti.f32,
         vel_adv=vecxf(part_obj.m_world.g_dim[None]),
     )
     sph_wc = ti.types.struct(

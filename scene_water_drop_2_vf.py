@@ -19,13 +19,13 @@ sense_res = 128
 output_shift = 2000
 
 part_size = 0.05
-max_time_step = part_size/30
+max_time_step = part_size/100
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
-fluid_rest_density = val_f(1000)
+fluid_rest_density = val_f(10)
 fluid_rest_density_2 = val_f(1000)
 fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
 fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
@@ -96,10 +96,10 @@ sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_c
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=True)
+fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=True, div_warm_start=False)
 
 bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=True)
+bound_part.add_solver_df(div_free_threshold=2e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -122,8 +122,11 @@ def loop():
 
     world.neighb_search()
     world.step_sph_compute_density()
-    world.step_df_compute_alpha()
-    world.step_dfsph_div()
+    world.step_sph_compute_compression_ratio()
+
+    world.step_df_compute_beta()
+    # world.step_df_compute_alpha()
+    world.step_vfsph_div()
     print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     # Sense grid operation
@@ -135,7 +138,7 @@ def loop():
     world.add_acc_gravity()
     world.acc2vel_adv()
 
-    world.step_dfsph_incomp()
+    world.step_vfsph_incomp()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     world.update_pos_from_vel()

@@ -55,6 +55,16 @@ class SPH_solver:
         self.obj.sph[part_id].density += neighb_obj.mass[neighb_part_id] * cached_W
     
     @ti.func
+    def inloop_accumulate_number_density(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        self.obj.sph[part_id].density += self.obj.mass[part_id] * cached_W
+
+    @ti.func
+    def inloop_accumulate_compression_ratio(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        self.obj.sph[part_id].compression_ratio += neighb_obj.volume[neighb_part_id] * cached_W
+    
+    @ti.func
     def inloop_avg_velocity(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
         cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
@@ -65,6 +75,18 @@ class SPH_solver:
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_density)
+    
+    def sph_compute_number_density(self, neighb_pool):
+        self.obj.clear(self.obj.sph.density)
+        for neighb_obj in neighb_pool.neighb_obj_list:
+            ''' Compute Density '''
+            self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_number_density)
+    
+    def sph_compute_compression_ratio(self, neighb_pool):
+        self.obj.clear(self.obj.sph.compression_ratio)
+        for neighb_obj in neighb_pool.neighb_obj_list:
+            ''' Compute Compression Ratio '''
+            self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_compression_ratio)
     
     def sph_avg_velocity(self, neighb_pool):
         self.obj.clear(self.obj.vel)

@@ -86,16 +86,22 @@ class World:
 
     # Functions: SPH
     step_sph_compute_density = solver_sph.step_sph_compute_density
+    step_sph_compute_number_density = solver_sph.step_sph_compute_number_density
+    step_sph_compute_compression_ratio = solver_sph.step_sph_compute_compression_ratio
 
     # Functions: DFSPH
     step_df_compute_alpha = solver_df.step_df_compute_alpha
+    step_df_compute_beta = solver_df.step_df_compute_beta
     step_df_incomp = solver_df.step_df_incomp
     step_df_div = solver_df.step_df_div
     step_dfsph_incomp = solver_df.step_dfsph_incomp
     step_dfsph_div = solver_df.step_dfsph_div
+    step_vfsph_incomp = solver_df.step_vfsph_incomp
+    step_vfsph_div = solver_df.step_vfsph_div
     
     # Functions: WCSPH
     step_wcsph_add_acc_pressure = solver_wcsph.step_wcsph_add_acc_pressure
+    step_wcsph_add_acc_number_density_pressure = solver_wcsph.step_wcsph_add_acc_number_density_pressure
 
     # Functions: CFL time step
     find_max_vec = cfl.find_max_vec
