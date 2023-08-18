@@ -4,6 +4,7 @@ from ti_sph import *
 import numpy as np
 
 def part_template(part_obj, verbose=False):
+
     ''' Enssential arrays'''
     ''' encouraged to add for any particle system'''
     part_obj.add_array("pos", vecxf(part_obj.m_world.g_dim[None]).field())
@@ -54,6 +55,12 @@ def part_template(part_obj, verbose=False):
     )
     sph_wc = ti.types.struct(
         B=ti.f32,
+    )
+
+    phase_num = 2
+    phase = ti.types.struct(
+        val_frac=vecxf(phase_num),
+        vel=vecxf(part_obj.m_world.g_dim[None]*phase_num),
     )
 
     # part_obj.add_struct("phases", fluid_phase, bundle=2)
