@@ -1,5 +1,7 @@
 import taichi as ti
 
+from typing import List
+
 from .modules import neighb_search
 from .modules import solver_sph
 from .modules import solver_adv
@@ -56,6 +58,16 @@ class World:
         self.g_neg_inv_dt[None] = -1/dt
         self.g_inv_dt2[None] = self.g_inv_dt[None] ** 2
 
+    def set_multiphase(self, phase_num, phase_color:List[vec3f], phase_rest_density:List[float]):
+        self.g_phase_num = val_i(phase_num)
+        self.g_phase_color = ti.Vector.field(3, dtype=ti.f32, shape=phase_num)
+        self.g_phase_rest_density = vecx_f(phase_num)
+        for i in range(phase_num):
+            self.g_phase_color[i] = phase_color[i]
+            self.g_phase_rest_density[None][i] = phase_rest_density[i]
+        print('world.g_phase_num\n', self.g_phase_num[None])
+        print('world.g_phase_color\n', self.g_phase_color.to_numpy())
+        print('world.g_phase_rest_density\n', self.g_phase_rest_density.to_numpy())
     def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
         obj = Particle(part_num, size, is_dynamic)
         self.part_obj_list.append(obj)

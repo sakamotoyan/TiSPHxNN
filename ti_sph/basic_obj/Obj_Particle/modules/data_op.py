@@ -38,6 +38,12 @@ def fill_open_stack_with_val(self: ti.template(), attr_: ti.template(), val: ti.
     for i in range(self.m_stack_open_num[None]):
         attr_[i+self.m_stack_top[None]] = val[None]
 
+@ti.kernel
+def fill_open_stack_with_vals(self: ti.template(), attr_: ti.template(), val: ti.template()):
+    for i in range(self.m_stack_open_num[None]):
+        for j in range(ti.static(val.shape[0])):
+            attr_[i+self.m_stack_top[None], j] = val[j]
+
 def close_stack(self):
     if not self.m_if_stack_open:
         raise Exception("Particle Stack not opened!")

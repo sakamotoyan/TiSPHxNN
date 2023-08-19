@@ -3,7 +3,7 @@ from ti_sph.basic_op import *
 from ti_sph import *
 import numpy as np
 
-def part_template(part_obj, verbose=False):
+def part_template(part_obj, world, verbose=False):
 
     ''' Enssential arrays'''
     ''' encouraged to add for any particle system'''
@@ -52,21 +52,29 @@ def part_template(part_obj, verbose=False):
         delta_density=ti.f32,
         delta_compression_ratio=ti.f32,
         vel_adv=vecxf(part_obj.m_world.g_dim[None]),
+        pressure_acc=vecxf(part_obj.m_world.g_dim[None]),
     )
     sph_wc = ti.types.struct(
         B=ti.f32,
     )
 
-    phase_num = 2
     phase = ti.types.struct(
-        val_frac=vecxf(phase_num),
-        vel=vecxf(part_obj.m_world.g_dim[None]*phase_num),
+        val_frac=ti.f32,
+        val_frac_tmp=ti.f32,
+        vel=vecxf(part_obj.m_world.g_dim[None]),
+        drift_vel=vecxf(part_obj.m_world.g_dim[None]),
+        acc=vecxf(part_obj.m_world.g_dim[None]),
+    )
+    mixture = ti.types.struct(
+        flag_negative_val_frac = ti.i32,
     )
 
     # part_obj.add_struct("phases", fluid_phase, bundle=2)
     part_obj.add_struct("sph", sph)
     part_obj.add_struct("sph_df", sph_df)
     part_obj.add_struct("sph_wc", sph_wc)
+    part_obj.add_struct("phase", phase, bundle=world.g_phase_num[None])
+    part_obj.add_struct("mixture", mixture)
 
     if verbose:
         part_obj.verbose_attrs("fluid_part")

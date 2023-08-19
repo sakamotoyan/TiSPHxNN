@@ -98,8 +98,8 @@ def add_structs(self, name, structs):
         self.__dict__[name].append(struct.field(shape=(self.m_part_num[None],)))
     self.m_struct_list[name] = self.__dict__[name]
 
-def instantiate_from_template(self, template):
-    template(self)
+def instantiate_from_template(self, template, world):
+    template(self, world)
 
 def verbose_structs(self, append=None):
     if append is not None:

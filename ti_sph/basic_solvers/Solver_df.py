@@ -210,6 +210,16 @@ class DF_solver(SPH_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             self.obj.sph_df[part_id].vel_adv = in_vel_adv[part_id]
 
+    @ti.kernel
+    def get_acc_pressure_1of2(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.mixture[part_id].acc_pressure = self.obj.vel_adv[part_id]
+    
+    @ti.kernel
+    def get_acc_pressure_2of2(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.mixture[part_id].acc_pressure = (self.obj.mixture[part_id].acc_pressure - self.obj.sph_df[part_id].vel_adv) / self.dt[None]
+
     def compute_alpha(self, neighb_pool:ti.template()):
     
         self.obj.clear(self.obj.sph_df.alpha_1)

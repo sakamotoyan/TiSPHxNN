@@ -38,6 +38,7 @@ class Particle(Obj):
         self.m_solver_df = None
         self.m_solver_sph = None
         self.m_solver_wcsph = None
+        self.m_solver_ism = None
 
         # data structure
         self.m_attr_list = {}
@@ -67,6 +68,7 @@ class Particle(Obj):
     fill_open_stack_with_nparr = data_op.fill_open_stack_with_nparr
     fill_open_stack_with_arr = data_op.fill_open_stack_with_arr
     fill_open_stack_with_val = data_op.fill_open_stack_with_val
+    fill_open_stack_with_vals = data_op.fill_open_stack_with_vals
     close_stack = data_op.close_stack
     clear = data_op.clear
     set_from_numpy = data_op.set_from_numpy
@@ -91,10 +93,13 @@ class Particle(Obj):
     check_neighb_search = neighb_search.check_neighb_search
     add_neighb_obj = neighb_search.add_neighb_obj
     add_neighb_objs = neighb_search.add_neighb_objs
+
+    # Functions: solver related
     add_solver_adv = solvers.add_solver_adv
     add_solver_df = solvers.add_solver_df
     add_solver_sph = solvers.add_solver_sph
     add_solver_wcsph = solvers.add_solver_wcsph
+    add_solver_ism = solvers.add_solver_ism
     
     # TODO
     def delete_outbounded_particles(self):

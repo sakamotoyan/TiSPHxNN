@@ -3,6 +3,7 @@ from ....basic_solvers.Solver_adv import Adv_slover
 from ....basic_solvers.Solver_df import DF_solver
 from ....basic_solvers.Solver_sph import SPH_solver
 from ....basic_solvers.Solver_wcsph import WCSPH_solver
+from ....basic_solvers.Solver_ism import Implicit_mixture_solver
 
 def add_solver_adv(self):
     self.m_solver_adv = Adv_slover(self)
@@ -15,3 +16,6 @@ def add_solver_df(self, incompressible_threshold: ti.f32 = 1e-4, div_free_thresh
 
 def add_solver_wcsph(self, gamma: ti.f32 = 7, max_vel: ti.f32 = 10, eta: ti.f32 = 0.01):
     self.m_solver_wcsph = WCSPH_solver(self, gamma, max_vel, eta)
+
+def add_solver_ism(self, Cd):
+    self.m_solver_ism = Implicit_mixture_solver(self, Cd, self.m_world)
