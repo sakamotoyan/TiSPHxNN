@@ -27,7 +27,7 @@ def step_df_incomp(self):
         part_obj.m_solver_df.incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
+            part_obj.m_solver_df.get_vel_adv(part_obj.vel)
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -111,7 +111,7 @@ def step_dfsph_incomp(self):
         part_obj.m_solver_df.incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
+            part_obj.m_solver_df.get_vel_adv(part_obj.vel)
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -219,13 +219,13 @@ def step_dfsph_div(self):
         if part_obj.m_is_dynamic:
             part_obj.m_solver_df.update_vel(part_obj.vel)
 
-def step_vfsph_incomp(self):
+def step_vfsph_incomp(self, update_vel=True):
     for part_obj in self.df_solver_list:
 
         part_obj.m_solver_df.incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.get_vel_adv(part_obj.vel_adv)
+            part_obj.m_solver_df.get_vel_adv(part_obj.vel)
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -268,9 +268,10 @@ def step_vfsph_incomp(self):
         if part_obj.m_is_dynamic:
             part_obj.m_solver_df.log_kappa_incomp()
 
-    for part_obj in self.df_solver_list:
-        if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.update_vel(part_obj.vel)
+    if update_vel:
+        for part_obj in self.df_solver_list:
+            if part_obj.m_is_dynamic:
+                part_obj.m_solver_df.update_vel(part_obj.vel)
 
 def step_vfsph_div(self):
     for part_obj in self.df_solver_list:

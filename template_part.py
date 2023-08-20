@@ -52,7 +52,6 @@ def part_template(part_obj, world, verbose=False):
         delta_density=ti.f32,
         delta_compression_ratio=ti.f32,
         vel_adv=vecxf(part_obj.m_world.g_dim[None]),
-        pressure_acc=vecxf(part_obj.m_world.g_dim[None]),
     )
     sph_wc = ti.types.struct(
         B=ti.f32,
@@ -67,13 +66,15 @@ def part_template(part_obj, world, verbose=False):
     )
     mixture = ti.types.struct(
         flag_negative_val_frac = ti.i32,
+        acc_pressure=vecxf(part_obj.m_world.g_dim[None]),
     )
 
     # part_obj.add_struct("phases", fluid_phase, bundle=2)
     part_obj.add_struct("sph", sph)
     part_obj.add_struct("sph_df", sph_df)
     part_obj.add_struct("sph_wc", sph_wc)
-    part_obj.add_struct("phase", phase, bundle=world.g_phase_num[None])
+    if hasattr(world, 'g_phase_num'):
+        part_obj.add_struct("phase", phase, bundle=world.g_phase_num[None])
     part_obj.add_struct("mixture", mixture)
 
     if verbose:

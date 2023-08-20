@@ -19,10 +19,30 @@ class Implicit_mixture_solver(SPH_solver):
         self.world = world
         
     @ti.kernel
-    def update_mixture_velocity(self):
+    def update_vel_from_phase_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.vel[part_id] *= 0
+            for phase_id in range(self.phase_num[None]):
+                if not bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
+                    self.obj.phase.val_frac[part_id, phase_id] = 0
+                self.obj.vel[part_id] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id]
+            for phase_id in range(self.phase_num[None]):
+                if not bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
+                    self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
+                self.obj.phase.drift_vel[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id]
+
+    # @ti.kernel
+    # def update_drift_vel(self):
+    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
+    #         for phase_id in range(self.phase_num[None]):
+    #             self.obj.phase.drift_vel[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id]
+
+    @ti.kernel
+    def zero_drift(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
-                self.obj.vel[part_id] = self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id]
+                self.obj.phase.drift_vel[part_id, phase_id] *= 0
+                self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def update_rest_density_and_mass(self):
@@ -47,10 +67,10 @@ class Implicit_mixture_solver(SPH_solver):
                 self.obj.phase.acc[part_id, phase_id] += self.world.g_gravity[None]
 
     @ti.kernel
-    def pressure_acc_2_phase_acc(self):
+    def ditribute_acc_pressure_2_phase(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.acc[part_id, phase_id] += self.obj.sph_df.pressure_acc[part_id] * \
+                self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
                     (self.Cd + ((1 - self.Cd) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
                 
     @ti.kernel
@@ -58,52 +78,51 @@ class Implicit_mixture_solver(SPH_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.vel[part_id, phase_id] += self.obj.phase.acc[part_id, phase_id] * self.world.g_dt[None]
-    
-    @ti.kernel
-    def phase_acc_2_phase_vel_adv(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
-            for phase_id in range(self.phase_num[None]):
-                self.obj.phase.vel_adv[part_id, phase_id] += self.obj.phase.acc[part_id, phase_id] * self.world.g_dt[None]
 
     @ti.kernel
     def phase_vel_2_phase_phase_vel_adv(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.vel_adv[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id]
-
+    
     @ti.kernel
-    def phase_vel_2_drift_vel(self):
+    def clear_val_frac_tmp(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.drift_vel[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id]
-    
+                self.obj.phase.val_frac_tmp[part_id, phase_id] = 0
+
     @ti.func
     def inloop_update_phase_change(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
         cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.val_frac_tmp[part_id, phase_id] = self.dt[None] * neighb_obj.volume[neighb_part_id] * \
+                self.obj.phase.val_frac_tmp[part_id, phase_id] -= self.dt[None] * neighb_obj.volume[neighb_part_id] * \
                 (self.obj.phase.val_frac[part_id, phase_id] * self.obj.phase.drift_vel[part_id, phase_id] + \
                  neighb_obj.phase.val_frac[neighb_part_id, phase_id] * neighb_obj.phase.drift_vel[neighb_part_id, phase_id]).dot(cached_grad_W)
 
     @ti.kernel
-    def check_negative(self):
-        all_negative = True
+    def check_negative(self) -> ti.i32:
+        all_positive = 1
         for part_id in range(self.obj.ti_get_stack_top()[None]):
-            self.obj.phase.mixture[part_id].flag_negative_val_frac = 0
-            for phase_id in range(self.phase_num[None]):
-                if self.obj.phase.val_frac_tmp[part_id, phase_id] + self.obj.phase.val_frac[part_id, phase_id] < 0:
-                    self.obj.phase.mixture[part_id].flag_negative_val_frac = 1
-                    all_negative = False
-        return all_negative
+            if self.obj.mixture[part_id].flag_negative_val_frac == 0:
+                for phase_id in range(self.phase_num[None]):
+                    if self.obj.phase.val_frac_tmp[part_id, phase_id] + self.obj.phase.val_frac[part_id, phase_id] < 0:
+                        self.obj.mixture[part_id].flag_negative_val_frac = 1
+                        all_positive = 0
+        return all_positive
     
     @ti.kernel
     def update_phase_change(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
-            for phase_id in range(self.phase_num[None]):
-                self.obj.phase.val_frac[part_id, phase_id] += self.obj.phase.val_frac_tmp[part_id, phase_id]
-
+            if self.obj.mixture[part_id].flag_negative_val_frac == 0:
+                for phase_id in range(self.phase_num[None]):
+                    self.obj.phase.val_frac[part_id, phase_id] += self.obj.phase.val_frac_tmp[part_id, phase_id]
+            else:
+                self.obj.mixture[part_id].flag_negative_val_frac = 0
+                for phase_id in range(self.phase_num[None]):
+                    self.obj.phase.drift_vel[part_id, phase_id] *= 0
+                    self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def update_color(self):
