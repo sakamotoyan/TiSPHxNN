@@ -4,6 +4,9 @@ from numpy import float32
 import taichi as ti
 import math
 
+INF_SMALL = 1e-6
+REL_SMALL = 0.01
+
 # ====================================================================================
 # smoothing kernels
 
@@ -95,14 +98,14 @@ def artificial_Laplacian_spline_W(
 @ti.func
 def bigger_than_zero(val: ti.f32):
     if_bigger_than_zero = False
-    if val > 1e-6:
+    if val > INF_SMALL:
         if_bigger_than_zero = True
     return if_bigger_than_zero
 
 
 @ti.func
 def make_bigger_than_zero():
-    return 1e-6
+    return INF_SMALL
 
 # ====================================================================================
 # decide timestep length
@@ -200,7 +203,7 @@ class SPH_kernel:
                         """compute below"""
                         x_ij = obj.basic.pos[i] - nobj.basic.pos[nid]
                         dis = x_ij.norm()
-                        if dis > 1e-6:
+                        if dis > INF_SMALL:
                             grad_W_vec = (
                                 grad_spline_W(dis, obj.sph.h[i], obj.sph.sig_inv_h[i])
                                 * x_ij
@@ -235,7 +238,7 @@ class SPH_kernel:
                         """compute below"""
                         x_ij = obj.basic.pos[i] - nobj.basic.pos[nid]
                         dis = x_ij.norm()
-                        if dis > 1e-6:
+                        if dis > INF_SMALL:
                             grad_W_vec = (
                                 grad_spline_W(dis, obj.sph.h[i], obj.sph.sig_inv_h[i])
                                 * x_ij
@@ -272,7 +275,7 @@ class SPH_kernel:
                         """compute below"""
                         x_ij = obj.basic.pos[i] - nobj.basic.pos[nid]
                         dis = x_ij.norm()
-                        if dis > 1e-6:
+                        if dis > INF_SMALL:
                             grad_W_vec = (
                                 grad_spline_W(dis, obj.sph.h[i], obj.sph.sig_inv_h[i])
                                 * x_ij
@@ -321,7 +324,7 @@ class SPH_kernel:
                         """compute below"""
                         x_ij = obj_pos[pid] - nobj_pos[nid]
                         dis = x_ij.norm()
-                        if dis > 1e-6:
+                        if dis > INF_SMALL:
                             grad_W = grad_spline_W(
                                 dis, obj.sph.h[pid], obj.sph.sig_inv_h[pid]
                             )

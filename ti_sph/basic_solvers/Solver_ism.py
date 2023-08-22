@@ -7,6 +7,10 @@ from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle
 from typing import List
 
+GREEN = ti.Vector([0.0, 1.0, 0.0])
+WHITE = ti.Vector([1.0, 1.0, 1.0])
+DARK = ti.Vector([0.0, 0.0, 0.0])
+
 @ti.data_oriented
 class Implicit_mixture_solver(SPH_solver):
     def __init__(self, obj: Particle, Cd: ti.f32, world):
@@ -23,19 +27,28 @@ class Implicit_mixture_solver(SPH_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             self.obj.vel[part_id] *= 0
             for phase_id in range(self.phase_num[None]):
-                if not bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
-                    self.obj.phase.val_frac[part_id, phase_id] = 0
+                # if bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
                 self.obj.vel[part_id] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id]
             for phase_id in range(self.phase_num[None]):
-                if not bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
-                    self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
+                # if not bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
+                #     self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
                 self.obj.phase.drift_vel[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id]
 
-    # @ti.kernel
-    # def update_drift_vel(self):
-    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
-    #         for phase_id in range(self.phase_num[None]):
-    #             self.obj.phase.drift_vel[part_id, phase_id] = self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id]
+    @ti.kernel
+    def regularize_val_frac(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            frac_sum = 0.0
+            for phase_id in range(self.phase_num[None]):
+                frac_sum += self.obj.phase.val_frac[part_id, phase_id]
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.val_frac[part_id, phase_id] /= frac_sum
+
+    @ti.kernel
+    def zero_out_drift_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.drift_vel[part_id, phase_id] *= 0
+                # self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def zero_drift(self):
@@ -113,16 +126,29 @@ class Implicit_mixture_solver(SPH_solver):
         return all_positive
     
     @ti.kernel
+    def release_negative(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.mixture[part_id].flag_negative_val_frac = 0
+
+    @ti.kernel
+    def release_unused_drift_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            if not self.obj.mixture[part_id].flag_negative_val_frac == 0:
+                for phase_id in range(self.phase_num[None]):
+                    self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
+
+    @ti.kernel
     def update_phase_change(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
-            if self.obj.mixture[part_id].flag_negative_val_frac == 0:
-                for phase_id in range(self.phase_num[None]):
-                    self.obj.phase.val_frac[part_id, phase_id] += self.obj.phase.val_frac_tmp[part_id, phase_id]
-            else:
-                self.obj.mixture[part_id].flag_negative_val_frac = 0
-                for phase_id in range(self.phase_num[None]):
-                    self.obj.phase.drift_vel[part_id, phase_id] *= 0
-                    self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.val_frac[part_id, phase_id] += self.obj.phase.val_frac_tmp[part_id, phase_id]
+            # else:
+                # print('trigger!!!') 
+                # self.obj.rgb[part_id] = GREEN
+                # self.obj.mixture[part_id].flag_negative_val_frac = 0
+                # for phase_id in range(self.phase_num[None]):
+                    # self.obj.phase.drift_vel[part_id, phase_id] *= 0
+                    # self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def update_color(self):
@@ -134,3 +160,64 @@ class Implicit_mixture_solver(SPH_solver):
             for rgb_id in range(self.phase_num[None]):
                 color[rgb_id] = ti.min(color[rgb_id], 1.0)
             self.obj.rgb[part_id] = color
+
+    @ti.kernel
+    def cfl_dt(self, cfl_factor: ti.f32, max_dt: ti.f32) -> ti.f32:
+        max_vel = 0.0
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                ti.atomic_max(max_vel, ti.math.length(self.obj.phase.drift_vel[part_id, phase_id]))
+        new_dt = ti.min(max_dt, self.world.g_part_size[None] / max_vel * cfl_factor)
+        return new_dt
+    
+    @ti.kernel
+    def draw_drift_vel(self, phase:ti.i32):
+        max_vel = 0.0
+        phase_id = phase
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            length = ti.math.length(self.obj.phase.drift_vel[part_id, phase_id])/20
+            self.obj.rgb[part_id] = ti.Vector([length, length, length])
+            # ti.atomic_max(max_vel, ti.math.length(self.obj.phase.drift_vel[part_id, phase_id]))
+    
+    @ti.kernel
+    def max_phase_vel(self) -> ti.f32:
+        max_vel = 0.0
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                ti.atomic_max(max_vel, ti.math.length(self.obj.phase.vel[part_id, phase_id]))
+        return max_vel
+    
+    @ti.kernel
+    def check_empty_phase(self):
+        fact = 0.99999
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            sum = 0.0
+            for phase_id in range(self.phase_num[None]):
+                sum += self.obj.phase.val_frac[part_id, phase_id]
+            if sum < fact:
+                # print('empty phase', part_id, sum)
+                self.obj.rgb[part_id] = WHITE
+            if sum > 2-fact:
+                # print('empty phase', part_id, sum)
+                self.obj.rgb[part_id] = DARK
+    
+    @ti.kernel
+    def check_negative_phase(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                if self.obj.phase.val_frac[part_id, phase_id] < 0:
+                    self.obj.rgb[part_id] = GREEN
+                    print('negative phase', part_id, phase_id, self.obj.phase.val_frac[part_id, phase_id])
+    
+    @ti.kernel
+    def check_val_frac(self):
+        sum_phase_1 = 0.0
+        sum_phase_2 = 0.0
+        sum_phase_3 = 0.0
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            sum_phase_1 += self.obj.phase.val_frac[part_id, 0]
+            sum_phase_2 += self.obj.phase.val_frac[part_id, 1]
+            sum_phase_3 += self.obj.phase.val_frac[part_id, 2]
+        print('phase 1 total', sum_phase_1)
+        # print('phase 2 total', sum_phase_2)
+        print('phase 3 total', sum_phase_3)

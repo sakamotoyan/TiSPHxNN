@@ -30,14 +30,14 @@ kinematic_viscosity_bound = val_f(0.01)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
-fluid_rest_density_2 = val_f(10)
+fluid_rest_density_2 = val_f(100)
 fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
 fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
-fluid_part.instantiate_from_template(part_template)
+fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part.open_stack(val_i(fluid_cube_data_1.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
@@ -64,7 +64,7 @@ fluid_part.close_stack()
 box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
 bound_rest_density = val_f(1000)
 bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
-bound_part.instantiate_from_template(part_template)
+bound_part.instantiate_from_template(part_template, world)
 bound_part.open_stack(val_i(box_data.num))
 bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
@@ -130,16 +130,16 @@ def loop():
     world.update_pos_in_neighb_search()
 
     world.neighb_search()
-    world.step_sph_compute_density()
-    # world.step_sph_compute_number_density()
+    # world.step_sph_compute_density()
+    world.step_sph_compute_number_density()
 
     world.clear_acc()
     world.add_acc_gravity()
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     
-    world.step_wcsph_add_acc_pressure()
-    # world.step_wcsph_add_acc_number_density_pressure()
+    # world.step_wcsph_add_acc_pressure()
+    world.step_wcsph_add_acc_number_density_pressure()
 
     world.acc2vel()
     
