@@ -139,11 +139,11 @@ def loop():
     # fluid_part.m_solver_ism.zero_out_drift_vel() # DRBUG
     ''' phase change '''
     fluid_part.m_solver_ism.clear_val_frac_tmp()
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change)
+    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
     while(fluid_part.m_solver_ism.check_negative() == 0):
         # print('triggered!!!')
         fluid_part.m_solver_ism.clear_val_frac_tmp()
-        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change)
+        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
     fluid_part.m_solver_ism.update_phase_change()
     fluid_part.m_solver_ism.release_unused_drift_vel()
     fluid_part.m_solver_ism.release_negative()

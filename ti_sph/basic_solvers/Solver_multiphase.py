@@ -3,10 +3,8 @@ import math
 from .sph_funcs import *
 from .Solver_sph import SPH_solver
 from .Neighb_looper import Neighb_looper
-from .Solver_multiphase import Multiphase_solver
 from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle
-
 from typing import List
 
 GREEN = ti.Vector([0.0, 1.0, 0.0])
@@ -14,12 +12,13 @@ WHITE = ti.Vector([1.0, 1.0, 1.0])
 DARK = ti.Vector([0.0, 0.0, 0.0])
 
 @ti.data_oriented
-class Implicit_mixture_solver(Multiphase_solver):
-    def __init__(self, obj: Particle, Cd: ti.f32, world):
+class Multiphase_solver(SPH_solver):
+    def __init__(self, obj: Particle, world):
         
-        super().__init__(obj, world)
+        super().__init__(obj)
 
-        self.Cd = Cd
+        self.phase_num = world.g_phase_num
+        self.world = world
         
     @ti.kernel
     def update_vel_from_phase_vel(self):
@@ -104,7 +103,7 @@ class Implicit_mixture_solver(Multiphase_solver):
                 self.obj.phase.val_frac_tmp[part_id, phase_id] = 0
 
     @ti.func
-    def inloop_update_phase_change_from_drift(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+    def inloop_update_phase_change(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
         cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
@@ -141,13 +140,6 @@ class Implicit_mixture_solver(Multiphase_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.val_frac[part_id, phase_id] += self.obj.phase.val_frac_tmp[part_id, phase_id]
-            # else:
-                # print('trigger!!!') 
-                # self.obj.rgb[part_id] = GREEN
-                # self.obj.mixture[part_id].flag_negative_val_frac = 0
-                # for phase_id in range(self.phase_num[None]):
-                    # self.obj.phase.drift_vel[part_id, phase_id] *= 0
-                    # self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def update_color(self):
@@ -220,3 +212,11 @@ class Implicit_mixture_solver(Multiphase_solver):
         print('phase 1 total', sum_phase_1)
         # print('phase 2 total', sum_phase_2)
         print('phase 3 total', sum_phase_3)
+    
+    @ti.func
+    def inloop_update_phase_change_from_diffuse(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
+        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.val_frac_tmp[part_id, phase_id] += 0.0
