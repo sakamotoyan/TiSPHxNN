@@ -15,9 +15,9 @@ DARK = ti.Vector([0.0, 0.0, 0.0])
 
 @ti.data_oriented
 class Implicit_mixture_solver(Multiphase_solver):
-    def __init__(self, obj: Particle, Cd: ti.f32, world):
+    def __init__(self, obj: Particle, Cd: ti.f32, Cf: ti.f32, world):
         
-        super().__init__(obj, world)
+        super().__init__(obj, Cf, world)
 
         self.Cd = Cd
         

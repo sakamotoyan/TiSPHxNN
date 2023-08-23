@@ -13,12 +13,13 @@ DARK = ti.Vector([0.0, 0.0, 0.0])
 
 @ti.data_oriented
 class Multiphase_solver(SPH_solver):
-    def __init__(self, obj: Particle, world):
+    def __init__(self, obj: Particle, Cf: ti.f32, world):
         
         super().__init__(obj)
 
         self.phase_num = world.g_phase_num
         self.world = world
+        self.Cf = Cf
         
     @ti.kernel
     def update_vel_from_phase_vel(self):
@@ -219,4 +220,6 @@ class Multiphase_solver(SPH_solver):
         cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.val_frac_tmp[part_id, phase_id] += 0.0
+                val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
+                x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
+                self.obj.phase.val_frac_tmp[part_id, phase_id] += self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)

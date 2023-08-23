@@ -24,7 +24,7 @@ max_time_step = part_size/100
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
-world.set_multiphase(phase_num,[vec3f(1,0,0),vec3f(0,1,0),vec3f(0,0,1)],[1000,500,100])
+world.set_multiphase(phase_num,[vec3f(1,0,0),vec3f(0,1,0),vec3f(0,0,1)],[500,500,1000])
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(10)
@@ -48,7 +48,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density_2)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
-val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
+val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
 fluid_part.close_stack()
 
@@ -59,7 +59,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-# val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
+val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
 fluid_part.close_stack()
 
@@ -80,7 +80,6 @@ bound_part.close_stack()
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
 
-
 fluid_part.add_module_neighb_search()
 bound_part.add_module_neighb_search()
 
@@ -90,12 +89,11 @@ bound_part.add_neighb_objs(neighb_list)
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=False)
-fluid_part.add_solver_ism(Cd=0.8)
+fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=True)
+fluid_part.add_solver_ism(Cd=0.0, Cf=0.5)
 
 bound_part.add_solver_sph()
 bound_part.add_solver_df(div_free_threshold=2e-4)
-bound_part.add_solver_ism(Cd=1)
 
 
 world.init_modules()
@@ -140,10 +138,13 @@ def loop():
     ''' phase change '''
     fluid_part.m_solver_ism.clear_val_frac_tmp()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
+    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
+    
     while(fluid_part.m_solver_ism.check_negative() == 0):
         # print('triggered!!!')
         fluid_part.m_solver_ism.clear_val_frac_tmp()
         fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
+        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
     fluid_part.m_solver_ism.update_phase_change()
     fluid_part.m_solver_ism.release_unused_drift_vel()
     fluid_part.m_solver_ism.release_negative()
@@ -157,9 +158,9 @@ def loop():
     world.update_pos_from_vel()
 
     ''' cfl condition update'''
-    # world.cfl_dt(0.4, max_time_step)
-    dt = fluid_part.m_solver_ism.cfl_dt(0.5, max_time_step)
-    world.set_dt(dt)
+    world.cfl_dt(0.4, max_time_step)
+    # dt = fluid_part.m_solver_ism.cfl_dt(0.5, max_time_step)
+    # world.set_dt(dt)
 
     ''' debug info '''
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
