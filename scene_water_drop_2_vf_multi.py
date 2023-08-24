@@ -134,7 +134,7 @@ def loop():
 
     timing.startGroup("SPH_Prepare")
     ''' sph pre-computation '''
-    world.step_sph_compute_density()
+    # world.step_sph_compute_density()
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
     # world.step_df_compute_alpha()
