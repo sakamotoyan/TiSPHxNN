@@ -5,6 +5,7 @@ from template_grid import grid_template
 import time
 import sys
 import numpy as np
+from Timing import Timing
 np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
@@ -25,6 +26,18 @@ world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
 world.set_multiphase(phase_num,[vec3f(1,0,0),vec3f(0,1,0),vec3f(0,0,1)],[500,500,1000])
+
+timing = Timing("timing.csv")
+timing.addGroup("neighbSearch")
+timing.addGroup("SPH_Prepare")
+timing.addGroup("SPH_UpdatePos")
+timing.addGroup("SPH_CFL")
+timing.addGroup("SPH_Pressure")
+timing.addGroup("ISM_Color")
+timing.addGroup("ISM_Gravity")
+timing.addGroup("ISM_Pressure")
+timing.addGroup("ISM_PhaseChange")
+timing.addGroup("ISM_UpdateMassVel")
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(10)
@@ -105,13 +118,21 @@ world.neighb_search()
 # np.save("pos_np.npy", sense_output.np_node_index_organized)
 
 def loop():
+    timing.startStep()
+    timing.setStepLength(world.g_dt[None])
+
+    timing.startGroup("ISM_Color")
     ''' color '''
     fluid_part.m_solver_ism.update_color()
+    timing.endGroup()
 
+    timing.startGroup("neighbSearch")
     ''' neighb search'''
     world.update_pos_in_neighb_search()
     world.neighb_search()
+    timing.endGroup()
 
+    timing.startGroup("SPH_Prepare")
     ''' sph pre-computation '''
     world.step_sph_compute_density()
     world.step_sph_compute_compression_ratio()
@@ -119,21 +140,29 @@ def loop():
     # world.step_df_compute_alpha()
     # world.step_vfsph_div()
     # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    timing.endGroup()
 
+    timing.startGroup("ISM_Gravity")
     ''' gravity '''
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.add_phase_acc_gravity()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
+    timing.startGroup("SPH_Pressure")
     ''' pressure '''
     world.step_vfsph_incomp(update_vel=False)
+    timing.endGroup()
+    timing.startGroup("ISM_Pressure")
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
+    timing.startGroup("ISM_PhaseChange")
     # fluid_part.m_solver_ism.zero_out_drift_vel() # DRBUG
     ''' phase change '''
     fluid_part.m_solver_ism.clear_val_frac_tmp()
@@ -148,19 +177,27 @@ def loop():
     fluid_part.m_solver_ism.update_phase_change()
     fluid_part.m_solver_ism.release_unused_drift_vel()
     fluid_part.m_solver_ism.release_negative()
+    timing.endGroup()
 
+    timing.startGroup("ISM_UpdateMassVel")
     ''' update mass and velocity '''
     fluid_part.m_solver_ism.regularize_val_frac()
     fluid_part.m_solver_ism.update_rest_density_and_mass()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
+    timing.startGroup("SPH_UpdatePos")
     ''' pos update '''
     world.update_pos_from_vel()
+    timing.endGroup()
 
+    timing.startGroup("SPH_CFL")
     ''' cfl condition update'''
     world.cfl_dt(0.4, max_time_step)
     # dt = fluid_part.m_solver_ism.cfl_dt(0.5, max_time_step)
     # world.set_dt(dt)
+    timing.endGroup()
+    timing.endStep()
 
     ''' debug info '''
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
