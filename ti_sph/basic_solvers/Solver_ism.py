@@ -274,3 +274,17 @@ class Implicit_mixture_solver(Multiphase_solver):
                 self.obj.phase.acc[part_id, phase_id] += 2*(2+self.obj.m_world.g_dim[None]) * neighb_obj.volume[neighb_part_id] * \
                     ((self.k_vis_inner * (1-self.Cd) *  v_ki_mj) + (self.k_vis_inter * self.Cd * v_ij)).dot(x_ij) * cached_grad_W \
                     / (cached_dist**2) 
+
+    @ti.kernel
+    def statistics_momentum(self):
+        self.obj.statistics_momentum[None] *= 0
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                self.obj.statistics_momentum[None] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
+        print('statistics momentum:', self.obj.statistics_momentum[None])
+    
+    @ti.kernel
+    def recover_phase_vel_from_mixture(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]

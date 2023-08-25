@@ -18,6 +18,8 @@ def part_template(part_obj, world, verbose=False):
     part_obj.add_array("k_vis", ti.field(ti.f32))
     part_obj.add_array("acc", vecxf(part_obj.m_world.g_dim[None]).field())
     part_obj.add_array("rgb", vecxf(3).field())
+    
+    part_obj.add_attr("statistics_momentum", vecx_f(part_obj.m_world.g_dim[None]))
 
     ''' Optional arrays'''
     # part_obj.add_array("volume_fraction", ti.field(ti.f32), bundle=2)
