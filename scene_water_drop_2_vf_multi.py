@@ -67,8 +67,8 @@ def fill_vel_phase(val:float):
         vel_phase[i][0] = val
         vel_phase[i][1] = 0
 
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3.5, -1.8), rt=vec2f(-0.5, 3.5), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(3.5, 3.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3.5, -1.5), rt=vec2f(-0.5, 1.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.5), rt=vec2f(3.5, 1.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
@@ -99,8 +99,9 @@ fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[No
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
+val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
-fill_vel_phase(-1.0)
+fill_vel_phase(-2.0)
 print("vel_phase:",vel_phase,"\n")
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.vel, vel_phase)
 fluid_part.close_stack()
@@ -210,13 +211,13 @@ def loop():
     ''' phase change '''
     fluid_part.m_solver_ism.clear_val_frac_tmp()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
+    # fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
     
     while(fluid_part.m_solver_ism.check_negative() == 0):
         # print('triggered!!!')
         fluid_part.m_solver_ism.clear_val_frac_tmp()
         fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
-        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
+        # fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
     fluid_part.m_solver_ism.update_phase_change()
     fluid_part.m_solver_ism.release_unused_drift_vel()
     fluid_part.m_solver_ism.release_negative()
