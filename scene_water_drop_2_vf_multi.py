@@ -52,17 +52,27 @@ statistics.addGroup("momentum_Y")
 statistics.addGroup("momentum_Len")
 
 '''BASIC SETTINGS FOR FLUID'''
-fluid_rest_density = val_f(10)
+fluid_rest_density = val_f(500)
 fluid_rest_density_2 = val_f(1000)
 val_frac = ti.field(dtype=ti.f32, shape=phase_num)
+vel_phase = ti.field(dtype=vec2f, shape=phase_num)
+print("vel_frac:",val_frac,"\n")
+print("vel_phase:",vel_phase,"\n")
 # phase_vel = ti.Vector.field(world.g_dim[None], dtype=ti.f32, shape=phase_num)
 # loop val_frac
 
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
+@ti.kernel
+def fill_vel_phase(val:float):
+    for i in ti.grouped(vel_phase):
+        vel_phase[i][0] = val
+        vel_phase[i][1] = 0
+
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3.5, -1.8), rt=vec2f(-0.5, 3.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(3.5, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
+print("part1_num",fluid_cube_data_1.num,"part2_num",fluid_cube_data_2.num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
 fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
@@ -76,6 +86,9 @@ fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
+fill_vel_phase(2.0)
+print("vel_phase:",vel_phase,"\n")
+fluid_part.fill_open_stack_with_vals(fluid_part.phase.vel, vel_phase)
 fluid_part.close_stack()
 
 fluid_part.open_stack(val_i(fluid_cube_data_2.num))
@@ -87,38 +100,41 @@ fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
+fill_vel_phase(-1.0)
+print("vel_phase:",vel_phase,"\n")
+fluid_part.fill_open_stack_with_vals(fluid_part.phase.vel, vel_phase)
 fluid_part.close_stack()
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
-box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
-bound_rest_density = val_f(1000)
-bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
-bound_part.instantiate_from_template(part_template, world)
-bound_part.open_stack(val_i(box_data.num))
-bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
-bound_part.fill_open_stack_with_vals(bound_part.phase.val_frac, val_frac)
-bound_part.close_stack()
+# box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
+# bound_rest_density = val_f(1000)
+# bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
+# bound_part.instantiate_from_template(part_template, world)
+# bound_part.open_stack(val_i(box_data.num))
+# bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
+# bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
+# bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
+# bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
+# bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
+# bound_part.fill_open_stack_with_vals(bound_part.phase.val_frac, val_frac)
+# bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
-neighb_list=[fluid_part, bound_part]
+neighb_list=[fluid_part]
 
 fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
+# bound_part.add_module_neighb_search()
 
 fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+# bound_part.add_neighb_objs(neighb_list)
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
 fluid_part.add_solver_ism(Cd=0.0, Cf=0.5, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
 
-bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4)
+# bound_part.add_solver_sph()
+# bound_part.add_solver_df(div_free_threshold=2e-4)
 
 
 world.init_modules()
@@ -171,7 +187,7 @@ def loop():
     timing.startGroup("ISM_Gravity_Vis")
     ''' gravity and viscosity '''
     fluid_part.m_solver_ism.clear_phase_acc()
-    fluid_part.m_solver_ism.add_phase_acc_gravity()
+    # fluid_part.m_solver_ism.add_phase_acc_gravity()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
@@ -291,7 +307,7 @@ def vis_run(loop):
             gui.scene_setup()
             if gui.show_bound:
                 gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+                # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
             else:
                 gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
             
