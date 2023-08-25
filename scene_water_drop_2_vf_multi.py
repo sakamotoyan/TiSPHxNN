@@ -6,6 +6,7 @@ import time
 import sys
 import numpy as np
 from Timing import Timing
+from Statistics import Statistics
 np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
@@ -38,6 +39,12 @@ timing.addGroup("ISM_Gravity")
 timing.addGroup("ISM_Pressure")
 timing.addGroup("ISM_PhaseChange")
 timing.addGroup("ISM_UpdateMassVel")
+timing.addGroup("stats_compute")
+
+statistics = Statistics("statistics.csv")
+statistics.addGroup("momentum_X")
+statistics.addGroup("momentum_Y")
+statistics.addGroup("momentum_Len")
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(10)
@@ -118,8 +125,11 @@ world.neighb_search()
 # np.save("pos_np.npy", sense_output.np_node_index_organized)
 
 def loop():
+    ''' statistics: cache dt'''
+    step_dt = world.g_dt[None]
+
     timing.startStep()
-    timing.setStepLength(world.g_dt[None])
+    timing.setStepLength(step_dt)
 
     timing.startGroup("ISM_Color")
     ''' color '''
@@ -197,6 +207,18 @@ def loop():
     # dt = fluid_part.m_solver_ism.cfl_dt(0.5, max_time_step)
     # world.set_dt(dt)
     timing.endGroup()
+
+    timing.startGroup("stats_compute")
+    ''' statistics: compute and save'''
+    fluid_part.m_solver_df.compute_sum_momentum()
+    timing.endGroup()
+    mom_x = fluid_part.sum_momentum[None].x
+    mom_y = fluid_part.sum_momentum[None].y
+    statistics.recordStep(step_dt, 
+                          momentum_X=mom_x,
+                          momentum_Y=mom_y,
+                          momentum_Len=(mom_x * mom_x + mom_y * mom_y) ** 0.5)
+
     timing.endStep()
 
     ''' debug info '''
