@@ -256,6 +256,14 @@ class DF_solver(SPH_solver):
         ''' Compute Alpha '''
         self.ker_compute_alpha()     
 
+    # statistics
+    @ti.kernel
+    def compute_sum_momentum(self):
+        self.obj.sum_momentum[None] = 0.0
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.sum_momentum[None] += self.obj.mass[part_id] * self.obj.vel[part_id]
+
+
 
 
 
