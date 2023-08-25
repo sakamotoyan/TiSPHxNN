@@ -67,8 +67,8 @@ def fill_vel_phase(val:float):
         vel_phase[i][0] = val
         vel_phase[i][1] = 0
 
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3.5, -1.5), rt=vec2f(-0.5, 1.5), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.5), rt=vec2f(3.5, 1.5), span=world.g_part_size[None]*1.001)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3, -1.2), rt=vec2f(-0.5, 1.2), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -1.8), rt=vec2f(3.5, 1.8), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
@@ -101,7 +101,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
-fill_vel_phase(-2.0)
+fill_vel_phase(0.0)
 print("vel_phase:",vel_phase,"\n")
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.vel, vel_phase)
 fluid_part.close_stack()
