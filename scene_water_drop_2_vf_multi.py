@@ -21,6 +21,9 @@ output_shift = 2000
 part_size = 0.05
 phase_num = 3
 max_time_step = part_size/100
+kinematic_viscosity_fluid_inter = val_f(1e-5)
+kinematic_viscosity_fluid_inner = val_f(1e-3)
+
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
@@ -48,7 +51,8 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density_2)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
-val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
+# val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
+val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
 fluid_part.close_stack()
 
@@ -59,7 +63,7 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
-val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
+# val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac)
 fluid_part.close_stack()
 
@@ -86,11 +90,10 @@ bound_part.add_module_neighb_search()
 fluid_part.add_neighb_objs(neighb_list)
 bound_part.add_neighb_objs(neighb_list)
 
-
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=True)
-fluid_part.add_solver_ism(Cd=0.0, Cf=0.5)
+fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
+fluid_part.add_solver_ism(Cd=0.0, Cf=0.5, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
 
 bound_part.add_solver_sph()
 bound_part.add_solver_df(div_free_threshold=2e-4)
@@ -117,16 +120,24 @@ def loop():
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
     # world.step_df_compute_alpha()
-    # world.step_vfsph_div()
-    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
-    ''' gravity '''
+    ''' pressure (divergence-free) '''
+    world.step_vfsph_div(update_vel=False)
+    fluid_part.m_solver_df.get_acc_pressure()
+    fluid_part.m_solver_ism.clear_phase_acc()
+    fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
+    fluid_part.m_solver_ism.phase_acc_2_phase_vel()
+    fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+
+    ''' gravity and viscosity '''
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.add_phase_acc_gravity()
+    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
 
-    ''' pressure '''
+    ''' pressure (incompressible) '''
     world.step_vfsph_incomp(update_vel=False)
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
@@ -152,6 +163,7 @@ def loop():
     ''' update mass and velocity '''
     fluid_part.m_solver_ism.regularize_val_frac()
     fluid_part.m_solver_ism.update_rest_density_and_mass()
+    fluid_part.m_solver_ism.zero_out_small_drift()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
 
     ''' pos update '''

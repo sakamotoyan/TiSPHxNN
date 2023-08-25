@@ -273,7 +273,7 @@ def step_vfsph_incomp(self, update_vel=True):
             if part_obj.m_is_dynamic:
                 part_obj.m_solver_df.update_vel(part_obj.vel)
 
-def step_vfsph_div(self):
+def step_vfsph_div(self, update_vel=True):
     for part_obj in self.df_solver_list:
 
         part_obj.m_solver_df.div_free_iter[None] = 0
@@ -322,6 +322,7 @@ def step_vfsph_div(self):
         if part_obj.m_is_dynamic:
             part_obj.m_solver_df.log_kappa_div()
 
-    for part_obj in self.df_solver_list:
-        if part_obj.m_is_dynamic:
-            part_obj.m_solver_df.update_vel(part_obj.vel)
+    if update_vel:
+        for part_obj in self.df_solver_list:
+            if part_obj.m_is_dynamic:
+                part_obj.m_solver_df.update_vel(part_obj.vel)

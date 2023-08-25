@@ -116,6 +116,7 @@ world.init_modules()
 
 world.neighb_search()
 
+
 # sense_output = Output_manager(format_type = Output_manager.type.SEQ, data_source = sense_grid_part)
 # sense_output.add_output_dataType("pos",2)
 # sense_output.add_output_dataType("node_index",2)

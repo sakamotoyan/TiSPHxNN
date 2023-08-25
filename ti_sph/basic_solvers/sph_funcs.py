@@ -5,7 +5,7 @@ import taichi as ti
 import math
 
 INF_SMALL = 1e-6
-REL_SMALL = 0.01
+REL_SMALL = 0.001
 
 # ====================================================================================
 # smoothing kernels

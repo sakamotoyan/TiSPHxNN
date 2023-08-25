@@ -17,5 +17,5 @@ def add_solver_df(self, incompressible_threshold: ti.f32 = 1e-4, div_free_thresh
 def add_solver_wcsph(self, gamma: ti.f32 = 7, max_vel: ti.f32 = 10, eta: ti.f32 = 0.01):
     self.m_solver_wcsph = WCSPH_solver(self, gamma, max_vel, eta)
 
-def add_solver_ism(self, Cd, Cf):
-    self.m_solver_ism = Implicit_mixture_solver(self, Cd, Cf, self.m_world)
+def add_solver_ism(self, Cd, Cf, k_vis_inter, k_vis_inner):
+    self.m_solver_ism = Implicit_mixture_solver(self, Cd, Cf, k_vis_inter, k_vis_inner, self.m_world)

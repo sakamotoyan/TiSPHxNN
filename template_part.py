@@ -60,6 +60,7 @@ def part_template(part_obj, world, verbose=False):
     phase = ti.types.struct(
         val_frac=ti.f32,
         val_frac_tmp=ti.f32,
+        val_frac_tmp2=ti.f32,
         vel=vecxf(part_obj.m_world.g_dim[None]),
         drift_vel=vecxf(part_obj.m_world.g_dim[None]),
         acc=vecxf(part_obj.m_world.g_dim[None]),
