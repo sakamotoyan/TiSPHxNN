@@ -10,3 +10,4 @@ imgui.ini
 *.mp4
 *.png
 *.npy
+output.csv

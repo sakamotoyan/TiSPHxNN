@@ -22,12 +22,12 @@ part_size = 0.05
 phase_num = 3
 max_time_step = part_size/100
 kinematic_viscosity_fluid_inter = val_f(1e-5)
-kinematic_viscosity_fluid_inner = val_f(1e-3)
+kinematic_viscosity_fluid_inner = val_f(1e-4)
 
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
-world.set_multiphase(phase_num,[vec3f(1,0,0),vec3f(0,1,0),vec3f(0,0,1)],[500,500,1000])
+world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,1,0),vec3f(0,0.2,0.8)],[500,500,1000])
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(10)
@@ -93,7 +93,7 @@ bound_part.add_neighb_objs(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
-fluid_part.add_solver_ism(Cd=0.0, Cf=0.1, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
+fluid_part.add_solver_ism(Cd=0.0, Cf=0.4, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
 
 bound_part.add_solver_sph()
 bound_part.add_solver_df(div_free_threshold=2e-4)
@@ -145,6 +145,9 @@ def loop():
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
 
+    ''' pos update '''
+    world.update_pos_from_vel()
+
     # fluid_part.m_solver_ism.zero_out_drift_vel() # DRBUG
     ''' phase change '''
     fluid_part.m_solver_ism.clear_val_frac_tmp()
@@ -163,11 +166,7 @@ def loop():
     ''' update mass and velocity '''
     fluid_part.m_solver_ism.regularize_val_frac()
     fluid_part.m_solver_ism.update_rest_density_and_mass()
-    fluid_part.m_solver_ism.zero_out_small_drift()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
-
-    ''' pos update '''
-    world.update_pos_from_vel()
 
     ''' cfl condition update'''
     world.cfl_dt(0.4, max_time_step)
@@ -188,7 +187,7 @@ def loop():
     #         print('low val_frac: \n',frac_np[i])
     # print('dt', world.g_dt[None])   
 
-    fluid_part.m_solver_ism.draw_drift_vel(1)
+    # fluid_part.m_solver_ism.draw_drift_vel(0)
     fluid_part.m_solver_ism.check_empty_phase()
     # fluid_part.m_solver_ism.check_negative_phase()
     fluid_part.m_solver_ism.check_val_frac()
