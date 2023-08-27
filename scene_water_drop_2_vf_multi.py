@@ -22,7 +22,7 @@ output_shift = 2000
 
 part_size = 0.05
 phase_num = 3
-max_time_step = part_size/100
+max_time_step = part_size/500
 kinematic_viscosity_fluid_inter = val_f(1e-5)
 kinematic_viscosity_fluid_inner = val_f(1e-3)
 
