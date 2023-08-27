@@ -14,7 +14,7 @@ from ...basic_obj.Obj_Particle import Particle
 
 @ti.data_oriented
 class World:
-    def __init__(self, dim=3, lb = -8, rt = 8):
+    def __init__(self, dim=3, lb = -16, rt = 16):
         ''' GLOBAL CONFIGURATION '''
         self.g_dim = val_i(dim)
         self.g_space_lb = vecx_f(self.g_dim[None])
