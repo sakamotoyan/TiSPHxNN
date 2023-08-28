@@ -244,10 +244,10 @@ def loop():
 
     timing.startGroup("stats_compute")
     ''' statistics: compute and save'''
-    fluid_part.m_solver_df.compute_sum_momentum()
+    fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     timing.endGroup()
-    mom_x = fluid_part.sum_momentum[None].x
-    mom_y = fluid_part.sum_momentum[None].y
+    mom_x = fluid_part.statistics_linear_momentum[None].x
+    mom_y = fluid_part.statistics_linear_momentum[None].y
     statistics.recordStep(step_dt, 
                           momentum_X=mom_x,
                           momentum_Y=mom_y,
