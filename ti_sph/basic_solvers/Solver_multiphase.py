@@ -222,7 +222,12 @@ class Multiphase_solver(SPH_solver):
             for phase_id in range(self.phase_num[None]):
                 val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
                 x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
-                self.obj.phase.val_frac_tmp[part_id, phase_id] += self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
+                val_frac_change = self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
+                if val_frac_change < 0: # out
+                    self.obj.phase.val_frac_out[part_id, phase_id] += val_frac_change
+                else: # in
+                    self.obj.phase.val_frac_in[part_id, phase_id] += val_frac_change
+
 
     @ti.kernel
     def zero_out_small_drift(self):
