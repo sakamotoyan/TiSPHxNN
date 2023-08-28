@@ -270,43 +270,21 @@ def vis_run(loop):
     loop_count = 0
     flag_write_img = False
 
-    gui = Gui3d()
-    while gui.window.running:
+    while True:
 
-        gui.monitor_listen()
-
-        if gui.op_system_run:
-            loop()
-            loop_count += 1
-            sim_time += world.g_dt[None]
-            
-            # print('loop count', loop_count, 'compressible ratio', 'incompressible iter', fluid_part_1.m_solver_df.incompressible_iter[None], ' ', fluid_part_2.m_solver_df.incompressible_iter[None])
-            # print('comp ratio', fluid_part_1.m_solver_df.compressible_ratio[None], ' ', fluid_part_2.m_solver_df.compressible_ratio[None])
-            # print('dt', world.g_dt[None])
-            if(sim_time > timer*inv_fps):
-                if gui.op_write_file:
-                    sense_output.export_to_numpy(index=output_shift+timer,path='./output')
-                timer += 1
-                flag_write_img = True
-                # with open('output.csv', 'a', newline='') as csvfile:
-                #     writer = csv.writer(csvfile)
-                #     writer.writerow([fluid_part.statistics_angular_momentum[None][2],fluid_part.statistics_linear_momentum[None][0],fluid_part.statistics_linear_momentum[None][1],fluid_part.statistics_kinetic_energy[None]])
+        loop()
+        loop_count += 1
+        sim_time += world.g_dt[None]
         
-        if gui.op_refresh_window:
-            gui.scene_setup()
-            if gui.show_bound:
-                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
-            else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
-            
-            gui.canvas.scene(gui.scene)  # Render the scene
-
-            if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
-                flag_write_img = False
-
-            gui.window.show()
+        # print('loop count', loop_count, 'compressible ratio', 'incompressible iter', fluid_part_1.m_solver_df.incompressible_iter[None], ' ', fluid_part_2.m_solver_df.incompressible_iter[None])
+        # print('comp ratio', fluid_part_1.m_solver_df.compressible_ratio[None], ' ', fluid_part_2.m_solver_df.compressible_ratio[None])
+        # print('dt', world.g_dt[None])
+        if(sim_time > timer*inv_fps):
+            timer += 1
+            flag_write_img = True
+            # with open('output.csv', 'a', newline='') as csvfile:
+            #     writer = csv.writer(csvfile)
+            #     writer.writerow([fluid_part.statistics_angular_momentum[None][2],fluid_part.statistics_linear_momentum[None][0],fluid_part.statistics_linear_momentum[None][1],fluid_part.statistics_kinetic_energy[None]])
         
         if timer > output_frame_num:
             break
