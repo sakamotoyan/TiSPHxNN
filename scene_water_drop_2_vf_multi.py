@@ -23,6 +23,8 @@ output_shift = 2000
 part_size = 0.05
 phase_num = 3
 max_time_step = part_size/500
+Cf = 0.0
+Cd = 0.0
 kinematic_viscosity_fluid_inter = val_f(1e-5)
 kinematic_viscosity_fluid_inner = val_f(1e-4)
 
@@ -132,7 +134,7 @@ fluid_part.add_neighb_objs(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
-fluid_part.add_solver_ism(Cd=0.0, Cf=0.4, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
+fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid_inter[None], k_vis_inner=kinematic_viscosity_fluid_inner[None])
 
 # bound_part.add_solver_sph()
 # bound_part.add_solver_df(div_free_threshold=2e-4)

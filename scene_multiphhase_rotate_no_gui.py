@@ -239,28 +239,29 @@ def loop():
     # fluid_part.m_solver_ism.check_negative_phase()
     # fluid_part.m_solver_ism.check_empty_phase()
     # fluid_part.m_solver_ism.check_val_frac()
-    timing.startGroup("stats_compute")
-    fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
-    fluid_part.m_solver_ism.statistics_angular_momentum()
-    timing.endGroup()
-
-    mom_x = fluid_part.statistics_linear_momentum[None].x
-    mom_y = fluid_part.statistics_linear_momentum[None].y
-    a_mom_x = fluid_part.statistics_angular_momentum[None].x
-    a_mom_y = fluid_part.statistics_angular_momentum[None].y
-    a_mom_z = fluid_part.statistics_angular_momentum[None].z
-    statistics.recordStep(step_dt, 
-                          momentum_X=mom_x,
-                          momentum_Y=mom_y,
-                          momentum_Len=(mom_x * mom_x + mom_y * mom_y) ** 0.5,
-                          angular_momentum_X=a_mom_x,
-                          angular_momentum_Y=a_mom_y,
-                          angular_momentum_Z=a_mom_z)
     timing.endStep()
 
 
 
-    
+def record_data():
+    fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
+    fluid_part.m_solver_ism.statistics_angular_momentum()
+
+
+    mom_x = fluid_part.statistics_linear_momentum[None].x
+    mom_y = fluid_part.statistics_linear_momentum[None].y
+    Ek = fluid_part.statistics_kinetic_energy[None]
+    a_mom_x = fluid_part.statistics_angular_momentum[None].x
+    a_mom_y = fluid_part.statistics_angular_momentum[None].y
+    a_mom_z = fluid_part.statistics_angular_momentum[None].z
+    statistics.recordStep(-1, 
+                          momentum_X=mom_x,
+                          momentum_Y=mom_y,
+                          momentum_Len=(mom_x * mom_x + mom_y * mom_y) ** 0.5,
+                          kinetic_energy=Ek,
+                          angular_momentum_X=a_mom_x,
+                          angular_momentum_Y=a_mom_y,
+                          angular_momentum_Z=a_mom_z)
 
 
 def vis_run(loop):
@@ -282,6 +283,7 @@ def vis_run(loop):
         if(sim_time > timer*inv_fps):
             timer += 1
             flag_write_img = True
+            record_data()
             # with open('output.csv', 'a', newline='') as csvfile:
             #     writer = csv.writer(csvfile)
             #     writer.writerow([fluid_part.statistics_angular_momentum[None][2],fluid_part.statistics_linear_momentum[None][0],fluid_part.statistics_linear_momentum[None][1],fluid_part.statistics_kinetic_energy[None]])
