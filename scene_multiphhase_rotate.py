@@ -19,9 +19,9 @@ output_frame_num = 240
 sense_res = 128
 output_shift = 2000
 
-part_size = 0.005
+part_size = 0.02
 phase_num = 3
-max_time_step = part_size/100
+max_time_step = part_size/100 * 0.4
 Cf = 0.0
 Cd = 0.0
 kinematic_viscosity_fluid_inter = 0.0
@@ -88,9 +88,12 @@ fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=False)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid_inter, k_vis_inner=kinematic_viscosity_fluid_inner)
+fluid_part.add_solver_wcsph()
+fluid_part.add_solver_JL21(kd=2,Cf=0.0,k_vis=kinematic_viscosity_fluid_inter)
 
 bound_part.add_solver_sph()
 bound_part.add_solver_df(div_free_threshold=2e-4)
+fluid_part.add_solver_wcsph()
 
 world.init_modules()
 
@@ -181,7 +184,37 @@ def loop():
     fluid_part.m_solver_ism.statistics_angular_momentum()
 
 
+def loop_JL21():
+    fluid_part.m_solver_JL21.update_color()
+
+    world.update_pos_in_neighb_search()
+    world.neighb_search()
+    # world.step_sph_compute_density()
+    world.step_sph_compute_number_density()
+
+    # world.clear_acc()
+    # world.add_acc_gravity()
+
+    fluid_part.m_solver_JL21.clear_vis_force()
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+
+    fluid_part.m_solver_JL21.clear_pressure_force()
+    world.step_wcsph_add_acc_number_density_pressure()
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+
+    fluid_part.m_solver_JL21.update_phase_vel()
     
+    world.update_pos_from_vel()
+
+    fluid_part.m_solver_JL21.update_val_frac_lamb()    
+
+    fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
+    fluid_part.m_solver_ism.statistics_angular_momentum()
+
+    dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
+    world.set_dt(dt)    
 
 
 def vis_run(loop):

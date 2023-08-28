@@ -17,20 +17,22 @@ fps = 60
 output_frame_num = 2000
 sense_res = 128
 output_shift = 2000
+phase_num = 3
 
 part_size = 0.05
 max_time_step = part_size/100*0.4
 world = World(dim=2)
 world.set_part_size(part_size)
 world.set_dt(max_time_step)
+world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,1,0),vec3f(0,0.2,0.8)],[500,500,1000])
 
-kinematic_viscosity_air = val_f(1.57e-5)
+kinematic_viscosity_air = val_f(1e-4)
 # kinematic_viscosity_air = val_f(0.01)
 kinematic_viscosity_bound = val_f(0.01)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
-fluid_rest_density_2 = val_f(100)
+fluid_rest_density_2 = val_f(1000)
 fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
 fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
 '''INIT AN FLUID PARTICLE OBJECT'''
@@ -104,6 +106,7 @@ bound_part.add_neighb_objs(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_wcsph()
+fluid_part.add_solver_JL21(kd=0.01,Cf=0.1,k_vis=kinematic_viscosity_air[None])
 # fluid_part.add_solver_df(div_free_threshold=2e-4)
 
 bound_part.add_solver_sph()
@@ -136,12 +139,21 @@ def loop():
 
     world.clear_acc()
     world.add_acc_gravity()
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
-    
-    # world.step_wcsph_add_acc_pressure()
+
+    fluid_part.m_solver_JL21.clear_vis_force()
+    fluid_part.m_solver_JL21.clear_pressure_force()
+
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+
     world.step_wcsph_add_acc_number_density_pressure()
 
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+
+    fluid_part.m_solver_JL21.vis_force_2_acc()
+    fluid_part.m_solver_JL21.pressure_force_2_acc()
+    
     world.acc2vel()
     
     world.update_pos_from_vel()

@@ -54,9 +54,4 @@ class WCSPH_solver(SPH_solver):
             neighb_part_volume2 = (neighb_obj.mass[neighb_part_id] / neighb_obj.sph[neighb_part_id].density)**2
             acc_pressure = - (self.obj.pressure[part_id]*part_volume2 + neighb_obj.pressure[neighb_part_id]*neighb_part_volume2) / self.obj.mass[part_id] * cached_grad_W 
             self.obj.acc[part_id] += acc_pressure
-        
-
-            
-
-
                 
