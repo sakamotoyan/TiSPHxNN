@@ -22,7 +22,7 @@ part_size = 0.05
 phase_num = 3
 max_time_step = part_size/100
 kinematic_viscosity_fluid_inter = val_f(1e-5)
-kinematic_viscosity_fluid_inner = val_f(1e-4)
+kinematic_viscosity_fluid_inner = val_f(1e-3)
 
 world = World(dim=2)
 world.set_part_size(part_size)
@@ -128,7 +128,7 @@ def loop():
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' gravity and viscosity '''
     fluid_part.m_solver_ism.clear_phase_acc()
@@ -149,23 +149,8 @@ def loop():
     world.update_pos_from_vel()
 
     # fluid_part.m_solver_ism.zero_out_drift_vel() # DRBUG
-    ''' phase change '''
-    fluid_part.m_solver_ism.clear_val_frac_tmp()
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
-    
-    while(fluid_part.m_solver_ism.check_negative() == 0):
-        # print('triggered!!!')
-        fluid_part.m_solver_ism.clear_val_frac_tmp()
-        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_drift)
-        fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_update_phase_change_from_diffuse)
-    fluid_part.m_solver_ism.update_phase_change()
-    fluid_part.m_solver_ism.release_unused_drift_vel()
-    fluid_part.m_solver_ism.release_negative()
-
-    ''' update mass and velocity '''
-    fluid_part.m_solver_ism.regularize_val_frac()
-    fluid_part.m_solver_ism.update_rest_density_and_mass()
+    ''' phase change ''' 
+    fluid_part.m_solver_ism.update_val_frac_lamb()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
 
     ''' cfl condition update'''
@@ -174,8 +159,8 @@ def loop():
     # world.set_dt(dt)
 
     ''' debug info '''
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
-    print(' ')
+    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    # print(' ')
     # print('val_frac_sum: \n',fluid_part.phase.val_frac.to_numpy()[0].sum(), fluid_part.phase.val_frac.to_numpy()[1].sum())
     # print('drift vel: \n',fluid_part.phase.drift_vel.to_numpy()[0])
     # frac_np = fluid_part.phase.val_frac.to_numpy()
@@ -187,10 +172,11 @@ def loop():
     #         print('low val_frac: \n',frac_np[i])
     # print('dt', world.g_dt[None])   
 
-    # fluid_part.m_solver_ism.draw_drift_vel(0)
-    fluid_part.m_solver_ism.check_empty_phase()
-    # fluid_part.m_solver_ism.check_negative_phase()
-    fluid_part.m_solver_ism.check_val_frac()
+    # fluid_part.m_solver_ism.debug_draw_drift_vel(2)
+    # fluid_part.m_solver_ism.debug_draw_empty_phase()
+    # fluid_part.m_solver_ism.debug_draw_lambda()
+    # fluid_part.m_solver_ism.debug_check_negative_phase()
+    fluid_part.m_solver_ism.debug_check_val_frac()
 
     
 

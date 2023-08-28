@@ -70,6 +70,7 @@ def part_template(part_obj, world, verbose=False):
         acc=vecxf(part_obj.m_world.g_dim[None]),
     )
     mixture = ti.types.struct(
+        lamb = ti.f32,
         flag_negative_val_frac = ti.i32,
         acc_pressure=vecxf(part_obj.m_world.g_dim[None]),
     )
