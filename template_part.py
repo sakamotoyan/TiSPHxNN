@@ -18,7 +18,10 @@ def part_template(part_obj, world, verbose=False):
     part_obj.add_array("k_vis", ti.field(ti.f32))
     part_obj.add_array("acc", vecxf(part_obj.m_world.g_dim[None]).field())
     part_obj.add_array("rgb", vecxf(3).field())
-    part_obj.add_attr("sum_momentum", ti.field(vecxf(part_obj.m_world.g_dim[None]),()))
+    
+    part_obj.add_attr("statistics_linear_momentum", vecx_f(part_obj.m_world.g_dim[None]))
+    part_obj.add_attr("statistics_angular_momentum", vecx_f(3))
+    part_obj.add_attr("statistics_kinetic_energy", val_f(0))
 
     ''' Optional arrays'''
     # part_obj.add_array("volume_fraction", ti.field(ti.f32), bundle=2)
@@ -60,8 +63,8 @@ def part_template(part_obj, world, verbose=False):
 
     phase = ti.types.struct(
         val_frac=ti.f32,
-        val_frac_tmp=ti.f32,
-        val_frac_tmp2=ti.f32,
+        val_frac_in=ti.f32,
+        val_frac_out=ti.f32,
         vel=vecxf(part_obj.m_world.g_dim[None]),
         drift_vel=vecxf(part_obj.m_world.g_dim[None]),
         acc=vecxf(part_obj.m_world.g_dim[None]),
@@ -71,7 +74,6 @@ def part_template(part_obj, world, verbose=False):
         acc_pressure=vecxf(part_obj.m_world.g_dim[None]),
     )
 
-    # part_obj.add_struct("phases", fluid_phase, bundle=2)
     part_obj.add_struct("sph", sph)
     part_obj.add_struct("sph_df", sph_df)
     part_obj.add_struct("sph_wc", sph_wc)
