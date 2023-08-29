@@ -249,6 +249,7 @@ def loop_JL21():
 
 ''' Viusalization and run '''
 def vis_run(loop):
+    global flag_strat_drift
     inv_fps = 1/fps
     timer = 0
     sim_time = 0
