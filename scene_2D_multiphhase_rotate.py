@@ -1,7 +1,6 @@
 import taichi as ti
 from ti_sph import *
 from template_part import part_template
-from template_grid import grid_template
 import time
 import sys
 import numpy as np
@@ -40,7 +39,7 @@ Cf = 0.0
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
 Cd = 0.0 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
-kd = 0.0
+kd = 10.0
 # kinematic viscosity of fluid
 kinematic_viscosity_fluid = 0.0 
 
@@ -152,7 +151,7 @@ def loop_ism():
 
     ''' pressure accleration (divergence-free) '''
     world.step_vfsph_div(update_vel=False)
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' [ISM] distribute pressure acc to phase acc and update phase vel '''
     fluid_part.m_solver_df.get_acc_pressure()
@@ -171,7 +170,7 @@ def loop_ism():
 
     ''' pressure accleration (divergence-free) '''
     world.step_vfsph_incomp(update_vel=False)
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     ''' distribute pressure acc to phase acc and update phase vel '''
     fluid_part.m_solver_df.get_acc_pressure()
@@ -265,7 +264,7 @@ def vis_run(loop):
                     pass
                 timer += 1
                 flag_write_img = True
-        
+                
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
