@@ -39,6 +39,7 @@ class Particle(Obj):
         self.m_solver_sph = None
         self.m_solver_wcsph = None
         self.m_solver_ism = None
+        self.m_solver_JL21 = None
 
         # data structure
         self.m_attr_list = {}
@@ -100,6 +101,7 @@ class Particle(Obj):
     add_solver_sph = solvers.add_solver_sph
     add_solver_wcsph = solvers.add_solver_wcsph
     add_solver_ism = solvers.add_solver_ism
+    add_solver_JL21 = solvers.add_solver_JL21
     
     # TODO
     def delete_outbounded_particles(self):
