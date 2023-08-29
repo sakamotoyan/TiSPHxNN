@@ -89,6 +89,11 @@ class JL21_mixture_solver(Multiphase_solver):
             self.obj.acc[part_id] += self.obj.sph.pressure_force[part_id] / self.obj.mass[part_id]
 
     @ti.kernel
+    def acc_2_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.vel[part_id] += self.dt[None] * self.obj.acc[part_id]
+
+    @ti.kernel
     def ditribute_acc_pressure_2_phase(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):

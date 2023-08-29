@@ -39,7 +39,8 @@ Cf = 0.0
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
 Cd = 0.0 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
-kd = 10.0
+kd = 0.0
+flag_strat_drift = False
 # kinematic viscosity of fluid
 kinematic_viscosity_fluid = 0.0 
 
@@ -224,7 +225,12 @@ def loop_JL21():
     fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
 
     ''' update phase vel (from all accelerations) '''
-    fluid_part.m_solver_JL21.update_phase_vel()
+    if flag_strat_drift:
+        fluid_part.m_solver_JL21.update_phase_vel()
+    else:
+        fluid_part.m_solver_JL21.vis_force_2_acc()
+        fluid_part.m_solver_JL21.pressure_force_2_acc()
+        fluid_part.m_solver_JL21.acc_2_vel()
 
     ''' update particle position from velocity '''
     world.update_pos_from_vel()
@@ -264,7 +270,8 @@ def vis_run(loop):
                     pass
                 timer += 1
                 flag_write_img = True
-                
+                if timer == 2:
+                    flag_strat_drift = True
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
