@@ -342,7 +342,7 @@ class Multiphase_solver(SPH_solver):
         max_vel = 0.0
         phase_id = phase
         for part_id in range(self.obj.ti_get_stack_top()[None]):
-            length = ti.math.length(self.obj.phase.drift_vel[part_id, phase_id])/20
+            length = ti.math.length(self.obj.phase.drift_vel[part_id, phase_id])/5
             self.obj.rgb[part_id] = ti.Vector([length, length, length])
             # ti.atomic_max(max_vel, ti.math.length(self.obj.phase.drift_vel[part_id, phase_id]))
 
