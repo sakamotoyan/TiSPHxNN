@@ -120,7 +120,7 @@ kd = float(args.drag) if args.drag else 0.0
 flag_start_drift = False
 frame_change_drag = int(args.drag_frame) if args.drag_frame else 0
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 0.0 
+kinematic_viscosity_fluid = 1e-4 
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
