@@ -298,12 +298,14 @@ class Multiphase_solver(SPH_solver):
     def compute_angular_momentum(self):
         self.obj.statistics_angular_momentum[None] *= 0
         for part_id in range(self.obj.ti_get_stack_top()[None]):
-            vel = ti.Vector([self.obj.vel[part_id][0], self.obj.vel[part_id][1], 0.0])
-            pos = ti.Vector([self.obj.pos[part_id][0], self.obj.pos[part_id][1], 0.0])
-            self.obj.statistics_angular_momentum[None] += vel.cross(pos)*self.obj.mass[part_id]
-            # for phase_id in range(self.phase_num[None]):
-            #     self.obj.statistics_angular_momentum[None] += self.obj.phase.acc[part_id, phase_id] * \
-            #         self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id] * self.obj.phase.val_frac[part_id, phase_id]
+            # vel = ti.Vector([self.obj.vel[part_id][0], self.obj.vel[part_id][1], 0.0])
+            # pos = ti.Vector([self.obj.pos[part_id][0], self.obj.pos[part_id][1], 0.0])
+            # self.obj.statistics_angular_momentum[None] += vel.cross(pos)*self.obj.mass[part_id]
+            for phase_id in range(self.phase_num[None]):
+                vel = ti.Vector([self.obj.phase.vel[part_id, phase_id][0], self.obj.phase.vel[part_id, phase_id][1], 0.0])
+                pos = ti.Vector([self.obj.pos[part_id][0], self.obj.pos[part_id][1], 0.0])
+                self.obj.statistics_angular_momentum[None] += vel.cross(pos) * \
+                    self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id] * self.obj.phase.val_frac[part_id, phase_id]
         # print('statistics angular momentum:', self.obj.statistics_angular_momentum[None])
 
     ''' ######################## UTIL ######################## '''
