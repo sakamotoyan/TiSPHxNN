@@ -109,9 +109,9 @@ part_size = 0.0075
 phase_num = 3 
 # max time step size
 if solver == SOLVER_ISM:
-    max_time_step = part_size/10
+    max_time_step = part_size/100
 elif solver == SOLVER_JL21:
-    max_time_step = part_size/200
+    max_time_step = part_size/100
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
@@ -188,7 +188,7 @@ bound_part.add_neighb_objs(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 if solver == SOLVER_ISM:
-    fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=True, div_warm_start=False)
+    fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=False)
     fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 elif solver == SOLVER_JL21:
     fluid_part.add_solver_wcsph()
