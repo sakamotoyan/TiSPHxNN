@@ -2,8 +2,13 @@ import taichi as ti
 from ti_sph import *
 from template_part import part_template
 import time
+import os
 import sys
 import numpy as np
+from Timing import Timing
+from Statistics import Statistics
+import argparse
+from ply_util import *
 np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
@@ -12,16 +17,88 @@ ti.init(arch=ti.cuda, device_memory_GB=3)
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.cpu) 
 
+''' COMMAND ARGUMENTS '''
+parser = argparse.ArgumentParser()
+parser.add_argument('--solver', help='Solver to use: ISM or JL21')
+parser.add_argument('--gui', help='Enable gui')
+parser.add_argument('--ply', help='Enable ply')
+parser.add_argument('--drag', help='Drag coefficient')
+parser.add_argument('--drag_frame', help='Frame to change drag coefficient from default value to drag')
+args = parser.parse_args()
+print(args)
+
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+if args.solver:
+    if args.solver == "ISM":
+        solver = SOLVER_ISM
+    elif args.solver == "JL21":
+        solver = SOLVER_JL21
+    else:
+        raise ValueError("wrong solver type: " + args.solver)
+else:
+    solver = SOLVER_ISM # choose the solver
+
+''' FILE SETTINGS '''
+file_identifier = ""
+if args.solver:
+    file_identifier += "_" + args.solver
+if args.drag:
+    file_identifier += "_" + args.drag
+output_folder = "output"+file_identifier
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
 
 ''' SETTINGS OUTPUT DATA '''
+# use gui
+use_gui = False if args.gui and args.gui == "False" else True
+# enable ply output
+enable_ply = True if args.ply and args.ply == "True" else False
 # output fps
 fps = 60
 # max output frame number
-output_frame_num = 2000
+output_frame_num = 110
+
+''' STATISITCS SETTINGS '''
+timing = Timing("timing"+file_identifier+".csv")
+if solver == SOLVER_ISM:
+    timing.addGroup("SPH_NeighbSearch")
+    timing.addGroup("SPH_Prepare")
+    timing.addGroup("SPH_UpdatePos")
+    timing.addGroup("SPH_CFL")
+    timing.addGroup("SPH_Pressure_Com")
+    timing.addGroup("SPH_Pressure_Div")
+    timing.addGroup("ISM_Color")
+    timing.addGroup("ISM_Gravity_Vis")
+    timing.addGroup("ISM_Pressure_Com")
+    timing.addGroup("ISM_Pressure_Div")
+    timing.addGroup("ISM_PhaseChange")
+    timing.addGroup("ISM_UpdateMassVel")
+    timing.addGroup("Statistics")
+elif solver == SOLVER_JL21:
+    timing.addGroup("SPH_NeighbSearch")
+    timing.addGroup("SPH_NumberDensity")
+    timing.addGroup("SPH_Gravity")
+    timing.addGroup("SPH_Viscosity")
+    timing.addGroup("SPH_Pressure")
+    timing.addGroup("SPH_UpdatePos")
+    timing.addGroup("SPH_CFL")
+    timing.addGroup("JL_Color")
+    timing.addGroup("JL_UpdatePhaseVel")
+    timing.addGroup("JL_PhaseChange")
+    timing.addGroup("Statistics")
+
+statistics = Statistics("statistics"+file_identifier+".csv")
+statistics.addGroup("momentum_X")
+statistics.addGroup("momentum_Y")
+statistics.addGroup("momentum_Z")
+statistics.addGroup("momentum_Len")
+statistics.addGroup("kinetic_energy")
+statistics.addGroup("ang_momentum_X")
+statistics.addGroup("ang_momentum_Y")
+statistics.addGroup("ang_momentum_Z")
+statistics.addGroup("ang_momentum_Len")
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
@@ -36,11 +113,14 @@ elif solver == SOLVER_JL21:
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
-Cd = 0.0 
+Cd_fin = float(args.drag) if args.drag else 0.0
+Cd = 1.0
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
-kd = 0.0
+kd = float(args.drag) if args.drag else 0.0
+flag_start_drift = False
+frame_change_drag = int(args.drag_frame) if args.drag_frame else 0
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 1e-4
+kinematic_viscosity_fluid = 0.0 
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
@@ -120,134 +200,249 @@ def prep_JL21():
 
 ''' SIMULATION LOOPS '''
 def loop_ism():
-    ''' update color based on the volume fraction '''
+    timing.startStep()
+
+    ''' color '''
+    timing.startGroup("ISM_Color")
     fluid_part.m_solver_ism.update_color()
+    timing.endGroup()
 
     ''' neighb search'''
+    timing.startGroup("SPH_NeighbSearch")
     world.neighb_search()
+    timing.endGroup()
 
-    ''' dfsph pre-computation '''
+    ''' sph pre-computation '''
+    timing.startGroup("SPH_Prepare")
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
+    timing.endGroup()
 
     ''' pressure accleration (divergence-free) '''
+    timing.startGroup("SPH_Pressure_Div")
     world.step_vfsph_div(update_vel=False)
+    timing.endGroup()
     print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' [ISM] distribute pressure acc to phase acc and update phase vel '''
+    timing.startGroup("ISM_Pressure_Div")
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
     
+
     ''' viscosity & gravity (not requird in this scene)  accleration and update phase vel '''
+    timing.startGroup("ISM_Gravity_Vis")
     fluid_part.m_solver_ism.clear_phase_acc()
     # fluid_part.m_solver_ism.add_phase_acc_gravity()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
-    ''' pressure accleration (divergence-free) '''
+    ''' pressure accleration (incompressible) '''
+    timing.startGroup("SPH_Pressure_Com")
     world.step_vfsph_incomp(update_vel=False)
+    timing.endGroup()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     ''' distribute pressure acc to phase acc and update phase vel '''
+    timing.startGroup("ISM_Pressure_Com")
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
     ''' update particle position from velocity '''
+    timing.startGroup("SPH_UpdatePos")
     world.update_pos_from_vel()
+    timing.endGroup()
 
     ''' phase change '''
+    timing.startGroup("ISM_PhaseChange")
     fluid_part.m_solver_ism.update_val_frac()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
 
     ''' update mass and velocity '''
+    timing.startGroup("ISM_UpdateMassVel")
     fluid_part.m_solver_ism.regularize_val_frac()
     fluid_part.m_solver_ism.update_rest_density_and_mass()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    timing.endGroup()
+
+    timing.setStepLength(world.g_dt[None])
 
     ''' cfl condition update'''
+    timing.startGroup("SPH_CFL")
     world.cfl_dt(0.4, max_time_step)
+    timing.endGroup()
 
     ''' statistical info '''
     print(' ')
+    timing.startGroup("Statistics")
     fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     fluid_part.m_solver_ism.statistics_angular_momentum()
     fluid_part.m_solver_ism.debug_check_val_frac()
+    timing.endGroup()
+
+    timing.endStep()
 
 def loop_JL21():
+    timing.startStep()
+
     ''' update color based on the volume fraction '''
+    timing.startGroup("JL_Color")
     fluid_part.m_solver_JL21.update_color()
+    timing.endGroup()
 
     ''' compute number density '''
+    timing.startGroup("SPH_NeighbSearch")
     world.neighb_search()
+    timing.endGroup()
+    timing.startGroup("SPH_NumberDensity")
     world.step_sph_compute_number_density()
+    timing.endGroup()
 
-    ''' viscosity & gravity (not requird in this scene)  accleration and update phase vel '''
+    ''' gravity (not requird in this scene) accleration '''
+    timing.startGroup("SPH_Gravity")
     world.clear_acc()
     # world.add_acc_gravity()
+    timing.endGroup()
+
+    ''' viscosity force '''
+    timing.startGroup("SPH_Viscosity")
     fluid_part.m_solver_JL21.clear_vis_force()
     fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+    timing.endGroup()
 
     ''' pressure force '''
+    timing.startGroup("SPH_Pressure")
     fluid_part.m_solver_JL21.clear_pressure_force()
     world.step_wcsph_add_acc_number_density_pressure()
     fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    timing.endGroup()
 
     ''' update phase vel (from all accelerations) '''
-    fluid_part.m_solver_JL21.update_phase_vel()
-    
+    if flag_start_drift:
+        timing.startGroup("JL_UpdatePhaseVel")
+        fluid_part.m_solver_JL21.update_phase_vel()
+        timing.endGroup()
+    else:
+        timing.startGroup("JL_UpdatePhaseVel")
+        fluid_part.m_solver_JL21.vis_force_2_acc()
+        fluid_part.m_solver_JL21.pressure_force_2_acc()
+        fluid_part.m_solver_JL21.acc_2_vel()
+        fluid_part.m_solver_JL21.vel_2_phase_vel()
+        timing.endGroup()
+
     ''' update particle position from velocity '''
+    timing.startGroup("SPH_UpdatePos")
     world.update_pos_from_vel()
+    timing.endGroup()
 
     ''' phase change (spacial care with lambda scheme) '''
+    timing.startGroup("JL_PhaseChange")
     fluid_part.m_solver_JL21.update_val_frac_lamb()    
+    timing.endGroup()
 
     ''' statistical info '''
     print(' ')
+    timing.startGroup("Statistics")
     fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
     fluid_part.m_solver_JL21.statistics_angular_momentum()
     fluid_part.m_solver_JL21.debug_check_val_frac()
+    timing.endGroup()
 
+    timing.setStepLength(world.g_dt[None])
+
+    timing.startGroup("SPH_CFL")
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
     world.set_dt(dt)    
+    timing.endGroup() 
+
+    timing.endStep()
+
+def stats_record(sim_time):
+    mom_x = fluid_part.statistics_linear_momentum[None].x
+    mom_y = fluid_part.statistics_linear_momentum[None].y
+    mom_z = 0.0
+    k_energy = fluid_part.statistics_kinetic_energy[None]
+    a_mom_x = fluid_part.statistics_angular_momentum[None].x
+    a_mom_y = fluid_part.statistics_angular_momentum[None].y
+    a_mom_z = fluid_part.statistics_angular_momentum[None].z
+    statistics.recordStep(sim_time, 
+                          momentum_X=mom_x,
+                          momentum_Y=mom_y,
+                          momentum_Z=mom_z,
+                          momentum_Len=(mom_x * mom_x + mom_y * mom_y + mom_z * mom_z) ** 0.5,
+                          kinetic_energy=k_energy,
+                          ang_momentum_X=a_mom_x,
+                          ang_momentum_Y=a_mom_y,
+                          ang_momentum_Z=a_mom_z,
+                          ang_momentum_Len=(a_mom_x * a_mom_x + a_mom_y * a_mom_y + a_mom_z * a_mom_z) ** 0.5)
+
 
 ''' Viusalization and run '''
 def vis_run(loop):
+    global flag_start_drift
     inv_fps = 1/fps
     timer = 0
     sim_time = 0
     loop_count = 0
     flag_write_img = False
 
-    gui = Gui3d()
-    while gui.window.running:
+    gui = Gui3d() if use_gui else None
+    while gui is None or gui.window.running:
 
-        gui.monitor_listen()
+        if not gui is None:
+            gui.monitor_listen()
 
-        if gui.op_system_run:
+        if gui is None or gui.op_system_run:
             loop()
             loop_count += 1
             sim_time += world.g_dt[None]
             
             if(sim_time > timer*inv_fps):
-                if gui.op_write_file:
+                if not gui is None and gui.op_write_file:
                     pass
+
+                if timer == frame_change_drag:
+                    if solver == SOLVER_ISM:
+                        fluid_part.m_solver_ism.set_Cd(Cd_fin)
+                        print("Change Cd to", fluid_part.m_solver_ism.Cd[None])
+                    elif solver == SOLVER_JL21:
+                        flag_start_drift = True
+                        print("Start JL21 drift")
+                
                 timer += 1
                 flag_write_img = True
+
+                stats_record(sim_time)
+
+                # if enable_ply:
+                #     write_ply(path='output_ply', 
+                #             frame_num=timer, 
+                #             dim=world.g_dim[None], 
+                #             num=fluid_part.m_part_num[None], 
+                #             pos=fluid_part.pos.to_numpy(), 
+                #             phase_num=phase_num, 
+                #             volume_frac=fluid_part.phase.val_frac.to_numpy(), 
+                #             phase_vel_flag=True, 
+                #             phase_vel=fluid_part.phase.vel.to_numpy())
         
-        if gui.op_refresh_window:
+        if not gui is None and gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
+                gui.window.save_image(output_folder+'/'+str(timer)+'.png')
                 flag_write_img = False
 
             gui.window.show()

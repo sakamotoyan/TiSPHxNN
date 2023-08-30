@@ -277,8 +277,8 @@ class Multiphase_solver(SPH_solver):
             for phase_id in range(self.phase_num[None]):
                 self.obj.statistics_linear_momentum[None] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
                 self.obj.statistics_kinetic_energy[None] += 0.5 * self.obj.phase.vel[part_id, phase_id].dot(self.obj.phase.vel[part_id, phase_id]) * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
-        print('statistics linear momentum:', self.obj.statistics_linear_momentum[None])
-        print('statistics kinetic energy:', self.obj.statistics_kinetic_energy[None])
+        # print('statistics linear momentum:', self.obj.statistics_linear_momentum[None])
+        # print('statistics kinetic energy:', self.obj.statistics_kinetic_energy[None])
     
     def statistics_angular_momentum(self):
         self.clear_phase_acc()
@@ -304,7 +304,7 @@ class Multiphase_solver(SPH_solver):
             # for phase_id in range(self.phase_num[None]):
             #     self.obj.statistics_angular_momentum[None] += self.obj.phase.acc[part_id, phase_id] * \
             #         self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id] * self.obj.phase.val_frac[part_id, phase_id]
-        print('statistics angular momentum:', self.obj.statistics_angular_momentum[None])
+        # print('statistics angular momentum:', self.obj.statistics_angular_momentum[None])
 
     ''' ######################## UTIL ######################## '''
 
