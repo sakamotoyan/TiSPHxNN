@@ -4,6 +4,7 @@ from template_part import part_template
 from template_grid import grid_template
 import time
 import sys
+import os
 import numpy as np
 import csv
 from Timing import Timing
@@ -26,8 +27,7 @@ parser.add_argument('--ply', help='Enable ply')
 parser.add_argument('--drag', help='Drag coefficient')
 parser.add_argument('--drag_frame', help='Frame to change drag coefficient from default value to drag')
 args = parser.parse_args()
-for arg in args:
-    print(arg, args[arg])
+print(args)
 
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
@@ -42,18 +42,28 @@ if args.solver:
 else:
     solver = SOLVER_JL21 # choose the solver
 
+''' FILE SETTINGS '''
+file_identifier = ""
+if args.solver:
+    file_identifier += "_" + args.solver
+if args.drag:
+    file_identifier += "_" + args.drag
+output_folder = "output"+file_identifier
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
+
 ''' SETTINGS OUTPUT DATA '''
 # use gui
-use_gui = bool(args.gui) if args.gui else True
+use_gui = False if args.gui and args.gui == "False" else True
 # enable ply output
-enable_ply = bool(args.ply) if args.ply else False
+enable_ply = True if args.ply and args.ply == "True" else False
 # output fps
 fps = 60
 # max output frame number
-output_frame_num = 2000
+output_frame_num = 120
 
 ''' STATISITCS SETTINGS '''
-timing = Timing("timing.csv")
+timing = Timing("timing"+file_identifier+".csv")
 if solver == SOLVER_ISM:
     timing.addGroup("SPH_NeighbSearch")
     timing.addGroup("SPH_Prepare")
@@ -81,7 +91,7 @@ elif solver == SOLVER_JL21:
     timing.addGroup("JL_PhaseChange")
     timing.addGroup("Statistics")
 
-statistics = Statistics("statistics.csv")
+statistics = Statistics("statistics"+file_identifier+".csv")
 statistics.addGroup("momentum_X")
 statistics.addGroup("momentum_Y")
 statistics.addGroup("momentum_Z")
@@ -94,7 +104,7 @@ statistics.addGroup("ang_momentum_Len")
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.05 
+part_size = 0.0075 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -108,8 +118,8 @@ Cf = 0.0
 Cd_fin = float(args.drag) if args.drag else 0.0
 Cd = 1.0
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
-kd_fin = float(args.drag) if args.drag else 0.0
-kd = 0.0
+kd = float(args.drag) if args.drag else 0.0
+flag_start_drift = False
 frame_change_drag = int(args.drag_frame) if args.drag_frame else 0
 # kinematic viscosity of fluid
 kinematic_viscosity_fluid = 0.0 
@@ -215,12 +225,12 @@ def loop_ism():
     ''' color '''
     timing.startGroup("ISM_Color")
     fluid_part.m_solver_ism.update_color()
-    timing.endGroup
+    timing.endGroup()
 
     ''' neighb search'''
     timing.startGroup("SPH_NeighbSearch")
     world.neighb_search()
-    timing.endGroup
+    timing.endGroup()
 
     ''' sph pre-computation '''
     timing.startGroup("SPH_Prepare")
@@ -293,8 +303,6 @@ def loop_ism():
     world.cfl_dt(0.4, max_time_step)
     timing.endGroup()
 
-    timing.endStep()
-
     ''' statistical info '''
     print(' ')
     timing.startGroup("Statistics")
@@ -302,6 +310,8 @@ def loop_ism():
     fluid_part.m_solver_ism.statistics_angular_momentum()
     fluid_part.m_solver_ism.debug_check_val_frac()
     timing.endGroup()
+
+    timing.endStep()
 
 def loop_JL21():
     timing.startStep()
@@ -341,9 +351,17 @@ def loop_JL21():
     timing.endGroup()
 
     ''' update phase vel (from all accelerations) '''
-    timing.startGroup("JL_UpdatePhaseVel")
-    fluid_part.m_solver_JL21.update_phase_vel()
-    timing.endGroup()
+    if flag_start_drift:
+        timing.startGroup("JL_UpdatePhaseVel")
+        fluid_part.m_solver_JL21.update_phase_vel()
+        timing.endGroup()
+    else:
+        timing.startGroup("JL_UpdatePhaseVel")
+        fluid_part.m_solver_JL21.vis_force_2_acc()
+        fluid_part.m_solver_JL21.pressure_force_2_acc()
+        fluid_part.m_solver_JL21.acc_2_vel()
+        fluid_part.m_solver_JL21.vel_2_phase_vel()
+        timing.endGroup()
 
     ''' update particle position from velocity '''
     timing.startGroup("SPH_UpdatePos")
@@ -375,7 +393,7 @@ def loop_JL21():
 def stats_record(sim_time):
     mom_x = fluid_part.statistics_linear_momentum[None].x
     mom_y = fluid_part.statistics_linear_momentum[None].y
-    mom_z = fluid_part.statistics_linear_momentum[None].z
+    mom_z = 0.0
     k_energy = fluid_part.statistics_kinetic_energy[None]
     a_mom_x = fluid_part.statistics_angular_momentum[None].x
     a_mom_y = fluid_part.statistics_angular_momentum[None].y
@@ -393,6 +411,7 @@ def stats_record(sim_time):
 
 ''' Viusalization and run '''
 def vis_run(loop):
+    global flag_start_drift
     inv_fps = 1/fps
     timer = 0
     sim_time = 0
@@ -416,27 +435,27 @@ def vis_run(loop):
 
                 if timer == frame_change_drag:
                     if solver == SOLVER_ISM:
-                        fluid_part.m_solver_ism.Cd = Cd_fin
-                        print("Change Cd to", Cd_fin)
+                        fluid_part.m_solver_ism.set_Cd(Cd_fin)
+                        print("Change Cd to", fluid_part.m_solver_ism.Cd[None])
                     elif solver == SOLVER_JL21:
-                        fluid_part.m_solver_JL21.kd = kd_fin
-                        print("Change kd to", kd_fin)
+                        flag_start_drift = True
+                        print("Start JL21 drift")
                 
                 timer += 1
                 flag_write_img = True
 
-                stats_record()
+                stats_record(sim_time)
 
-                if enable_ply:
-                    write_ply(path='output_ply', 
-                            frame_num=timer, 
-                            dim=world.g_dim[None], 
-                            num=fluid_part.m_part_num[None], 
-                            pos=fluid_part.pos.to_numpy(), 
-                            phase_num=phase_num, 
-                            volume_frac=fluid_part.phase.val_frac.to_numpy(), 
-                            phase_vel_flag=True, 
-                            phase_vel=fluid_part.phase.vel.to_numpy())
+                # if enable_ply:
+                #     write_ply(path='output_ply', 
+                #             frame_num=timer, 
+                #             dim=world.g_dim[None], 
+                #             num=fluid_part.m_part_num[None], 
+                #             pos=fluid_part.pos.to_numpy(), 
+                #             phase_num=phase_num, 
+                #             volume_frac=fluid_part.phase.val_frac.to_numpy(), 
+                #             phase_vel_flag=True, 
+                #             phase_vel=fluid_part.phase.vel.to_numpy())
         
         if not gui is None and gui.op_refresh_window:
             gui.scene_setup()
@@ -445,7 +464,7 @@ def vis_run(loop):
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
+                gui.window.save_image(output_folder+'/'+str(timer)+'.png')
                 flag_write_img = False
 
             gui.window.show()

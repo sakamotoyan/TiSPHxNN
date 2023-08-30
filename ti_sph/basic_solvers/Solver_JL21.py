@@ -19,8 +19,8 @@ class JL21_mixture_solver(Multiphase_solver):
         
         super().__init__(obj, Cf, world)
 
-        self.kd = kd
-        self.k_vis = k_vis
+        self.kd = val_f(kd)
+        self.k_vis = val_f(k_vis)
 
     @ti.kernel
     def clear_vis_force(self):
@@ -48,7 +48,7 @@ class JL21_mixture_solver(Multiphase_solver):
         if bigger_than_zero(cached_dist):
             A_ij = self.obj.vel[part_id] - neighb_obj.vel[neighb_part_id]
             x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
-            PI_ij = - (self.k_vis) * \
+            PI_ij = - (self.k_vis[None]) * \
                 ( ti.min(0, A_ij.dot(x_ij)) / ((cached_dist**2)+INF_SMALL*(self.obj.sph[part_id].h**2)) )
             self.obj.sph.viscosity_force[part_id] += - self.obj.mass[part_id] * neighb_obj.mass[neighb_part_id] * PI_ij * cached_grad_W
 
@@ -67,7 +67,7 @@ class JL21_mixture_solver(Multiphase_solver):
 
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.vel[part_id, phase_id] += - self.kd * self.dt[None] * \
+                self.obj.phase.vel[part_id, phase_id] += - self.kd[None] * self.dt[None] * \
                     (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id]) *\
                     (self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id])
         
@@ -87,6 +87,17 @@ class JL21_mixture_solver(Multiphase_solver):
     def pressure_force_2_acc(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             self.obj.acc[part_id] += self.obj.sph.pressure_force[part_id] / self.obj.mass[part_id]
+
+    @ti.kernel
+    def acc_2_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            self.obj.vel[part_id] += self.dt[None] * self.obj.acc[part_id]
+
+    @ti.kernel
+    def vel_2_phase_vel(self):
+        for part_id in range(self.obj.ti_get_stack_top()[None]):
+            for phase_id in range(self.phase_num[None]):
+                self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def ditribute_acc_pressure_2_phase(self):

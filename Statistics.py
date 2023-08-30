@@ -15,9 +15,9 @@ class Statistics:
             return
         self._groups.append(groupName)
 
-    def recordStep(self, stepLength = -1, **kwargs):
+    def recordStep(self, simTime = -1, **kwargs):
         self._stepId += 1
-        l = [self._stepId, stepLength]
+        l = [self._stepId, simTime]
         for group in self._groups:
             if group in kwargs:
                 l.append(kwargs[group])
@@ -30,7 +30,7 @@ class Statistics:
         with open(self._filename, 'w') as file:
             file.write("id")
             file.write(colSeparator)
-            file.write("timestep")
+            file.write("sim_time")
             for i in range(len(self._groups)):
                 file.write(colSeparator)
                 file.write(self._groups[i])

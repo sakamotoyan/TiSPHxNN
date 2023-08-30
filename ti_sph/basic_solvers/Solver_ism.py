@@ -19,16 +19,16 @@ class Implicit_mixture_solver(Multiphase_solver):
         
         super().__init__(obj, Cf, world)
 
-        self.Cd = Cd
-        self.k_vis_inter = k_vis_inter
-        self.k_vis_inner = k_vis_inner
+        self.Cd = val_f(Cd)
+        self.k_vis_inter = val_f(k_vis_inter)
+        self.k_vis_inner = val_f(k_vis_inner)
 
     @ti.kernel
     def ditribute_acc_pressure_2_phase(self):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
-                    (self.Cd + ((1 - self.Cd) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
+                    (self.Cd[None] + ((1 - self.Cd[None]) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
 
     @ti.func
     def inloop_add_phase_acc_vis(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
@@ -40,8 +40,11 @@ class Implicit_mixture_solver(Multiphase_solver):
             for phase_id in range(self.phase_num[None]):
                 v_ki_mj = self.obj.phase.vel[part_id, phase_id] - neighb_obj.vel[neighb_part_id]
                 self.obj.phase.acc[part_id, phase_id] += 2*(2+self.obj.m_world.g_dim[None]) * neighb_obj.volume[neighb_part_id] * \
-                    ((self.k_vis_inner * (1-self.Cd) *  v_ki_mj) + (self.k_vis_inter * self.Cd * v_ij)).dot(x_ij) * cached_grad_W \
+                    ((self.k_vis_inner[None] * (1-self.Cd[None]) *  v_ki_mj) + (self.k_vis_inter[None] * self.Cd[None] * v_ij)).dot(x_ij) * cached_grad_W \
                     / (cached_dist**2) 
+
+    def set_Cd(self, Cd: ti.f32):
+        self.Cd[None] = Cd
 
     # def update_phase_change(self):
     #     self.update_phase_change_ker()

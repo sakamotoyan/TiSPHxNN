@@ -21,10 +21,10 @@ class Gui3d:
         self.show_bound = True
         self.show_help = True
         self.show_run_info = True
-        self.op_system_run = False
+        self.op_system_run = True
         self.op_write_file = False
         self.op_refresh_window = True
-        self.op_save_img = False
+        self.op_save_img = True
 
         self.env_set_up()
 
