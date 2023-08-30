@@ -16,7 +16,7 @@ ti.init(arch=ti.cuda, device_memory_GB=3)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+solver = SOLVER_ISM # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -31,9 +31,9 @@ part_size = 0.05
 phase_num = 3 
 # max time step size
 if solver == SOLVER_ISM:
-    max_time_step = part_size/10
+    max_time_step = part_size/100
 elif solver == SOLVER_JL21:
-    max_time_step = part_size/200
+    max_time_step = part_size/100
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
@@ -108,7 +108,7 @@ bound_part.add_neighb_objs(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 if solver == SOLVER_ISM:
-    fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=True, div_warm_start=False)
+    fluid_part.add_solver_df(div_free_threshold=2e-4, incomp_warm_start=False, div_warm_start=False)
     fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 elif solver == SOLVER_JL21:
     fluid_part.add_solver_wcsph()
@@ -125,7 +125,7 @@ elif solver == SOLVER_JL21:
 ''' INIT ALL SOLVERS '''
 world.init_modules()
 
-''' DATA PREPERATIONs '''
+''' DATA PREPERATIONS '''
 def prep_ism():
     world.neighb_search() # perform the neighbor search
     fluid_part.m_solver_ism.update_rest_density_and_mass()
@@ -144,46 +144,63 @@ def loop_ism():
     fluid_part.m_solver_ism.update_color()
 
     ''' neighb search'''
+    ''' [TIME START] neighb_search '''
     world.neighb_search()
+    ''' [TIME END] neighb_search '''
 
     ''' sph pre-computation '''
+    ''' [TIME START] DFSPH Part 1 '''
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
+    ''' [TIME START] DFSPH Part 1 '''
 
     ''' pressure accleration (divergence-free) '''
+    ''' [TIME START] DFSPH Part 2 '''
     world.step_vfsph_div(update_vel=False)
-    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    ''' [TIME END] DFSPH Part 2 '''
+    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' [ISM] distribute pressure acc to phase acc and update phase vel '''
+    '''  [TIME START] ISM Part 1 '''
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    '''  [TIME END] ISM Part 1 '''
     
 
     ''' viscosity & gravity (not requird in this scene)  accleration and update phase vel '''
+    '''  [TIME START] ISM Part 2 '''
     fluid_part.m_solver_ism.clear_phase_acc()
     # fluid_part.m_solver_ism.add_phase_acc_gravity()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    '''  [TIME END] ISM Part 2 '''
 
     ''' pressure accleration (divergence-free) '''
+    '''  [TIME START] DFSPH Part 3 '''
     world.step_vfsph_incomp(update_vel=False)
-    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    '''  [TIME START] DFSPH Part 3 '''
+    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     ''' distribute pressure acc to phase acc and update phase vel '''
+    '''  [TIME START] ISM Part 3 '''
     fluid_part.m_solver_df.get_acc_pressure()
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.ditribute_acc_pressure_2_phase()
     fluid_part.m_solver_ism.phase_acc_2_phase_vel()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    '''  [TIME END] ISM Part 3 '''
 
     ''' update particle position from velocity '''
+    '''  [TIME START] DFSPH Part 4 '''
     world.update_pos_from_vel()
+    '''  [TIME START] DFSPH Part 4 '''
 
     ''' phase change '''
+    '''  [TIME START] ISM Part 4 '''
     fluid_part.m_solver_ism.update_val_frac()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
 
@@ -191,9 +208,12 @@ def loop_ism():
     fluid_part.m_solver_ism.regularize_val_frac()
     fluid_part.m_solver_ism.update_rest_density_and_mass()
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
+    '''  [TIME END] ISM Part 4 '''
 
     ''' cfl condition update'''
+    '''  [TIME START] CFL '''
     world.cfl_dt(0.4, max_time_step)
+    '''  [TIME END] CFL '''
 
     ''' statistical info '''
     print(' ')
@@ -205,11 +225,18 @@ def loop_JL21():
     ''' update color based on the volume fraction '''
     fluid_part.m_solver_JL21.update_color()
 
-    ''' compute number density '''
+    ''' neighb search'''
+    ''' [TIME START] neighb_search '''
     world.neighb_search()
+    ''' [TIME END] neighb_search '''
+
+    ''' compute number density '''
+    ''' [TIME START] WCSPH Part 1 '''
     world.step_sph_compute_number_density()
+    ''' [TIME END] WCSPH Part 1 '''
 
     ''' gravity (not requird in this scene) accleration '''
+    ''' [TIME START] WCSPH Part 2 '''
     world.clear_acc()
     # world.add_acc_gravity()
 
@@ -223,20 +250,27 @@ def loop_JL21():
     world.step_wcsph_add_acc_number_density_pressure()
     fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
     fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    ''' [TIME END] WCSPH Part 2 '''
 
     ''' update phase vel (from all accelerations) '''
     if flag_strat_drift:
+        ''' [TIME START] JL21 Part 1 '''
         fluid_part.m_solver_JL21.update_phase_vel()
+        ''' [TIME END] JL21 Part 1 '''
     else:
         fluid_part.m_solver_JL21.vis_force_2_acc()
         fluid_part.m_solver_JL21.pressure_force_2_acc()
         fluid_part.m_solver_JL21.acc_2_vel()
 
     ''' update particle position from velocity '''
+    ''' [TIME START] WCSPH Part 3 '''
     world.update_pos_from_vel()
+    ''' [TIME END] WCSPH Part 3 '''
 
     ''' phase change (spacial care with lambda scheme) '''
-    fluid_part.m_solver_JL21.update_val_frac_lamb()    
+    ''' [TIME START] JL21 Part 2 '''
+    fluid_part.m_solver_JL21.update_val_frac_lamb()
+    ''' [TIME END] JL21 Part 2 '''    
 
     ''' statistical info '''
     print(' ')
