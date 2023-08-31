@@ -252,6 +252,14 @@ def loop_JL21():
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
     world.set_dt(dt)    
 
+def write_part_info_ply():
+    for part_id in range(fluid_part.get_stack_top()[None]):
+        fluid_part.pos[part_id]
+        fluid_part.vel[part_id]
+        for phase_id in range(phase_num):
+            fluid_part.phase.val_frac[part_id, phase_id]
+        fluid_part.rgb[part_id]
+
 ''' Viusalization and run '''
 def vis_run(loop):
     inv_fps = 1/fps
@@ -272,7 +280,7 @@ def vis_run(loop):
             
             if(sim_time > timer*inv_fps):
                 if gui.op_write_file:
-                    pass
+                    write_part_info_ply()
                 timer += 1
                 flag_write_img = True
         

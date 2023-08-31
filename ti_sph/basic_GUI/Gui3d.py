@@ -61,16 +61,14 @@ class Gui3d:
 
         if self.show_help:
             self.window.GUI.begin("options", 0.05, 0.3, 0.2, 0.2)
-            self.window.GUI.text("h: help")
             self.window.GUI.text("w: front")
             self.window.GUI.text("s: back")
             self.window.GUI.text("a: left")
             self.window.GUI.text("d: right")
             self.window.GUI.text("RMB: rotate")
-            self.window.GUI.text("b: display boundary")
             self.window.GUI.text("r: run system")
             self.window.GUI.text("f: write file")
-            self.window.GUI.text("c: refresh window")
+            # self.window.GUI.text("c: refresh window")
             self.window.GUI.text("i: save image to the 'output' folder")
             self.window.GUI.end()
 
@@ -88,21 +86,21 @@ class Gui3d:
                 self.op_save_img = not self.op_save_img
                 print("save image:", self.op_save_img)
 
-            if self.window.event.key == "b":
-                self.show_bound = not self.show_bound
-                print("show boundary:", self.show_bound)
+            # if self.window.event.key == "b":
+            #     self.show_bound = not self.show_bound
+            #     print("show boundary:", self.show_bound)
 
-            if self.window.event.key == "i":
-                self.show_run_info = not self.show_run_info
-                print("show run information:", self.show_run_info)
+            # if self.window.event.key == "i":
+            #     self.show_run_info = not self.show_run_info
+            #     print("show run information:", self.show_run_info)
 
-            if self.window.event.key == "h":
-                self.show_help = not self.show_help
-                print("show help:", self.show_help)
+            # if self.window.event.key == "h":
+            #     self.show_help = not self.show_help
+            #     print("show help:", self.show_help)
             
-            if self.window.event.key == "c":
-                self.op_refresh_window = not self.op_refresh_window
-                print("refresh window:", self.op_refresh_window)
+            # if self.window.event.key == "c":
+            #     self.op_refresh_window = not self.op_refresh_window
+            #     print("refresh window:", self.op_refresh_window)
 
     
 
