@@ -28,7 +28,7 @@ class World:
         self.g_neg_inv_dt = val_f(-1/self.g_dt[None])
         self.g_inv_dt2 = val_f(self.g_inv_dt[None] ** 2)
         self.g_part_size = val_f(0.1)
-        self.g_avg_neighb_part_num = val_i(32)
+        self.g_avg_neighb_part_num = val_i(6**self.g_dim[None])
         self.g_obj_num = val_i(3)
         self.g_sound_speed = val_f(100)
 

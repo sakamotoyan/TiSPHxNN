@@ -20,7 +20,7 @@ def fill_open_stack_with_nparr(self, attr_: ti.template(), data: ti.types.ndarra
     if data_dim == 1:
         data_ti_container = ti.field(ti.f32, self.m_stack_open_num[None])
     elif data_dim == 2:
-        data_ti_container = ti.Vector.field(data_dim, ti.f32, self.m_stack_open_num[None])
+        data_ti_container = ti.Vector.field(data.shape[1], ti.f32, self.m_stack_open_num[None])
     else:
         raise Exception("Data dimension not supported!")
         exit(0)

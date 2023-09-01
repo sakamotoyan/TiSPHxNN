@@ -26,7 +26,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.0075 
+part_size = 0.05 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -37,16 +37,16 @@ elif solver == SOLVER_JL21:
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
-Cd = 0.0 
+Cd = 1.0 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
 kd = 0.0
-flag_strat_drift = False
+flag_strat_drift = True
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 0.0 
+kinematic_viscosity_fluid = 1e-4
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
-world = World(dim=2) 
+world = World(dim=3) 
 # set the particle diameter
 world.set_part_size(part_size) 
 # set the max time step size
@@ -56,7 +56,7 @@ world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-pool_data = Round_pool_2D_data(r_hollow=1, r_in=6, r_out=6.5, angular_vel=3.14159, span=world.g_part_size[None]*1.001)
+pool_data = Squared_pool_3D_data(container_height=5, container_size=2, fluid_height=3.5, span=world.g_part_size[None], layer = 3)
 # particle number of fluid/boundary
 fluid_part_num = pool_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
@@ -65,7 +65,6 @@ print("fluid_part_num", fluid_part_num)
 fluid_part_pos = pool_data.fluid_part_pos
 bound_part_pos = pool_data.bound_part_pos
 # initial velocity info of fluid
-fluid_part_vel = pool_data.fluid_part_vel
 
 '''INIT AN FLUID PARTICLE OBJECT'''
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
@@ -80,7 +79,6 @@ fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-fluid_part.fill_open_stack_with_nparr(fluid_part.vel, fluid_part_vel) # feed the initial velocity
 fluid_part.close_stack() # close the stack
 
 ''' INIT A BOUNDARY PARTICLE OBJECT '''
@@ -173,7 +171,7 @@ def loop_ism():
     ''' viscosity & gravity (not requird in this scene)  accleration and update phase vel '''
     '''  [TIME START] ISM Part 2 '''
     fluid_part.m_solver_ism.clear_phase_acc()
-    # fluid_part.m_solver_ism.add_phase_acc_gravity()
+    fluid_part.m_solver_ism.add_phase_acc_gravity()
     fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
@@ -238,7 +236,7 @@ def loop_JL21():
     ''' gravity (not requird in this scene) accleration '''
     ''' [TIME START] WCSPH Part 2 '''
     world.clear_acc()
-    # world.add_acc_gravity()
+    world.add_acc_gravity()
 
     ''' viscosity force '''
     fluid_part.m_solver_JL21.clear_vis_force()
@@ -316,12 +314,10 @@ def vis_run(loop):
                     write_part_info_ply()
                 timer += 1
                 flag_write_img = True
-                if timer == 2:
-                    flag_strat_drift = True
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-            gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+            # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:

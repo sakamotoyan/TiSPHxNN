@@ -57,7 +57,7 @@ class JL21_mixture_solver(Multiphase_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 phase_mass = self.world.g_phase_rest_density[None][phase_id] * self.obj.volume[part_id]
-                self.obj.phase.vel[part_id, phase_id] += self.dt[None] * (self.obj.phase.acc[part_id, phase_id] +\
+                self.obj.phase.vel[part_id, phase_id] += self.dt[None] * (self.obj.acc[part_id] +\
                     (self.obj.sph.viscosity_force[part_id]+self.obj.sph.pressure_force[part_id])/phase_mass)
 
         for part_id in range(self.obj.ti_get_stack_top()[None]):
@@ -93,12 +93,12 @@ class JL21_mixture_solver(Multiphase_solver):
         for part_id in range(self.obj.ti_get_stack_top()[None]):
             self.obj.vel[part_id] += self.dt[None] * self.obj.acc[part_id]
 
-    @ti.kernel
-    def ditribute_acc_pressure_2_phase(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
-            for phase_id in range(self.phase_num[None]):
-                self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
-                    (self.Cd + ((1 - self.Cd) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
+    # @ti.kernel
+    # def ditribute_acc_pressure_2_phase(self):
+    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
+    #         for phase_id in range(self.phase_num[None]):
+    #             self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
+    #                 (self.Cd + ((1 - self.Cd) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
 
     # def update_phase_change(self):
     #     self.update_phase_change_ker()

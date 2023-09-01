@@ -15,7 +15,7 @@ def numerical_sort(value):
 
 # Get the list of image files sorted numerically
 image_files = []
-for i in range(1,1200,stride):
+for i in range(28,115,stride):
     image_files.append(f'./output/{i}.png')
 
 # image_files = sorted(
