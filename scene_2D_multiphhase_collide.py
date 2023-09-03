@@ -15,7 +15,7 @@ ti.init(arch=ti.cuda, device_memory_GB=3)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_ISM # choose the solver
+solver = SOLVER_JL21 # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -30,7 +30,7 @@ part_size = 0.05
 phase_num = 3 
 # max time step size
 if solver == SOLVER_ISM:
-    max_time_step = part_size/100
+    max_time_step = part_size/20
 elif solver == SOLVER_JL21:
     max_time_step = part_size/100
 #  diffusion amount: Cf = 0 yields no diffusion
@@ -40,7 +40,7 @@ Cd = 0.0
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
 kd = 0.0
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 1e-4
+kinematic_viscosity_fluid = 0.0
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
@@ -55,8 +55,8 @@ world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as two cubes. Should leave tiny space (1.001 of the part size) between particles to avoid SPH density error.
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-3, -1.5), rt=vec2f(0, 1.5), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.5, -2.0), rt=vec2f(2.5, 2.0), span=world.g_part_size[None]*1.001)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1.5, -0.75), rt=vec2f(0, 0.75), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.1, -1.5), rt=vec2f(4.1, 1.5), span=world.g_part_size[None]*1.001)
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 # get the number of fluid particles required to be generated
 print("fluid_part_num", fluid_part_num)
@@ -105,6 +105,7 @@ elif solver == SOLVER_JL21:
 ''' INIT ALL SOLVERS '''
 world.init_modules()
 
+gui2d = Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=vec2f(-8,-6),rt=vec2f(8,6))
 ''' DATA PREPERATIONs '''
 def prep_ism():
     world.neighb_search() # perform the neighbor search
@@ -245,12 +246,11 @@ def loop_JL21():
 
     ''' statistical info '''
     print(' ')
-    fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
-    fluid_part.m_solver_JL21.statistics_angular_momentum()
-    fluid_part.m_solver_JL21.debug_check_val_frac()
+    # fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
+    # fluid_part.m_solver_JL21.statistics_angular_momentum()
+    # fluid_part.m_solver_JL21.debug_check_val_frac()
 
-    dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.set_dt(dt)    
+    # world.cfl_dt(0.4, max_time_step) 
 
 def write_part_info_ply():
     for part_id in range(fluid_part.get_stack_top()[None]):
@@ -290,7 +290,8 @@ def vis_run(loop):
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
+                # gui.window.save_image('output/'+str(timer)+'.png')
+                gui2d.save_img(path='output/'+str(timer)+'.png')
                 flag_write_img = False
 
             gui.window.show()

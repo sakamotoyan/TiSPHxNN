@@ -9,7 +9,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.cuda, device_memory_GB=3) 
+ti.init(arch=ti.cuda, device_memory_GB=13) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.cpu) 
 
@@ -26,7 +26,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.05 
+part_size = 0.03 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -56,7 +56,7 @@ world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-pool_data = Squared_pool_3D_data(container_height=5, container_size=2, fluid_height=3.5, span=world.g_part_size[None], layer = 3)
+pool_data = Squared_pool_3D_data(container_height=3, container_size=4, fluid_height=2, span=world.g_part_size[None], layer = 3)
 # particle number of fluid/boundary
 fluid_part_num = pool_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num

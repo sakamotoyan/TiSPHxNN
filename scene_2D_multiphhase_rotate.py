@@ -26,7 +26,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.0075 
+part_size = 0.075 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -316,8 +316,6 @@ def vis_run(loop):
                     write_part_info_ply()
                 timer += 1
                 flag_write_img = True
-                if timer == 2:
-                    flag_strat_drift = True
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])

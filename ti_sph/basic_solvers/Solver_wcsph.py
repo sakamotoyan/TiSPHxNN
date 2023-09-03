@@ -9,17 +9,15 @@ from typing import List
 
 @ti.data_oriented
 class WCSPH_solver(SPH_solver):
-    def __init__(self, obj: Particle, gamma, max_vel, eta):
+    def __init__(self, obj: Particle, gamma, stiffness):
         
         super().__init__(obj)
         self.B = None
 
         self.gamma = gamma
-        self.max_vel = max_vel
-        self.eta_sqrt = math.sqrt(eta)
+        self.stiffness = stiffness
 
-        self.Cs = self.max_vel / self.eta_sqrt
-        self.B_by_rest_density = self.Cs * self.Cs / self.gamma
+        self.B_by_rest_density = stiffness / self.gamma
     
     @ti.kernel
     def compute_B(self):
