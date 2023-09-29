@@ -41,28 +41,6 @@ class Neighb_search_template:
 '''#################### ABOVE IS THE TEMPLATE FOR NEIGHBORHOOD SEASCHING ####################'''
 
 
-
-
-
-
-'''#################### BELOW IS THE CACHE STRUCT AND ACCOMPINED POINTER 
-                        STRUCT FOR LOGGING NEIGHBOUR PARTICLES ####################'''
-@ti.dataclass
-class Pointer_pool:
-    begin: ti.i32
-    current: ti.i32
-    size: ti.i32
-
-@ti.dataclass
-class Pointer_obj:
-    begin: ti.i32
-    size: ti.i32
-
-@ti.dataclass
-class LinkedList_container:
-    neighb_part_id: ti.i32
-    neighb_obj_id: ti.i32
-    next: ti.i32
 '''#################### ABOVE IS THE CACHE STRUCT AND ACCOMPINED POINTER
                         STRUCT FOR LOGGING NEIGHBOUR PARTICLES ####################'''  
 
@@ -99,22 +77,37 @@ class Neighb_pool:
         self.m_neighb_search_range_list = []  # val_f() # TODO: use 'Dynamic' as search range
         self.m_neighb_search_template_list = []  # Neighb_search_template class
 
+
+        self.neighb_pool_pointer = ti.Struct.field({
+            "begin":ti.i32,
+            "current":ti.i32,
+            "size":ti.i32,
+            }, shape=(self.obj_part_num[None],)
+        )
+        self.neighb_obj_pointer = ti.Struct.field({
+            "begin":ti.i32,
+            "size":ti.i32,
+            }, shape=(self.obj_part_num[None], self.max_neighb_obj_num[None])
+        )
+        self.neighb_pool_container = ti.Struct.field({
+            "neighb_part_id":ti.i32,
+            "neighb_obj_id":ti.i32,
+            "next":ti.i32,
+            }, shape=(self.max_neighb_part_num[None])
+        )
+
         '''[DIY AREA]'''
         ''' add your own data here'''
-        Struct_cached_attributes = ti.types.struct(
-            dist=ti.f32,
-            xij_norm=vecxf(self.obj.m_world.g_dim[None]),
-            W=ti.f32,
-            grad_W=vecxf(self.obj.m_world.g_dim[None]),
+        self.cached_neighb_attributes = ti.Struct.field({
+            "xij_norm":vecxf(self.obj.m_world.g_dim[None]),
+            "grad_W":vecxf(self.obj.m_world.g_dim[None]),
+            "dist":ti.f32,
+            "W":ti.f32,
+            }, shape=(self.max_neighb_part_num[None])
         )
 
         self.neighb_pool_used_space = val_i(0)
         self.neighb_pool_size = ti.static(self.max_neighb_part_num)
-        # print('debug neighb_pool_size: ', self.neighb_pool_size[None])
-        self.neighb_pool_pointer = Pointer_pool.field(shape=(self.obj_part_num[None]))
-        self.neighb_obj_pointer = Pointer_obj.field(shape=(self.obj_part_num[None], self.max_neighb_obj_num[None]))
-        self.neighb_pool_container = LinkedList_container.field(shape=(self.max_neighb_part_num[None]))
-        self.cached_neighb_attributes = Struct_cached_attributes.field(shape=(self.max_neighb_part_num[None]))
 
     ''' clear the cache pool'''
     @ti.kernel

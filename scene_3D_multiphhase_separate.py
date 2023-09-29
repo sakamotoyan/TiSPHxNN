@@ -9,9 +9,10 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.cuda, device_memory_GB=13) 
+# ti.init(arch=ti.cuda, device_memory_GB=13) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
-# ti.init(arch=ti.cpu) 
+ti.init(arch=ti.vulkan)
+# ti.init(arch=ti.cpu)
 
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
@@ -228,6 +229,9 @@ def loop_JL21():
     world.neighb_search()
     ''' [TIME END] neighb_search '''
 
+    # for i in range(fluid_part.get_stack_top()[None]):
+    #     print(fluid_part.m_neighb_search.neighb_pool.neighb_obj_pointer[i, 1].size)
+
     ''' compute number density '''
     ''' [TIME START] WCSPH Part 1 '''
     world.step_sph_compute_number_density()
@@ -308,6 +312,7 @@ def vis_run(loop):
             loop()
             loop_count += 1
             sim_time += world.g_dt[None]
+            print("loop ", loop_count)
             
             if(sim_time > timer*inv_fps):
                 if gui.op_write_file:

@@ -8,9 +8,9 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.cuda, device_memory_GB=3) 
+# ti.init(arch=ti.cuda, device_memory_GB=3) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
-# ti.init(arch=ti.cpu) 
+ti.init(arch=ti.cpu, debug=True) 
 
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
