@@ -1,7 +1,7 @@
 import taichi as ti
 
 @ti.func
-def ti_get_stack_top(self:ti.template()):
+def tiGet_stack_top(self:ti.template()):
     return self.m_stack_top
 
 @ti.func
@@ -11,6 +11,9 @@ def ti_get_part_num(self:ti.template()):
 def get_stack_top(self):
     return self.m_stack_top
 
+@ti.func
+def tiGet_part_num(self):
+    return self.m_part_num
 def get_part_num(self):
     return self.m_part_num
 

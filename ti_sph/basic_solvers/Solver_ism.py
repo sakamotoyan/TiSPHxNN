@@ -25,7 +25,7 @@ class Implicit_mixture_solver(Multiphase_solver):
 
     @ti.kernel
     def ditribute_acc_pressure_2_phase(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
                     (self.Cd[None] + ((1 - self.Cd[None]) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
@@ -67,7 +67,7 @@ class Implicit_mixture_solver(Multiphase_solver):
 
     # @ti.kernel
     # def re_arrange_phase_vel(self):
-    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
+    #     for part_id in range(self.obj.tiGet_stack_top()[None]):
     #         if self.obj.mixture[part_id].flag_negative_val_frac == 0:
     #             for phase_id in range(self.phase_num[None]):
     #                 val_frac_remain = self.obj.phase.val_frac[part_id, phase_id] + self.obj.phase.val_frac_out[part_id, phase_id]

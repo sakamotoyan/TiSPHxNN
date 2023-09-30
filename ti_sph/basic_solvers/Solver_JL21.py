@@ -24,12 +24,12 @@ class JL21_mixture_solver(Multiphase_solver):
 
     @ti.kernel
     def clear_vis_force(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.sph.viscosity_force[part_id] *= 0
     
     @ti.kernel
     def clear_pressure_force(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.sph.pressure_force[part_id] *= 0
 
     @ti.func
@@ -54,24 +54,24 @@ class JL21_mixture_solver(Multiphase_solver):
 
     @ti.kernel
     def update_phase_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 phase_mass = self.world.g_phase_rest_density[None][phase_id] * self.obj.volume[part_id]
                 self.obj.phase.vel[part_id, phase_id] += self.dt[None] * (self.obj.acc[part_id] +\
                     (self.obj.sph.viscosity_force[part_id]+self.obj.sph.pressure_force[part_id])/phase_mass)
 
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.vel[part_id] *= 0
             for phase_id in range(self.phase_num[None]):
                 self.obj.vel[part_id] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id]
 
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.vel[part_id, phase_id] += - self.kd[None] * self.dt[None] * \
                     (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id]) *\
                     (self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id])
         
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.vel[part_id] *= 0
             for phase_id in range(self.phase_num[None]):
                 self.obj.vel[part_id] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id]
@@ -80,22 +80,22 @@ class JL21_mixture_solver(Multiphase_solver):
 
     @ti.kernel
     def vis_force_2_acc(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.acc[part_id] += self.obj.sph.viscosity_force[part_id] / self.obj.mass[part_id]
     
     @ti.kernel
     def pressure_force_2_acc(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.acc[part_id] += self.obj.sph.pressure_force[part_id] / self.obj.mass[part_id]
 
     @ti.kernel
     def acc_2_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.vel[part_id] += self.dt[None] * self.obj.acc[part_id]
 
     # @ti.kernel
     # def ditribute_acc_pressure_2_phase(self):
-    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
+    #     for part_id in range(self.obj.tiGet_stack_top()[None]):
     #         for phase_id in range(self.phase_num[None]):
     #             self.obj.phase.acc[part_id, phase_id] += self.obj.mixture.acc_pressure[part_id] * \
     #                 (self.Cd + ((1 - self.Cd) * (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id])))
@@ -124,7 +124,7 @@ class JL21_mixture_solver(Multiphase_solver):
 
     # @ti.kernel
     # def re_arrange_phase_vel(self):
-    #     for part_id in range(self.obj.ti_get_stack_top()[None]):
+    #     for part_id in range(self.obj.tiGet_stack_top()[None]):
     #         if self.obj.mixture[part_id].flag_negative_val_frac == 0:
     #             for phase_id in range(self.phase_num[None]):
     #                 val_frac_remain = self.obj.phase.val_frac[part_id, phase_id] + self.obj.phase.val_frac_out[part_id, phase_id]

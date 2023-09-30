@@ -82,13 +82,6 @@ class Particle(Obj):
     integ = data_op.integ
     set = data_op.set
 
-    # Functions: Data access for single values
-    get_stack_top = get.get_stack_top
-    get_part_num = get.get_part_num
-    get_part_size = get.get_part_size
-    ti_get_stack_top = get.ti_get_stack_top
-    ti_get_part_num = get.ti_get_part_num
-
     # Functions: neighb search related
     add_module_neighb_search = neighb_search.add_neighb_search
     check_neighb_search = neighb_search.check_neighb_search
@@ -111,7 +104,7 @@ class Particle(Obj):
     @ti.kernel
     def log_tobe_deleted_particles(self):
         counter = ti.static(self.m_delete_list[self.m_delete_list.shape[0]])
-        for part_id in range(self.m_stack_top[None]):
+        for part_id in range(self.tiGet_stack_top()[None]):
             if self.has_negative(self.pos[part_id]-self.m_world.space_lb[None]) or self.has_positive(self.pos[part_id]-self.m_world.space_rt[None]):
                 self.m_delete_list[ti.atomic_add(self.m_delete_list[counter],1)] = part_id
     # TODO
@@ -120,7 +113,14 @@ class Particle(Obj):
 
     @ti.kernel
     def color_code_part(self: ti.template(), arr: ti.template(), lower: ti.f32, upper: ti.f32):
-        for i in range(self.ti_get_stack_top()[None]):
+        for i in range(self.tiGet_stack_top()[None]):
             val = ti.min(ti.max(ti.math.length(arr[i]) / (upper - lower), 0), 1)
             self.rgb[i][0] = val
             self.rgb[i][1] = val
+
+    # Functions: Data access for single values
+    get_stack_top = get.get_stack_top
+    get_part_num = get.get_part_num
+    get_part_size = get.get_part_size
+    tiGet_stack_top = get.tiGet_stack_top
+    ti_get_part_num = get.ti_get_part_num

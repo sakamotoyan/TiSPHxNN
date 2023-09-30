@@ -27,7 +27,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.03 
+part_size = 0.1 
 # number of phases
 phase_num = 3 
 # max time step size

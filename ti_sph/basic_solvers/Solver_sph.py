@@ -19,7 +19,7 @@ class SPH_solver:
 
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             neighb_part_num = neighb_pool.neighb_obj_pointer[part_id, neighb_obj.ti_get_id()[None]].size
             neighb_part_shift = neighb_pool.neighb_obj_pointer[part_id, neighb_obj.ti_get_id()[None]].begin
             for neighb_part_iter in range(neighb_part_num):
@@ -44,7 +44,7 @@ class SPH_solver:
     
     @ti.kernel
     def compute_sig(self, sig_dim: ti.f32):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.sph[part_id].h = self.obj.size[part_id] * 2
             self.obj.sph[part_id].sig = sig_dim / ti.pow(self.obj.sph[part_id].h, self.dim[None])
             self.obj.sph[part_id].sig_inv_h = self.obj.sph[part_id].sig / self.obj.sph[part_id].h

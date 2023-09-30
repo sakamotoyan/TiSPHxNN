@@ -21,18 +21,18 @@ class WCSPH_solver(SPH_solver):
     
     @ti.kernel
     def compute_B(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.sph_wc[part_id].B = self.B_by_rest_density * self.obj.rest_density[part_id]
 
     @ti.kernel
     def ReLU_density(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             if self.obj.sph[part_id].density < self.obj.rest_density[part_id]:
                 self.obj.sph[part_id].density = self.obj.rest_density[part_id]
     
     @ti.kernel
     def compute_pressure(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.pressure[part_id] = self.obj.sph_wc[part_id].B * ((self.obj.sph[part_id].density / self.obj.rest_density[part_id]) ** self.gamma - 1)
 
     @ti.func

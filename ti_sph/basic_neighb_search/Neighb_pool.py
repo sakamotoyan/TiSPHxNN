@@ -60,7 +60,7 @@ class Neighb_pool:
     ):
         self.obj = obj
         self.obj_pos = self.obj.pos
-        self.obj_part_num = obj.get_part_num()
+        self.part_num = obj.get_part_num()
         self.obj_stack_top = self.obj.get_stack_top()
         if max_neighb_part_num == 0:
             self.max_neighb_part_num = val_i(obj.get_part_num()[None] * self.obj.m_world.g_avg_neighb_part_num[None])
@@ -77,17 +77,49 @@ class Neighb_pool:
         self.m_neighb_search_range_list = []  # val_f() # TODO: use 'Dynamic' as search range
         self.m_neighb_search_template_list = []  # Neighb_search_template class
 
+        self.partNeighb_begin = ti.field(ti.i32)
+        self.partNeighb_current = ti.field(ti.i32)
+        self.partNeighb_size = ti.field(ti.i32)
+        ti.root.dense(ti.i, self.part_num[None]).place(
+            self.partNeighb_begin,
+            self.partNeighb_current,
+            self.partNeighb_size)
+
+        self.partNeighbObj_begin = ti.field(ti.i32)
+        self.partNeighbObj_size = ti.field(ti.i32)
+        ti.root.dense(ti.ij, (self.part_num[None], self.max_neighb_obj_num[None])).place(
+            self.partNeighbObj_begin,
+            self.partNeighbObj_size)
+
+        self.poolContainer_neighbPartId = ti.field(ti.i32)
+        self.poolContainer_neighbObjId = ti.field(ti.i32)
+        self.poolContainer_next = ti.field(ti.i32)
+        ti.root.dense(ti.i, self.max_neighb_part_num[None]).place(
+            self.poolContainer_neighbPartId,
+            self.poolContainer_neighbObjId,
+            self.poolContainer_next)
+
+        self.poolCachedAttr_dist = ti.field(ti.f32)
+        self.poolCachedAttr_xijNorm = ti.Vector.field(self.dim[None], ti.f32)
+        self.poolCachedAttr_W = ti.field(ti.f32)
+        self.poolCachedAttr_gradW = ti.Vector.field(self.dim[None], ti.f32)
+        ti.root.dense(ti.i, self.max_neighb_part_num[None]).place(
+            self.poolCachedAttr_dist,
+            self.poolCachedAttr_xijNorm,
+            self.poolCachedAttr_W,
+            self.poolCachedAttr_gradW)
+           
 
         self.neighb_pool_pointer = ti.Struct.field({
             "begin":ti.i32,
             "current":ti.i32,
             "size":ti.i32,
-            }, shape=(self.obj_part_num[None],)
+            }, shape=(self.part_num[None],)
         )
         self.neighb_obj_pointer = ti.Struct.field({
             "begin":ti.i32,
             "size":ti.i32,
-            }, shape=(self.obj_part_num[None], self.max_neighb_obj_num[None])
+            }, shape=(self.part_num[None], self.max_neighb_obj_num[None])
         )
         self.neighb_pool_container = ti.Struct.field({
             "neighb_part_id":ti.i32,
@@ -112,7 +144,7 @@ class Neighb_pool:
     ''' clear the cache pool'''
     @ti.kernel
     def clear_pool(self):
-        for part_id in range(self.obj_stack_top[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.neighb_pool_pointer[part_id].begin = -1
             self.neighb_pool_pointer[part_id].current = -1
             self.neighb_pool_pointer[part_id].size = 0
@@ -166,7 +198,7 @@ class Neighb_pool:
         neighb_cell: ti.template(),  # Neighb_cell_simple class
         neighb_search_template: ti.template(),  # Neighb_search_template class
     ):
-        for part_id in range(self.obj_stack_top[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             size_before = self.neighb_pool_pointer[part_id].size
 
             ''' locate the cell where the $obj particle$ is located '''

@@ -23,20 +23,20 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def clear_phase_acc(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.acc[part_id, phase_id] *= 0
                 # self.obj.phase.val_frac_tmp[part_id, phase_id] = self.obj.phase.val_frac[part_id, phase_id]
     
     @ti.kernel
     def add_phase_acc_gravity(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.acc[part_id, phase_id] += self.world.g_gravity[None]
                 
     @ti.kernel
     def phase_acc_2_phase_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.vel[part_id, phase_id] += self.obj.phase.acc[part_id, phase_id] * self.world.g_dt[None]
 
@@ -52,7 +52,7 @@ class Multiphase_solver(SPH_solver):
     
     @ti.kernel
     def release_negative(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.mixture[part_id].flag_negative_val_frac = 0
     
 
@@ -74,7 +74,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def clear_val_frac_tmp(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.val_frac_in[part_id, phase_id] = 0
                 self.obj.phase.val_frac_out[part_id, phase_id] = 0
@@ -110,7 +110,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def check_negative(self) -> ti.i32:
         all_positive = 1
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             if self.obj.mixture[part_id].flag_negative_val_frac == 0:
                 for phase_id in range(self.phase_num[None]):
                     if self.obj.phase.val_frac[part_id, phase_id] + self.obj.phase.val_frac_out[part_id, phase_id] + self.obj.phase.val_frac_in[part_id, phase_id] < 0:
@@ -120,19 +120,19 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def release_negative(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.mixture[part_id].flag_negative_val_frac = 0
 
     @ti.kernel
     def release_unused_drift_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             if not self.obj.mixture[part_id].flag_negative_val_frac == 0:
                 for phase_id in range(self.phase_num[None]):
                     self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def update_vel_from_phase_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.vel[part_id] *= 0
             for phase_id in range(self.phase_num[None]):
                 # if bigger_than_zero(self.obj.phase.val_frac[part_id, phase_id]):
@@ -144,7 +144,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def regularize_val_frac(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             frac_sum = 0.0
             for phase_id in range(self.phase_num[None]):
                 frac_sum += self.obj.phase.val_frac[part_id, phase_id]
@@ -153,7 +153,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def update_rest_density_and_mass(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             rest_density = 0
             for phase_id in range(self.phase_num[None]):
                 rest_density += self.obj.phase.val_frac[part_id, phase_id] * self.world.g_phase_rest_density[None][phase_id]
@@ -162,13 +162,13 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def update_phase_change(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.val_frac[part_id, phase_id] += (self.obj.phase.val_frac_in[part_id, phase_id] + self.obj.phase.val_frac_out[part_id, phase_id])
 
     @ti.kernel
     def update_color(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             color = ti.Vector([0.0, 0.0, 0.0])
             for phase_id in range(self.phase_num[None]):
                 for rgb_id in ti.static(range(3)):
@@ -197,7 +197,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def reset_lambda(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
                 self.obj.mixture.lamb[part_id] = 1.0
 
     @ti.func
@@ -232,7 +232,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def regularize_val_frac_lamb(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             frac_sum = 0.0
             for phase_id in range(self.phase_num[None]):
                 if self.obj.phase.val_frac[part_id, phase_id] < 0:
@@ -247,7 +247,7 @@ class Multiphase_solver(SPH_solver):
     def check_negative_lamb(self) -> ti.i32:
         all_positive = 1
         
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             this_negative = 0
 
             for phase_id in range(self.phase_num[None]):
@@ -273,7 +273,7 @@ class Multiphase_solver(SPH_solver):
     def statistics_linear_momentum_and_kinetic_energy(self):
         self.obj.statistics_linear_momentum[None] *= 0
         self.obj.statistics_kinetic_energy[None] *= 0
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.statistics_linear_momentum[None] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
                 self.obj.statistics_kinetic_energy[None] += 0.5 * self.obj.phase.vel[part_id, phase_id].dot(self.obj.phase.vel[part_id, phase_id]) * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
@@ -297,7 +297,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def compute_angular_momentum(self):
         self.obj.statistics_angular_momentum[None] *= 0
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             # vel = ti.Vector([self.obj.vel[part_id][0], self.obj.vel[part_id][1], 0.0])
             # pos = ti.Vector([self.obj.pos[part_id][0], self.obj.pos[part_id][1], 0.0])
             # self.obj.statistics_angular_momentum[None] += vel.cross(pos)*self.obj.mass[part_id]
@@ -313,7 +313,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def cfl_dt(self, cfl_factor: ti.f32, max_dt: ti.f32) -> ti.f32:
         max_vel = 0.0
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 ti.atomic_max(max_vel, ti.math.length(self.obj.phase.vel[part_id, phase_id]))
         new_dt = ti.min(max_dt, self.world.g_part_size[None] / max_vel * cfl_factor)
@@ -321,20 +321,20 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def recover_phase_vel_from_mixture(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def debug_zero_out_drift_vel(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.drift_vel[part_id, phase_id] *= 0
                 self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
 
     @ti.kernel
     def debug_zero_out_small_drift(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 if self.obj.phase.val_frac[part_id, phase_id] < INF_SMALL:
                     self.obj.phase.vel[part_id, phase_id] = self.obj.vel[part_id]
@@ -343,7 +343,7 @@ class Multiphase_solver(SPH_solver):
     def debug_draw_drift_vel(self, phase:ti.i32):
         max_vel = 0.0
         phase_id = phase
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             length = ti.math.length(self.obj.phase.drift_vel[part_id, phase_id])/5
             self.obj.rgb[part_id] = ti.Vector([length, length, length])
             # ti.atomic_max(max_vel, ti.math.length(self.obj.phase.drift_vel[part_id, phase_id]))
@@ -351,7 +351,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def debug_draw_empty_phase(self):
         fact = 0.99999
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             sum = 0.0
             for phase_id in range(self.phase_num[None]):
                 sum += self.obj.phase.val_frac[part_id, phase_id]
@@ -364,12 +364,12 @@ class Multiphase_solver(SPH_solver):
     
     @ti.kernel
     def debug_draw_lambda(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             self.obj.rgb[part_id] = ti.Vector([1, self.obj.mixture.lamb[part_id], self.obj.mixture.lamb[part_id]])
 
     @ti.kernel
     def debug_check_negative_phase(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 if self.obj.phase.val_frac[part_id, phase_id] < 0:
                     self.obj.rgb[part_id] = GREEN
@@ -380,7 +380,7 @@ class Multiphase_solver(SPH_solver):
         sum_phase_1 = 0.0
         sum_phase_2 = 0.0
         sum_phase_3 = 0.0
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             sum_phase_1 += self.obj.phase.val_frac[part_id, 0]
             sum_phase_2 += self.obj.phase.val_frac[part_id, 1]
             sum_phase_3 += self.obj.phase.val_frac[part_id, 2]
@@ -390,7 +390,7 @@ class Multiphase_solver(SPH_solver):
 
     @ti.kernel
     def debug_check_negative_phase(self):
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 if self.obj.phase.val_frac[part_id, phase_id] < 0:
                     self.obj.rgb[part_id] = GREEN
@@ -399,7 +399,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def debug_max_phase_vel(self) -> ti.f32:
         max_vel = 0.0
-        for part_id in range(self.obj.ti_get_stack_top()[None]):
+        for part_id in range(self.obj.tiGet_stack_top()[None]):
             for phase_id in range(self.phase_num[None]):
                 ti.atomic_max(max_vel, ti.math.length(self.obj.phase.vel[part_id, phase_id]))
         return max_vel

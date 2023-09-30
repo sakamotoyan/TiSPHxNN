@@ -34,7 +34,7 @@ class Cube_generator(Data_generator):
         self.generate_pos_based_on_span(temp_span)
         cube_pos_data = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.num)
         cube_pos_data.from_numpy(self.np_pos)
-        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.m_stack_top)
+        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.tiGet_stack_top()[None])
         return self.num
     
     def pushed_num_preview(self, factor: float = 1.0, span: float = -1):
@@ -70,9 +70,9 @@ class Cube_generator(Data_generator):
         return self.voxel_shape
 
     @ti.kernel
-    def ker_push_pos(self, cube_pos_data:ti.template(), pos_arr:ti.template(), stack_top:ti.template()):
+    def ker_push_pos(self, cube_pos_data:ti.template(), pos_arr:ti.template(), stack_top:ti.i32):
         for i in range(self.num):
-            pos_arr[stack_top[None]+i] = cube_pos_data[i]
+            pos_arr[stack_top+i] = cube_pos_data[i]
 
 
         
