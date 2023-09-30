@@ -20,15 +20,15 @@ class SPH_solver:
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
         for part_id in range(self.obj.tiGet_stack_top()[None]):
-            neighb_part_num = neighb_pool.neighb_obj_pointer[part_id, neighb_obj.ti_get_id()[None]].size
-            neighb_part_shift = neighb_pool.neighb_obj_pointer[part_id, neighb_obj.ti_get_id()[None]].begin
-            for neighb_part_iter in range(neighb_part_num):
-                neighb_part_id = neighb_pool.neighb_pool_container[neighb_part_shift].neighb_part_id
+            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.ti_get_id()[None])
+            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.ti_get_id()[None])
+            for neighb_part_iter in range(neighbPart_num):
+                neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
-                func(part_id, neighb_part_id, neighb_part_shift, neighb_pool, neighb_obj)
+                func(part_id, neighbPart_id, neighbPool_pointer, neighb_pool, neighb_obj)
                 ''' End of Code for Computation'''
                 ''' DO NOT FORGET TO COPY/PASE THE FOLLOWING CODE WHEN REUSING THIS FUNCTION '''
-                neighb_part_shift = neighb_pool.neighb_pool_container[neighb_part_shift].next
+                neighbPool_pointer = neighb_pool.tiGet_nextPointer(neighbPool_pointer)
     
     ''' [NOTICE] If sig_dim is decorated with @ti.func, and called in a kernel, 
     it will cause a computation error due to the use of math.pi. This bug is tested. '''
@@ -51,23 +51,23 @@ class SPH_solver:
 
     @ti.func
     def inloop_accumulate_density(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
         self.obj.sph[part_id].density += neighb_obj.mass[neighb_part_id] * cached_W
     
     @ti.func
     def inloop_accumulate_number_density(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
         self.obj.sph[part_id].density += self.obj.mass[part_id] * cached_W
 
     @ti.func
     def inloop_accumulate_compression_ratio(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
+        cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
         self.obj.sph[part_id].compression_ratio += neighb_obj.volume[neighb_part_id] * cached_W
     
     @ti.func
     def inloop_avg_velocity(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].W
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         self.obj.vel[part_id] += neighb_obj.vel[neighb_part_id] * neighb_obj.volume[neighb_part_id] * cached_W
 
     def sph_compute_density(self, neighb_pool):

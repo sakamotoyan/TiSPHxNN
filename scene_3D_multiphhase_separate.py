@@ -27,7 +27,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.1 
+part_size = 0.05 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -228,9 +228,6 @@ def loop_JL21():
     ''' [TIME START] neighb_search '''
     world.neighb_search()
     ''' [TIME END] neighb_search '''
-
-    # for i in range(fluid_part.get_stack_top()[None]):
-    #     print(fluid_part.m_neighb_search.neighb_pool.neighb_obj_pointer[i, 1].size)
 
     ''' compute number density '''
     ''' [TIME START] WCSPH Part 1 '''

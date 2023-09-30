@@ -32,8 +32,8 @@ class Implicit_mixture_solver(Multiphase_solver):
 
     @ti.func
     def inloop_add_phase_acc_vis(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
         if bigger_than_zero(cached_dist):
             v_ij = self.obj.vel[part_id] - neighb_obj.vel[neighb_part_id]
@@ -51,8 +51,8 @@ class Implicit_mixture_solver(Multiphase_solver):
     
     # @ti.func
     # def inloop_update_phase_change_from_all(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-    #     cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-    #     cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+    #     cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+    #     cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
     #     if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
     #         for phase_id in range(self.phase_num[None]):
     #             val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]

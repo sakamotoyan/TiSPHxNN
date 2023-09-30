@@ -108,35 +108,6 @@ class Neighb_pool:
             self.poolCachedAttr_xijNorm,
             self.poolCachedAttr_W,
             self.poolCachedAttr_gradW)
-           
-
-        self.neighb_pool_pointer = ti.Struct.field({
-            "begin":ti.i32,
-            "current":ti.i32,
-            "size":ti.i32,
-            }, shape=(self.part_num[None],)
-        )
-        self.neighb_obj_pointer = ti.Struct.field({
-            "begin":ti.i32,
-            "size":ti.i32,
-            }, shape=(self.part_num[None], self.max_neighb_obj_num[None])
-        )
-        self.neighb_pool_container = ti.Struct.field({
-            "neighb_part_id":ti.i32,
-            "neighb_obj_id":ti.i32,
-            "next":ti.i32,
-            }, shape=(self.max_neighb_part_num[None])
-        )
-
-        '''[DIY AREA]'''
-        ''' add your own data here'''
-        self.cached_neighb_attributes = ti.Struct.field({
-            "xij_norm":vecxf(self.obj.m_world.g_dim[None]),
-            "grad_W":vecxf(self.obj.m_world.g_dim[None]),
-            "dist":ti.f32,
-            "W":ti.f32,
-            }, shape=(self.max_neighb_part_num[None])
-        )
 
         self.neighb_pool_used_space = val_i(0)
         self.neighb_pool_size = ti.static(self.max_neighb_part_num)
@@ -145,12 +116,12 @@ class Neighb_pool:
     @ti.kernel
     def clear_pool(self):
         for part_id in range(self.obj.tiGet_stack_top()[None]):
-            self.neighb_pool_pointer[part_id].begin = -1
-            self.neighb_pool_pointer[part_id].current = -1
-            self.neighb_pool_pointer[part_id].size = 0
+            self.tiSet_partNeighbBeginingPointer(part_id, -1)
+            self.tiSet_partNeighbCurrnetPointer(part_id, -1) 
+            self.tiSet_partNeighbSize(part_id, 0)
             for obj_seq in range(self.max_neighb_obj_num[None]):
-                self.neighb_obj_pointer[part_id, obj_seq].begin = -1
-                self.neighb_obj_pointer[part_id, obj_seq].size = 0
+                self.tiSet_partNeighbObjBeginingPointer(part_id, obj_seq, -1)
+                self.tiSet_partNeighbObjSize(part_id, obj_seq, 0)
         self.neighb_pool_used_space[None] = 0
 
     ''' add a $neighb obj$ to the neighb search range'''
@@ -199,7 +170,7 @@ class Neighb_pool:
         neighb_search_template: ti.template(),  # Neighb_search_template class
     ):
         for part_id in range(self.obj.tiGet_stack_top()[None]):
-            size_before = self.neighb_pool_pointer[part_id].size
+            size_before = self.tiGet_partNeighbSize(part_id)
 
             ''' locate the cell where the $obj particle$ is located '''
             located_cell_vec = neighb_cell.compute_cell_vec(self.obj_pos[part_id])
@@ -224,12 +195,12 @@ class Neighb_pool:
                         
                         ''' [DIY AREA] '''
                         ''' You can add attributes you want to be pre-computed here '''
-                        self.cached_neighb_attributes[pointer].dist = dist
-                        self.cached_neighb_attributes[pointer].xij_norm = (self.obj_pos[part_id] - neighb_pos[neighb_part_id]) / dist
-                        self.cached_neighb_attributes[pointer].W = spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig)
-                        self.cached_neighb_attributes[pointer].grad_W = grad_spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig_inv_h) * self.cached_neighb_attributes[pointer].xij_norm
+                        self.poolCachedAttr_dist[pointer] = dist
+                        self.poolCachedAttr_xijNorm[pointer] = (self.obj_pos[part_id] - neighb_pos[neighb_part_id]) / dist
+                        self.poolCachedAttr_W[pointer] = spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig)
+                        self.poolCachedAttr_gradW[pointer] = grad_spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig_inv_h) * self.tiGet_cachedXijNorm(pointer)
 
-            self.neighb_obj_pointer[part_id, neighb_obj_id].size = self.neighb_pool_pointer[part_id].size - size_before
+            self.tiSet_partNeighbObjSize(part_id, neighb_obj_id, self.tiGet_partNeighbSize(part_id) - size_before)
 
     ''' insert a neighbouring particle into the linked list'''
     @ti.func
@@ -241,20 +212,86 @@ class Neighb_pool:
         dist: ti.f32,
     ) -> ti.i32:
         pointer = ti.atomic_add(self.neighb_pool_used_space[None], 1)
-        self.neighb_pool_pointer[part_id].size += 1
+        self.tiAdd_partNeighbSize(part_id, 1)
         
-        if self.neighb_pool_pointer[part_id].begin == -1:
-            self.neighb_pool_pointer[part_id].begin = pointer
+        if self.tiGet_partNeighbBeginingPointer(part_id) == -1:
+            self.tiSet_partNeighbBeginingPointer(part_id, pointer)
         else:
-            self.neighb_pool_container[self.neighb_pool_pointer[part_id].current].next = pointer
+            self.tiSet_nextPointer(self.tiGet_partNeighbCurrnetPointer(part_id), pointer)
         
-        if self.neighb_obj_pointer[part_id, neighb_obj_id].begin == -1:
-            self.neighb_obj_pointer[part_id, neighb_obj_id].begin = pointer
+        if self.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj_id) == -1:
+            self.tiSet_partNeighbObjBeginingPointer(part_id, neighb_obj_id, pointer)
 
-        self.neighb_pool_pointer[part_id].current = pointer
-        self.neighb_pool_container[pointer].neighb_obj_id = neighb_obj_id
-        self.neighb_pool_container[pointer].neighb_part_id = neighb_part_id
+        self.tiSet_partNeighbCurrnetPointer(part_id, pointer)
+        self.tiSet_neighbObjId(pointer, neighb_obj_id)
+        self.tiSet_neighbPartId(pointer, neighb_part_id)
 
         return pointer
+    
+    @ti.func
+    def tiGet_cachedDist(self, pointer: ti.i32):
+        return self.poolCachedAttr_dist[pointer]
+    @ti.func
+    def tiGet_cachedGradW(self, pointer: ti.i32):
+        return self.poolCachedAttr_gradW[pointer]
+    @ti.func
+    def tiGet_cachedW(self, pointer: ti.i32):
+        return self.poolCachedAttr_W[pointer]
+    @ti.func
+    def tiGet_cachedXijNorm(self, pointer: ti.i32):
+        return self.poolCachedAttr_xijNorm[pointer]
+    @ti.func
+    def tiGet_neighbPartId(self, pointer: ti.i32):
+        return self.poolContainer_neighbPartId[pointer]
+    @ti.func
+    def tiGet_neighbObjId(self, pointer: ti.i32):
+        return self.poolContainer_neighbObjId[pointer]
+    @ti.func
+    def tiGet_nextPointer(self, pointer: ti.i32):
+        return self.poolContainer_next[pointer]
+    @ti.func
+    def tiGet_partNeighbObjBeginingPointer(self, partId: ti.i32, neighbObj_id: ti.i32):
+        return self.partNeighbObj_begin[partId, neighbObj_id]
+    @ti.func
+    def tiGet_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32):
+        return self.partNeighbObj_size[partId, neighbObj_id]
+    @ti.func
+    def tiGet_partNeighbBeginingPointer(self, partId: ti.i32):
+        return self.partNeighb_begin[partId]
+    @ti.func
+    def tiGet_partNeighbSize(self, partId: ti.i32):
+        return self.partNeighb_size[partId]
+    @ti.func
+    def tiGet_partNeighbCurrnetPointer(self, partId: ti.i32):
+        return self.partNeighb_current[partId]
+
+    
+    @ti.func
+    def tiSet_neighbPartId(self, pointer: ti.i32, val: ti.i32):
+        self.poolContainer_neighbPartId[pointer] = val
+    @ti.func
+    def tiSet_neighbObjId(self, pointer: ti.i32, val: ti.i32):
+        self.poolContainer_neighbObjId[pointer] = val
+    @ti.func
+    def tiSet_nextPointer(self, pointer: ti.i32, val: ti.i32):
+        self.poolContainer_next[pointer] = val
+    @ti.func
+    def tiSet_partNeighbObjBeginingPointer(self, partId: ti.i32, neighbObj_id: ti.i32, val: ti.i32):
+        self.partNeighbObj_begin[partId, neighbObj_id] = val
+    @ti.func
+    def tiSet_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32, val: ti.i32):
+        self.partNeighbObj_size[partId, neighbObj_id] = val
+    @ti.func
+    def tiSet_partNeighbBeginingPointer(self, partId: ti.i32, val: ti.i32):
+        self.partNeighb_begin[partId] = val
+    @ti.func
+    def tiSet_partNeighbSize(self, partId: ti.i32, val: ti.i32):
+        self.partNeighb_size[partId] = val
+    @ti.func
+    def tiAdd_partNeighbSize(self, partId: ti.i32, val: ti.i32):
+        ti.atomic_add(self.partNeighb_size[partId], val)    
+    @ti.func
+    def tiSet_partNeighbCurrnetPointer(self, partId: ti.i32, val: ti.i32):
+        self.partNeighb_current[partId] = val
 '''#################### ABOVE IS THE CLASS FOR NEIGHBORHOOD SEASCHING ####################'''
 

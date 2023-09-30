@@ -28,37 +28,37 @@ class DF_solver(SPH_solver):
     
     @ti.func
     def inloop_compute_u_alpha_1_2(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].alpha_1 += neighb_obj.mass[neighb_part_id] * cached_grad_W
             self.obj.sph_df[part_id].alpha_2 += cached_grad_W.dot(cached_grad_W)
 
     @ti.func
     def inloop_accumulate_alpha_1(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].alpha_1 += neighb_obj.mass[neighb_part_id] * cached_grad_W
 
     @ti.func
     def inloop_accumulate_beta_1(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].alpha_1 += neighb_obj.volume[neighb_part_id] * cached_grad_W
 
     @ti.func
     def inloop_accumulate_alpha_2(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].alpha_2 += cached_grad_W.dot(cached_grad_W) * neighb_obj.mass[neighb_part_id]
 
     @ti.func
     def inloop_accumulate_beta_2(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].alpha_2 += cached_grad_W.dot(cached_grad_W) * neighb_obj.volume[neighb_part_id] * neighb_obj.volume[neighb_part_id] / neighb_obj.mass[neighb_part_id]
 
@@ -93,22 +93,22 @@ class DF_solver(SPH_solver):
 
     @ti.func
     def inloop_update_delta_density_from_vel_adv(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].delta_density += cached_grad_W.dot(self.obj.sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.mass[neighb_part_id] * self.dt[None]
 
     @ti.func
     def inloop_update_delta_compression_ratio_from_vel_adv(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].delta_compression_ratio += cached_grad_W.dot(self.obj.sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.volume[neighb_part_id] * self.dt[None]
 
     @ti.func
     def inloop_update_vel_adv_from_alpha(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].vel_adv += self.neg_inv_dt[None] * cached_grad_W / self.obj.mass[part_id] \
                 * ((self.obj.sph_df[part_id].delta_density * neighb_obj.mass[neighb_part_id] / self.obj.sph_df[part_id].alpha) \
@@ -150,8 +150,8 @@ class DF_solver(SPH_solver):
 
     @ti.func
     def inloop_df_update_vel_adv_from_kappa_incomp(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].vel_adv -= self.dt[None] * \
                 (neighb_obj.mass[neighb_part_id] / self.obj.mass[part_id] * self.obj.volume[part_id] * self.obj.sph_df[part_id].kappa_incomp + 
@@ -160,8 +160,8 @@ class DF_solver(SPH_solver):
     
     @ti.func
     def inloop_df_update_vel_adv_from_kappa_div(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].vel_adv -= self.dt[None] * \
                 (neighb_obj.mass[neighb_part_id] / self.obj.mass[part_id] * self.obj.volume[part_id] * self.obj.sph_df[part_id].kappa_div + 
@@ -170,8 +170,8 @@ class DF_solver(SPH_solver):
 
     @ti.func
     def inloop_vf_update_vel_adv_from_kappa_incomp(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].vel_adv -= self.dt[None] * self.obj.volume[part_id] * neighb_obj.volume[neighb_part_id] / self.obj.mass[part_id] * \
             (self.obj.sph_df[part_id].kappa_incomp + neighb_obj.sph_df[neighb_part_id].kappa_incomp) * \
@@ -179,8 +179,8 @@ class DF_solver(SPH_solver):
 
     @ti.func
     def inloop_vf_update_vel_adv_from_kappa_div(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             self.obj.sph_df[part_id].vel_adv -= self.dt[None] * self.obj.volume[part_id] * neighb_obj.volume[neighb_part_id] / self.obj.mass[part_id] * \
             (self.obj.sph_df[part_id].kappa_div + neighb_obj.sph_df[neighb_part_id].kappa_div) * \

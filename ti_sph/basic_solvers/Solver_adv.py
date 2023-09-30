@@ -30,8 +30,8 @@ class Adv_slover:
     
     @ti.func
     def inloop_accumulate_vis_acc(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             k_vis = (self.obj.k_vis[part_id] + neighb_obj.k_vis[neighb_part_id]) / 2
             A_ij = self.obj.vel[part_id] - neighb_obj.vel[neighb_part_id]

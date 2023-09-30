@@ -42,8 +42,8 @@ class Multiphase_solver(SPH_solver):
 
     @ti.func
     def inloop_update_phase_change(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.val_frac_tmp[part_id, phase_id] -= self.dt[None] * neighb_obj.volume[neighb_part_id] * \
@@ -81,8 +81,8 @@ class Multiphase_solver(SPH_solver):
 
     @ti.func
     def inloop_update_phase_change_from_drift(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
                 val_frac_change = -self.dt[None] * neighb_obj.volume[neighb_part_id] * \
@@ -95,8 +95,8 @@ class Multiphase_solver(SPH_solver):
 
     @ti.func
     def inloop_update_phase_change_from_diffuse(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
                 val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
@@ -202,8 +202,8 @@ class Multiphase_solver(SPH_solver):
 
     @ti.func
     def inloop_update_phase_change_from_drift_lamb(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             lamb_ij = ti.min(self.obj.mixture.lamb[part_id], neighb_obj.mixture.lamb[neighb_part_id])
             for phase_id in range(self.phase_num[None]):
@@ -217,8 +217,8 @@ class Multiphase_solver(SPH_solver):
 
     @ti.func
     def inloop_update_phase_change_from_diffuse_lamb(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             lamb_ij = ti.min(self.obj.mixture.lamb[part_id], neighb_obj.mixture.lamb[neighb_part_id])
             for phase_id in range(self.phase_num[None]):
@@ -287,8 +287,8 @@ class Multiphase_solver(SPH_solver):
     
     @ti.func
     def inloop_compute_angular_momentum(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
-        cached_dist = neighb_pool.cached_neighb_attributes[neighb_part_shift].dist
-        cached_grad_W = neighb_pool.cached_neighb_attributes[neighb_part_shift].grad_W
+        cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
             for phase_id in range(self.phase_num[None]):
                 self.obj.phase.acc[part_id, phase_id] += neighb_obj.volume[neighb_part_id] / 2 * \
