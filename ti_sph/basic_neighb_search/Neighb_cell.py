@@ -14,10 +14,10 @@ class Neighb_cell:
     ):
         # get all parameters from obj
         self.obj = obj
-        self.dim = ti.static(obj.m_world.g_dim)
-        self.cell_size = obj.m_world.support_radius
-        self.lb = obj.m_world.g_space_lb
-        self.rt = obj.m_world.g_space_rt
+        self.dim = ti.static(obj.get_world().g_dim)
+        self.cell_size = obj.get_world().support_radius
+        self.lb = obj.get_world().g_space_lb
+        self.rt = obj.get_world().g_space_rt
         self.part_num = obj.get_part_num()
         self.stack_top = obj.get_stack_top()
         self.pos = obj.pos

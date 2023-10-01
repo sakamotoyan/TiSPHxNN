@@ -20,8 +20,8 @@ class SPH_solver:
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
         for part_id in range(self.obj.tiGet_stack_top()[None]):
-            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.ti_get_id()[None])
-            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.ti_get_id()[None])
+            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGet_id()[None])
+            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGet_id()[None])
             for neighb_part_iter in range(neighbPart_num):
                 neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
@@ -93,3 +93,7 @@ class SPH_solver:
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Average Velocity '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)
+    
+    ''' get&set '''
+    def getObj(self):
+        return self.obj

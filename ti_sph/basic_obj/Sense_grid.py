@@ -31,7 +31,7 @@ class Sense_grid(Particle):
                  grid_center: ti.template() = DEFAULT, # vector<dim, float> FIXED_RES
                  ):
         # Reading parameters
-        self.m_world = world
+        self.set_world(world) 
         
         self.m_neighb_pool_size = neighb_pool_size
         self.m_cell_size = cell_size
@@ -73,7 +73,7 @@ class Sense_grid(Particle):
         self.node_num = val_i(self.generator.pushed_num_preview(span=self.get_cell_size()[None]))
         
         super().__init__(part_num=self.get_node_num()[None], part_size=self.get_part_size(), is_dynamic=False)
-        self.m_world = world
+        self.set_world(world)
 
         self.add_array("pos", vecxf(world.g_dim[None]).field())
         self.add_array("size", ti.field(ti.f32))

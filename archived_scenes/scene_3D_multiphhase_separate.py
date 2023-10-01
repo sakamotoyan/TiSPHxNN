@@ -1,6 +1,5 @@
 import taichi as ti
-# from ti_sph import *
-import ti_sph as tsph
+from ..ti_sph import *
 from template_part import part_template
 import time
 import sys
@@ -39,7 +38,7 @@ elif solver == SOLVER_JL21:
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
-Cd = 0.0 
+Cd = 1.0 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
 kd = 0.0
 flag_strat_drift = True
@@ -54,11 +53,11 @@ world.set_part_size(part_size)
 # set the max time step size
 world.set_dt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
-world.set_multiphase(phase_num,[tsph.vec3f(0.8,0.2,0),tsph.vec3f(0,0.8,0.2),tsph.vec3f(0,0,1)],[500,500,1000]) 
+world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],[500,500,1000]) 
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-pool_data = tsph.Squared_pool_3D_data(container_height=3, container_size=4, fluid_height=2, span=world.g_part_size[None], layer = 3)
+pool_data = Squared_pool_3D_data(container_height=3, container_size=4, fluid_height=2, span=world.g_part_size[None], layer = 3)
 # particle number of fluid/boundary
 fluid_part_num = pool_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
@@ -74,10 +73,10 @@ fluid_part = world.add_part_obj(part_num=fluid_part_num, size=world.g_part_size,
 fluid_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
-fluid_part.open_stack(tsph.val_i(fluid_part_num)) # open the stack to feed data
+fluid_part.open_stack(val_i(fluid_part_num)) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the position data
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, tsph.val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
@@ -88,12 +87,12 @@ bound_part = world.add_part_obj(part_num=bound_part_num, size=world.g_part_size,
 bound_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
-bound_part.open_stack(tsph.val_i(bound_part_num))
+bound_part.open_stack(val_i(bound_part_num))
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, tsph.val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, tsph.val_f(1000*bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.rest_density, tsph.val_f(1000))
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(1000*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.rest_density, val_f(1000))
 bound_part.close_stack()
 
 
@@ -301,7 +300,7 @@ def vis_run(loop):
     loop_count = 0
     flag_write_img = False
 
-    gui = tsph.Gui3d()
+    gui = Gui3d()
     while gui.window.running:
 
         gui.monitor_listen()

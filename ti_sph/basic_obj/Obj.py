@@ -6,15 +6,15 @@ class Obj:
     def __init__(self, is_dynamic: bool = True) -> None:
         self.m_is_dynamic = is_dynamic
 
-    def set_id(self, id):
-        self.m_id = val_i(id)
+    # def set_id(self, id):
+    #     self.m_id = val_i(id)
 
-    def set_world(self, world):
-        self.m_world = world
+    # def set_world(self, world):
+    #     self.m_world = world
 
-    def get_id(self):
-        return self.m_id
+    # def get_id(self):
+    #     return self.m_id
 
-    @ti.func
-    def ti_get_id(self):
-        return self.m_id
+    # @ti.func
+    # def ti_get_id(self):
+    #     return self.m_id

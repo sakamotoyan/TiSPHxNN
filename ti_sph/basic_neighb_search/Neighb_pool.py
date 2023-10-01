@@ -63,13 +63,13 @@ class Neighb_pool:
         self.part_num = obj.get_part_num()
         self.obj_stack_top = self.obj.get_stack_top()
         if max_neighb_part_num == 0:
-            self.max_neighb_part_num = val_i(obj.get_part_num()[None] * self.obj.m_world.g_avg_neighb_part_num[None])
+            self.max_neighb_part_num = val_i(obj.get_part_num()[None] * self.obj.get_world().g_avg_neighb_part_num[None])
         else:
             self.max_neighb_part_num = val_i(max_neighb_part_num[None])
         # print('debug part_num: ', obj.get_part_num()[None])
         # print('debug max_neighb_part_num: ', self.max_neighb_part_num[None])
-        self.max_neighb_obj_num = val_i(self.obj.m_world.g_obj_num[None])
-        self.dim = self.obj.m_world.g_dim
+        self.max_neighb_obj_num = val_i(self.obj.get_world().g_obj_num[None])
+        self.dim = self.obj.get_world().g_dim
 
         self.neighb_obj_list = []  # Particle class
         self.neighb_obj_pos_list = []  # ti.Vector.field(dim, ti.f32, neighb_obj_part_num)
@@ -135,7 +135,7 @@ class Neighb_pool:
             raise Exception("neighb_obj already in list")
         if neighb_obj.m_neighb_search.neighb_cell in self.neighb_cell_list:
             raise Exception("neighb_cell already in list")
-        if self.obj.m_world != neighb_obj.m_world:
+        if self.obj.get_world() != neighb_obj.get_world():
             raise Exception("two obj are not in the same world")
 
         ''' append to lists '''
@@ -146,7 +146,7 @@ class Neighb_pool:
 
         ''' generate search template '''
         search_cell_range = int(ti.ceil(search_range[None] / neighb_obj.m_neighb_search.neighb_cell.cell_size[None]))
-        neighb_search_template = Neighb_search_template(self.obj.m_world.g_dim[None], search_cell_range)
+        neighb_search_template = Neighb_search_template(self.obj.get_world().g_dim[None], search_cell_range)
         self.m_neighb_search_template_list.append(neighb_search_template)
 
     ''' get a obj, neighb_obj attributes pair  one at a time, as inputs to register_a_neighbour() '''
