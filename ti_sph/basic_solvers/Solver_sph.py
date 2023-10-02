@@ -20,7 +20,7 @@ class SPH_solver(Solver):
 
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
-        for part_id in range(self.obj.tiGetObjStackTop()[None]):
+        for part_id in range(self.tiGetObj().tiGetObjStackTop()[None]):
             neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetObjId()[None])
             neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetObjId()[None])
             for neighb_part_iter in range(neighbPart_num):
@@ -46,51 +46,50 @@ class SPH_solver(Solver):
     @ti.kernel
     def compute_sig(self, sig_dim: ti.f32):
         for part_id in range(self.obj.tiGetObjStackTop()[None]):
-            self.obj.sph[part_id].h = self.obj.size[part_id] * 2
-            self.obj.sph[part_id].sig = sig_dim / ti.pow(self.obj.sph[part_id].h, self.dim[None])
-            self.obj.sph[part_id].sig_inv_h = self.obj.sph[part_id].sig / self.obj.sph[part_id].h
+            self.tiGetObj().tiSetSphH(part_id, self.tiGetObj().tiGetPartSize(part_id) * 2)
+            self.tiGetObj().tiSetSphSig(part_id, sig_dim / ti.pow(self.tiGetObj().tiGetSphH(part_id), self.dim[None]))
+            self.tiGetObj().tiSetSphSigInvH(part_id, self.tiGetObj().tiGetSphSig(part_id) / self.tiGetObj().tiGetSphH(part_id))
 
     @ti.func
     def inloop_accumulate_density(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
-        self.obj.sph[part_id].density += neighb_obj.mass[neighb_part_id] * cached_W
+        self.tiGetObj().tiAddSphDensity(part_id, neighb_obj.tiGetMass(neighb_part_id) * cached_W)
     
     @ti.func
     def inloop_accumulate_number_density(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
-        self.obj.sph[part_id].density += self.obj.mass[part_id] * cached_W
+        self.tiGetObj().tiAddSphDensity(part_id, self.tiGetObj().tiGetMass(part_id) * cached_W)
 
     @ti.func
     def inloop_accumulate_compression_ratio(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
-        self.obj.sph[part_id].compression_ratio += neighb_obj.volume[neighb_part_id] * cached_W
+        self.tiGetObj().tiAddSphCompressionRatio(part_id, neighb_obj.tiGetVolume(neighb_part_id) * cached_W)
     
     @ti.func
     def inloop_avg_velocity(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
-        cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
-        self.obj.vel[part_id] += neighb_obj.vel[neighb_part_id] * neighb_obj.volume[neighb_part_id] * cached_W
+        self.tiGetObj().tiAddVel(part_id, neighb_obj.tiGetVel(neighb_part_id) * neighb_obj.tiGetVolume(neighb_part_id) * cached_W)
 
     def sph_compute_density(self, neighb_pool):
-        self.obj.clear(self.obj.sph.density)
+        self.getObj().clear(self.getObj().getSphDensityArr())
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_density)
     
     def sph_compute_number_density(self, neighb_pool):
-        self.obj.clear(self.obj.sph.density)
+        self.getObj().clear(self.getObj().getSphDensityArr())
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_number_density)
     
     def sph_compute_compression_ratio(self, neighb_pool):
-        self.obj.clear(self.obj.sph.compression_ratio)
+        self.getObj().clear(self.getObj().getSphCompressionRatioArr())
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Compression Ratio '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_compression_ratio)
     
     def sph_avg_velocity(self, neighb_pool):
-        self.obj.clear(self.obj.vel)
+        self.getObj().clear(self.getObj().getVelArr())
         for neighb_obj in neighb_pool.neighb_obj_list:
             ''' Compute Average Velocity '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)

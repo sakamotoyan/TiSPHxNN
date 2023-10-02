@@ -18,7 +18,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_ISM # choose the solver
+solver = SOLVER_JL21 # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -28,7 +28,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.08 
+part_size = 0.05 
 # number of phases
 phase_num = 3 
 # max time step size

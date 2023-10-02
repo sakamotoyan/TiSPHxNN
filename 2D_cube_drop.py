@@ -27,7 +27,7 @@ fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-2.5, 0.5
 fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 print("fluid_part_num", fluid_part_num)
 fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
-fluid_part.instantiate_from_template(part_template)
+fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part.open_stack(val_i(fluid_cube_data_1.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
@@ -52,7 +52,7 @@ fluid_part.close_stack()
 box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
 bound_rest_density = val_f(1000)
 bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, is_dynamic=False)
-bound_part.instantiate_from_template(part_template)
+bound_part.instantiate_from_template(part_template, world)
 bound_part.open_stack(val_i(box_data.num))
 bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
@@ -64,7 +64,7 @@ bound_part.close_stack()
 sense_cell_size = val_f(0.1)
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(64,64),grid_center=vec2f(0,0))
 sense_grid_part = world.add_part_obj(part_num=sense_cube_data.num, size=sense_cell_size, is_dynamic=False)
-sense_grid_part.instantiate_from_template(grid_template)
+sense_grid_part.instantiate_from_template(grid_template, world)
 sense_grid_part.open_stack(val_i(sense_cube_data.num))
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.pos, sense_cube_data.pos)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.node_index, sense_cube_data.index)
@@ -127,7 +127,7 @@ def loop():
 
     world.clear_acc()
     world.add_acc_gravity()
-    world.acc2vel_adv()
+    world.acc2vel()
 
     world.step_df_incomp()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
@@ -163,11 +163,11 @@ def run(loop):
         
         if gui.op_refresh_window:
             gui.scene_setup()
-            if gui.show_bound:
-                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
-            else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
+            # if gui.show_bound:
+            #     gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
+            #     gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
+            # else:
+            gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 

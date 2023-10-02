@@ -67,6 +67,8 @@ class Mod_GetAndSet:
         return self.pos
     def getVel(self, i):
         return self.vel[i]
+    def getVelArr(self):
+        return self.vel
     def getVelAdv(self, i):
         return self.vel_adv[i]
     def getAcc(self, i):
@@ -98,6 +100,12 @@ class Mod_GetAndSet:
     @ti.func
     def tiGetVel(self, i):
         return self.vel[i]
+    @ti.func
+    def tiGetVelArr(self):
+        return self.vel
+    @ti.func
+    def tiAddVel(self, i, vel):
+        self.vel[i] += vel
     @ti.func
     def tiGetVelAdv(self, i):
         return self.vel_adv[i]
@@ -140,8 +148,12 @@ class Mod_GetAndSet:
         return self.sph[i].sig_inv_h
     def getSphDensity(self, i):
         return self.sph[i].density
+    def getSphDensityArr(self):
+        return self.sph.density
     def getSphCompressionRatio(self, i):
         return self.sph[i].compression_ratio
+    def getSphCompressionRatioArr(self):
+        return self.sph.compression_ratio
     def getSphPressure(self, i):
         return self.sph[i].pressure
     def getSphPressureForce(self, i):
@@ -174,55 +186,121 @@ class Mod_GetAndSet:
     def tiGetSphH(self, i):
         return self.sph[i].h
     @ti.func
+    def tiSetSphH(self, i, h):
+        self.sph[i].h = h
+    @ti.func
     def tiGetSphSig(self, i):
         return self.sph[i].sig
+    @ti.func
+    def tiSetSphSig(self, i, sig):
+        self.sph[i].sig = sig
     @ti.func
     def tiGetSphSigInvH(self, i):
         return self.sph[i].sig_inv_h
     @ti.func
+    def tiSetSphSigInvH(self, i, sig_inv_h):
+        self.sph[i].sig_inv_h = sig_inv_h
+    @ti.func
     def tiGetSphDensity(self, i):
         return self.sph[i].density
+    @ti.func
+    def tiGetSphDensityArr(self):
+        return self.sph.density
+    @ti.func
+    def tiSetSphDensity(self, i, density):
+        self.sph[i].density = density
+    @ti.func
+    def tiAddSphDensity(self, i, density):
+        self.sph[i].density += density
     @ti.func
     def tiGetSphCompressionRatio(self, i):
         return self.sph[i].compression_ratio
     @ti.func
+    def tiGetSphCompressionRatioArr(self):
+        return self.sph.compression_ratio
+    @ti.func
+    def tiSetSphCompressionRatio(self, i, compression_ratio):
+        self.sph[i].compression_ratio = compression_ratio
+    @ti.func
+    def tiAddSphCompressionRatio(self, i, compression_ratio):
+        self.sph[i].compression_ratio += compression_ratio
+    @ti.func
     def tiGetSphPressure(self, i):
         return self.sph[i].pressure
+    @ti.func
+    def tiSetSphPressure(self, i, pressure):
+        self.sph[i].pressure = pressure
     @ti.func
     def tiGetSphPressureForce(self, i):
         return self.sph[i].pressure_force
     @ti.func
+    def tiSetSphPressureForce(self, i, pressure_force):
+        self.sph[i].pressure_force = pressure_force
+    @ti.func
     def tiGetSphViscosityForce(self, i):
         return self.sph[i].viscosity_force
+    @ti.func
+    def tiSetSphViscosityForce(self, i, viscosity_force):
+        self.sph[i].viscosity_force = viscosity_force
     @ti.func
     def tiGetSphGravityForce(self, i):
         return self.sph[i].gravity_force
     @ti.func
+    def tiSetSphGravityForce(self, i, gravity_force):
+        self.sph[i].gravity_force = gravity_force
+    @ti.func
     def tiGetSphAlpha1(self, i):
         return self.sph_df[i].alpha_1
+    @ti.func
+    def tiSetSphAlpha1(self, i, alpha_1):
+        self.sph_df[i].alpha_1 = alpha_1
     @ti.func
     def tiGetSphAlpha2(self, i):
         return self.sph_df[i].alpha_2
     @ti.func
+    def tiSetSphAlpha2(self, i, alpha_2):
+        self.sph_df[i].alpha_2 = alpha_2
+    @ti.func
     def tiGetSphAlpha(self, i):
         return self.sph_df[i].alpha
+    @ti.func
+    def tiSetSphAlpha(self, i, alpha):
+        self.sph_df[i].alpha = alpha
     @ti.func
     def tiGetSphKappaIncomp(self, i):
         return self.sph_df[i].kappa_incomp
     @ti.func
+    def tiSetSphKappaIncomp(self, i, kappa_incomp):
+        self.sph_df[i].kappa_incomp = kappa_incomp
+    @ti.func
     def tiGetSphKappaDiv(self, i):
         return self.sph_df[i].kappa_div
+    @ti.func
+    def tiSetSphKappaDiv(self, i, kappa_div):
+        self.sph_df[i].kappa_div = kappa_div
     @ti.func
     def tiGetSphDeltaDensity(self, i):
         return self.sph_df[i].delta_density
     @ti.func
+    def tiSetSphDeltaDensity(self, i, delta_density):
+        self.sph_df[i].delta_density = delta_density
+    @ti.func
     def tiGetSphDeltaCompressionRatio(self, i):
         return self.sph_df[i].delta_compression_ratio
+    @ti.func
+    def tiSetSphDeltaCompressionRatio(self, i, delta_compression_ratio):
+        self.sph_df[i].delta_compression_ratio = delta_compression_ratio
     @ti.func
     def tiGetSphVelAdv(self, i):
         return self.sph_df[i].vel_adv
     @ti.func
+    def tiSetSphVelAdv(self, i, vel_adv):
+        self.sph_df[i].vel_adv = vel_adv
+    @ti.func
     def tiGetSphB(self, i):
         return self.sph_wc[i].B
+    @ti.func
+    def tiSetSphB(self, i, B):
+        self.sph_wc[i].B = B
     
     
