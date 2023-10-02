@@ -29,9 +29,9 @@ fluid_part_1.instantiate_from_template(part_template)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part_1.open_stack(val_i(fluid_cube_data.num))
 fluid_part_1.fill_open_stack_with_nparr(fluid_part_1.pos, fluid_cube_data.pos)
-fluid_part_1.fill_open_stack_with_val(fluid_part_1.size, fluid_part_1.get_part_size())
-fluid_part_1.fill_open_stack_with_val(fluid_part_1.volume, val_f(fluid_part_1.get_part_size()[None]**world.g_dim[None]))
-fluid_part_1.fill_open_stack_with_val(fluid_part_1.mass, val_f(fluid_rest_density[None]*fluid_part_1.get_part_size()[None]**world.g_dim[None]))
+fluid_part_1.fill_open_stack_with_val(fluid_part_1.size, fluid_part_1.getObjPartSize())
+fluid_part_1.fill_open_stack_with_val(fluid_part_1.volume, val_f(fluid_part_1.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part_1.fill_open_stack_with_val(fluid_part_1.mass, val_f(fluid_rest_density[None]*fluid_part_1.getObjPartSize()[None]**world.g_dim[None]))
 fluid_part_1.fill_open_stack_with_val(fluid_part_1.rest_density, fluid_rest_density)
 fluid_part_1.close_stack()
 
@@ -45,9 +45,9 @@ fluid_part_2.instantiate_from_template(part_template)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part_2.open_stack(val_i(fluid_cube_data.num))
 fluid_part_2.fill_open_stack_with_nparr(fluid_part_2.pos, fluid_cube_data.pos)
-fluid_part_2.fill_open_stack_with_val(fluid_part_2.size, fluid_part_2.get_part_size())
-fluid_part_2.fill_open_stack_with_val(fluid_part_2.volume, val_f(fluid_part_2.get_part_size()[None]**world.g_dim[None]))
-fluid_part_2.fill_open_stack_with_val(fluid_part_2.mass, val_f(fluid_rest_density[None]*fluid_part_2.get_part_size()[None]**world.g_dim[None]))
+fluid_part_2.fill_open_stack_with_val(fluid_part_2.size, fluid_part_2.getObjPartSize())
+fluid_part_2.fill_open_stack_with_val(fluid_part_2.volume, val_f(fluid_part_2.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part_2.fill_open_stack_with_val(fluid_part_2.mass, val_f(fluid_rest_density[None]*fluid_part_2.getObjPartSize()[None]**world.g_dim[None]))
 fluid_part_2.fill_open_stack_with_val(fluid_part_2.rest_density, fluid_rest_density)
 fluid_part_2.close_stack()
 
@@ -60,9 +60,9 @@ bound_part = world.add_part_obj(part_num=box_data.num, size=world.g_part_size, i
 bound_part.instantiate_from_template(part_template)
 bound_part.open_stack(val_i(box_data.num))
 bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.getObjPartSize()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 bound_part.close_stack()
 
@@ -75,8 +75,8 @@ sense_grid_part.instantiate_from_template(grid_template)
 sense_grid_part.open_stack(val_i(sense_cube_data.num))
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.pos, sense_cube_data.pos)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.node_index, sense_cube_data.index)
-sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.get_part_size())
-sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, val_f(sense_grid_part.get_part_size()[None]**world.g_dim[None]))
+sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.getObjPartSize())
+sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, val_f(sense_grid_part.getObjPartSize()[None]**world.g_dim[None]))
 sense_grid_part.close_stack()
 # print(sense_cube_data.index.size)
 # np.save("./output/pos_np.npy", sense_cube_data.pos)
@@ -96,7 +96,7 @@ neighb_list=[fluid_part_1, fluid_part_2, bound_part]
 fluid_part_1.add_module_neighb_search()
 fluid_part_2.add_module_neighb_search()
 bound_part.add_module_neighb_search()
-sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part_1.get_part_num()[None]*32))
+sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part_1.getObjPartNum()[None]*32))
 
 fluid_part_1.add_neighb_objs(neighb_list)
 fluid_part_2.add_neighb_objs(neighb_list)
@@ -179,11 +179,11 @@ def run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             if gui.show_bound:
-                gui.scene_add_parts(obj_pos=fluid_part_1.pos, obj_color=(1,0.5,0),index_count=fluid_part_1.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=fluid_part_2.pos, obj_color=(0,0.5,1),index_count=fluid_part_2.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=fluid_part_1.pos, obj_color=(1,0.5,0),index_count=fluid_part_1.getObjStackTop()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=fluid_part_2.pos, obj_color=(0,0.5,1),index_count=fluid_part_2.getObjStackTop()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
             else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
+                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 

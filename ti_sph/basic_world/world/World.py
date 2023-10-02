@@ -71,8 +71,8 @@ class World:
     def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
         obj = Particle(part_num, size, is_dynamic)
         self.part_obj_list.append(obj)
-        obj.set_id(val_i(self.part_obj_list.index(obj)))
-        obj.set_world(self)
+        obj.setObjId(val_i(self.part_obj_list.index(obj)))
+        obj.setObjWorld(self)
         return obj
     
     def init_modules(self):

@@ -63,30 +63,30 @@ class DF_solver(SPH_solver):
 
     @ti.kernel
     def ker_compute_alpha(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].alpha = self.obj.sph_df[part_id].alpha_1.dot(self.obj.sph_df[part_id].alpha_1) / self.obj.mass[part_id] + self.obj.sph_df[part_id].alpha_2
             if not bigger_than_zero(self.obj.sph_df[part_id].alpha):
                 self.obj.sph_df[part_id].alpha = make_bigger_than_zero()
 
     @ti.kernel
     def compute_delta_density(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].delta_density = self.obj.sph[part_id].density - self.obj.rest_density[part_id]
     
     @ti.kernel
     def compute_delta_compression_ratio(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].delta_compression_ratio = self.obj.sph[part_id].compression_ratio - 1
     
     @ti.kernel
     def ReLU_delta_density(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             if self.obj.sph_df[part_id].delta_density < 0:
                 self.obj.sph_df[part_id].delta_density = 0
 
     @ti.kernel
     def ReLU_delta_compression_ratio(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             if self.obj.sph_df[part_id].delta_compression_ratio < 0:
                 self.obj.sph_df[part_id].delta_compression_ratio = 0
 
@@ -115,36 +115,36 @@ class DF_solver(SPH_solver):
 
     @ti.kernel
     def compute_kappa_incomp_from_delta_density(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_incomp = self.obj.sph_df[part_id].delta_density / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
             self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_incomp
     
     @ti.kernel
     def compute_kappa_incomp_from_delta_compression_ratio(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_incomp = self.obj.sph_df[part_id].delta_compression_ratio / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
             self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_incomp
 
     @ti.kernel
     def log_kappa_incomp(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_incomp = self.obj.sph_df[part_id].alpha_2
 
     @ti.kernel
     def compute_kappa_div_from_delta_density(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_div = self.obj.sph_df[part_id].delta_density / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
             self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_div
 
     @ti.kernel
     def compute_kappa_div_from_delta_compression_ratio(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_div = self.obj.sph_df[part_id].delta_compression_ratio / self.obj.sph_df[part_id].alpha * self.inv_dt2[None] / self.obj.volume[part_id]
             self.obj.sph_df[part_id].alpha_2 += self.obj.sph_df[part_id].kappa_div
 
     @ti.kernel
     def log_kappa_div(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].kappa_div = self.obj.sph_df[part_id].alpha_2
 
     @ti.func
@@ -188,35 +188,35 @@ class DF_solver(SPH_solver):
     @ti.kernel 
     def update_df_compressible_ratio(self):
         self.compressible_ratio[None] = 0
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.compressible_ratio[None] += self.obj.sph_df[part_id].delta_density / self.obj.rest_density[part_id]
-        self.compressible_ratio[None] /= self.obj.tiGet_stack_top()[None]
+        self.compressible_ratio[None] /= self.obj.tiGetObjStackTop()[None]
 
     @ti.kernel 
     def update_vf_compressible_ratio(self):
         self.compressible_ratio[None] = 0
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.compressible_ratio[None] += self.obj.sph_df[part_id].delta_compression_ratio
-        self.compressible_ratio[None] /= self.obj.tiGet_stack_top()[None]
+        self.compressible_ratio[None] /= self.obj.tiGetObjStackTop()[None]
 
     @ti.kernel
     def update_vel(self, out_vel: ti.template()):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             out_vel[part_id] = self.obj.sph_df[part_id].vel_adv
 
     @ti.kernel
     def get_vel_adv(self, in_vel_adv: ti.template()):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph_df[part_id].vel_adv = in_vel_adv[part_id]
 
     # @ti.kernel
     # def get_acc_pressure_1of2(self):
-    #     for part_id in range(self.obj.tiGet_stack_top()[None]):
+    #     for part_id in range(self.obj.tiGetObjStackTop()[None]):
     #         self.obj.mixture[part_id].acc_pressure = self.obj.vel[part_id]
     
     @ti.kernel
     def get_acc_pressure(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.mixture[part_id].acc_pressure = (self.obj.sph_df[part_id].vel_adv - self.obj.vel[part_id]) / self.dt[None]
 
     def compute_alpha(self, neighb_pool:ti.template()):

@@ -15,17 +15,17 @@ class Adv_slover:
     
     @ti.kernel
     def clear_acc(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.acc[i] = self.clean_acc
 
     @ti.kernel
     def add_gravity_acc(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.acc[i] += self.gravity[None]
     
     @ti.kernel
     def add_vis_acc(self, kinetic_vis_coeff: ti.template()):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.acc[i] += 0
     
     @ti.func
@@ -40,32 +40,32 @@ class Adv_slover:
     
     @ti.kernel
     def add_acc_gravity(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.acc[i] += self.gravity[None]
 
     @ti.kernel
     def acc2vel_adv(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.vel_adv[i] = self.obj.acc[i] * self.dt[None] + self.obj.vel[i]
     
     @ti.kernel
     def acc2vel(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.vel[i] = self.obj.acc[i] * self.dt[None] + self.obj.vel[i]
 
     @ti.kernel
     def vel_adv2vel(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.vel[i] = self.obj.vel_adv[i]
 
     @ti.kernel
     def update_pos(self):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.pos[i] += self.obj.vel[i] * self.dt[None]
 
     @ti.kernel
     def adv_step(self, in_vel: ti.template(), out_vel_adv: ti.template()):
-        for i in range(self.obj.tiGet_stack_top()[None]):
+        for i in range(self.obj.tiGetObjStackTop()[None]):
             out_vel_adv[i] = in_vel[i]
             self.obj.acc[i] = self.clean_acc
             self.obj.acc[i] += self.gravity[None]

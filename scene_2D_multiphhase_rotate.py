@@ -75,8 +75,8 @@ fluid_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(val_i(fluid_part_num)) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
@@ -90,9 +90,9 @@ bound_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(val_i(bound_part_num))
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(1000*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(1000*bound_part.getObjPartSize()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, val_f(1000))
 bound_part.close_stack()
 
@@ -282,14 +282,14 @@ def loop_JL21():
     world.set_dt(dt)    
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.get_stack_top()[None]):
+    for part_id in range(fluid_part.getObjStackTop()[None]):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
             fluid_part.phase.val_frac[part_id, phase_id]
         fluid_part.rgb[part_id]
 
-    for bound_part_id in range(bound_part.get_stack_top()[None]):
+    for bound_part_id in range(bound_part.getObjStackTop()[None]):
         bound_part.pos[bound_part_id]
 
 ''' Viusalization and run '''
@@ -318,8 +318,8 @@ def vis_run(loop):
                 flag_write_img = True
         if gui.op_refresh_window:
             gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-            gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
+            gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:

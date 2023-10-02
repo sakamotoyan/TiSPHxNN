@@ -27,18 +27,18 @@ class Cube_generator(Data_generator):
             span: float = -1,
             ):
         
-        temp_span = factor * self.obj.get_part_size()[None]
+        temp_span = factor * self.obj.getObjPartSize()[None]
         if not span < 0:
             temp_span = span
             
         self.generate_pos_based_on_span(temp_span)
         cube_pos_data = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.num)
         cube_pos_data.from_numpy(self.np_pos)
-        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.tiGet_stack_top()[None])
+        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.tiGetObjStackTop()[None])
         return self.num
     
     def pushed_num_preview(self, factor: float = 1.0, span: float = -1):
-        temp_span = factor * self.obj.get_part_size()[None]
+        temp_span = factor * self.obj.getObjPartSize()[None]
         if not span < 0:
             temp_span = span
             

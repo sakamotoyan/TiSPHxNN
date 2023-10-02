@@ -52,9 +52,9 @@ fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part.open_stack(val_i(fluid_part_num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.get_part_size()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.getObjPartSize()[None]**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
@@ -68,9 +68,9 @@ bound_part = world.add_part_obj(part_num=bound_part_num, size=world.g_part_size,
 bound_part.instantiate_from_template(part_template, world)
 bound_part.open_stack(val_i(bound_part_num))
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.getObjPartSize()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 bound_part.close_stack()
 
@@ -171,7 +171,7 @@ def loop():
     # print("phase 1 total", frac_np[:,0].sum())
     # print("phase 2 total", frac_np[:,1].sum())
     # print("phase 3 total", frac_np[:,2].sum())
-    # for i in range(fluid_part.get_stack_top()[None]):
+    # for i in range(fluid_part.getObjStackTop()[None]):
     #     if frac_np[i].sum() < 0.999:
     #         print('low val_frac: \n',frac_np[i])
     # print('dt', world.g_dt[None])   
@@ -249,10 +249,10 @@ def vis_run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             if gui.show_bound:
-                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
             else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.get_stack_top()[None], size=sense_grid_part.get_part_size()[None]*1.0)
+                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 

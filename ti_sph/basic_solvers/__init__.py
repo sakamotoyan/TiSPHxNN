@@ -3,6 +3,8 @@ from .sph_funcs import \
     spline_W, spline_C, grad_spline_W, \
     bigger_than_zero, make_bigger_than_zero
 
+# Soveler parent class
+from .Solver import Solver
 
 # basic SPH classes
 from .Solver_sph import SPH_solver

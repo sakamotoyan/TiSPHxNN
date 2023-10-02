@@ -1,12 +1,13 @@
 import taichi as ti
 import math
 from ..basic_obj.Obj_Particle import Particle
+from .Solver import Solver
 
 @ti.data_oriented
-class SPH_solver:
+class SPH_solver(Solver):
     def __init__(self, obj: Particle):
         
-        self.obj = obj
+        Solver.__init__(self, obj)
 
         self.dim = obj.m_world.g_dim
         sig_dim = self.sig_dim(self.dim[None])
@@ -19,9 +20,9 @@ class SPH_solver:
 
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
-            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGet_id()[None])
-            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGet_id()[None])
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
+            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetObjId()[None])
+            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetObjId()[None])
             for neighb_part_iter in range(neighbPart_num):
                 neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
@@ -44,7 +45,7 @@ class SPH_solver:
     
     @ti.kernel
     def compute_sig(self, sig_dim: ti.f32):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()[None]):
             self.obj.sph[part_id].h = self.obj.size[part_id] * 2
             self.obj.sph[part_id].sig = sig_dim / ti.pow(self.obj.sph[part_id].h, self.dim[None])
             self.obj.sph[part_id].sig_inv_h = self.obj.sph[part_id].sig / self.obj.sph[part_id].h
@@ -94,6 +95,3 @@ class SPH_solver:
             ''' Compute Average Velocity '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)
     
-    ''' get&set '''
-    def getObj(self):
-        return self.obj

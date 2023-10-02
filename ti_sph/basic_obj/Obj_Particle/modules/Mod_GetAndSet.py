@@ -6,57 +6,57 @@ class Mod_GetAndSet:
 
     ''' particle class attrs get&set '''
     @ti.func
-    def tiGet_stack_top(self:ti.template()):
+    def tiGetObjStackTop(self:ti.template()):
         return self.m_stack_top
     @ti.func
-    def tiGet_part_num(self):
+    def tiGetObjPartNum(self):
         return self.m_part_num
     @ti.func
-    def tiGet_part_size(self):
+    def tiGetObjPartSize(self):
         return self.m_part_size
     @ti.func
-    def tiCheck_stackOpen(self):
+    def tiCheckObjStackOpen(self):
         return self.m_if_stack_open
     @ti.func
-    def tiGet_stackOpenNum(self):
+    def tiGetObjStackOpenNum(self):
         return self.m_stack_open_num
     @ti.func
-    def tiSet_stackOpenNum(self, num: ti.i32):
+    def tiSetObjStackOpenNum(self, num: ti.i32):
         self.m_stack_open_num = num
     @ti.func
-    def tiGet_world(self):
+    def tiGetObjWorld(self):
         return self.m_world
     @ti.func
-    def tiSet_world(self, world):
+    def tiSetObjWorld(self, world):
         self.m_world = world
     @ti.func
-    def tiGet_id(self):
+    def tiGetObjId(self):
         return self.m_id
     @ti.func
-    def tiSet_id(self, id):
+    def tiSetObjId(self, id):
         self.m_id = id
 
-    def get_stack_top(self):
+    def getObjStackTop(self):
         return self.m_stack_top
-    def get_part_num(self):
+    def getObjPartNum(self):
         return self.m_part_num
-    def get_part_size(self):
+    def getObjPartSize(self):
         return self.m_part_size
-    def check_stackOpen(self):
+    def checkObjStackOpen(self):
         return self.m_if_stack_open
-    def set_stackOpen(self, if_open: bool):
+    def setObjStackOpen(self, if_open: bool):
         self.m_if_stack_open = if_open
-    def get_stackOpenNum(self):
+    def getObjStackOpenNum(self):
         return self.m_stack_open_num
-    def set_stackOpenNum(self, num: int):
+    def setObjStackOpenNum(self, num: int):
         self.m_stack_open_num = num
-    def get_world(self):
+    def getObjWorld(self):
         return self.m_world
-    def set_world(self, world):
+    def setObjWorld(self, world):
         self.m_world = world
-    def get_id(self):
+    def getObjId(self):
         return self.m_id
-    def set_id(self, id):
+    def setObjId(self, id):
         self.m_id = id
 
     ''' particle basic physical attrs get&set '''
@@ -168,3 +168,61 @@ class Mod_GetAndSet:
         return self.sph_df[i].vel_adv
     def getSphB(self, i):
         return self.sph_wc[i].B
+    
+    # taichi version
+    @ti.func
+    def tiGetSphH(self, i):
+        return self.sph[i].h
+    @ti.func
+    def tiGetSphSig(self, i):
+        return self.sph[i].sig
+    @ti.func
+    def tiGetSphSigInvH(self, i):
+        return self.sph[i].sig_inv_h
+    @ti.func
+    def tiGetSphDensity(self, i):
+        return self.sph[i].density
+    @ti.func
+    def tiGetSphCompressionRatio(self, i):
+        return self.sph[i].compression_ratio
+    @ti.func
+    def tiGetSphPressure(self, i):
+        return self.sph[i].pressure
+    @ti.func
+    def tiGetSphPressureForce(self, i):
+        return self.sph[i].pressure_force
+    @ti.func
+    def tiGetSphViscosityForce(self, i):
+        return self.sph[i].viscosity_force
+    @ti.func
+    def tiGetSphGravityForce(self, i):
+        return self.sph[i].gravity_force
+    @ti.func
+    def tiGetSphAlpha1(self, i):
+        return self.sph_df[i].alpha_1
+    @ti.func
+    def tiGetSphAlpha2(self, i):
+        return self.sph_df[i].alpha_2
+    @ti.func
+    def tiGetSphAlpha(self, i):
+        return self.sph_df[i].alpha
+    @ti.func
+    def tiGetSphKappaIncomp(self, i):
+        return self.sph_df[i].kappa_incomp
+    @ti.func
+    def tiGetSphKappaDiv(self, i):
+        return self.sph_df[i].kappa_div
+    @ti.func
+    def tiGetSphDeltaDensity(self, i):
+        return self.sph_df[i].delta_density
+    @ti.func
+    def tiGetSphDeltaCompressionRatio(self, i):
+        return self.sph_df[i].delta_compression_ratio
+    @ti.func
+    def tiGetSphVelAdv(self, i):
+        return self.sph_df[i].vel_adv
+    @ti.func
+    def tiGetSphB(self, i):
+        return self.sph_wc[i].B
+    
+    

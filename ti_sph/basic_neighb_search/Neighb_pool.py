@@ -2,10 +2,11 @@ import taichi as ti
 from ..basic_op.type import *
 from ..basic_solvers.sph_funcs import *
 from ..basic_obj.Obj_Particle import Particle
+from ..basic_solvers.Solver import Solver
 
 '''#################### BELOW IS THE TEMPLATE FOR NEIGHBORHOOD SEASCHING ####################'''
 @ti.data_oriented
-class Neighb_search_template:
+class Neighb_search_template(Solver):
     def __init__(
         self,
         dim,  # int32
@@ -51,28 +52,26 @@ class Neighb_search_template:
 
 '''#################### BELOW IS THE CLASS FOR NEIGHBORHOOD SEASCHING ####################'''
 @ti.data_oriented
-class Neighb_pool:
+class Neighb_pool(Solver):
     ''' init the neighb list'''
     def __init__(
             self,
             obj: Particle,  # Particle class
             max_neighb_part_num: ti.template() = 0,  # int32
     ):
+        Solver.__init__(self, obj)
         self.obj = obj
-        self.obj_pos = self.obj.pos
-        self.part_num = obj.get_part_num()
-        self.obj_stack_top = self.obj.get_stack_top()
+        self.part_num = obj.getObjPartNum()
+        self.obj_stack_top = self.getObj().getObjStackTop()
         if max_neighb_part_num == 0:
-            self.max_neighb_part_num = val_i(obj.get_part_num()[None] * self.obj.get_world().g_avg_neighb_part_num[None])
+            self.max_neighb_part_num = val_i(obj.getObjPartNum()[None] * self.getObj().getObjWorld().g_avg_neighb_part_num[None])
         else:
             self.max_neighb_part_num = val_i(max_neighb_part_num[None])
-        # print('debug part_num: ', obj.get_part_num()[None])
-        # print('debug max_neighb_part_num: ', self.max_neighb_part_num[None])
-        self.max_neighb_obj_num = val_i(self.obj.get_world().g_obj_num[None])
-        self.dim = self.obj.get_world().g_dim
+
+        self.max_neighb_obj_num = val_i(self.getObj().getObjWorld().g_obj_num[None])
+        self.dim = self.getObj().getObjWorld().g_dim
 
         self.neighb_obj_list = []  # Particle class
-        self.neighb_obj_pos_list = []  # ti.Vector.field(dim, ti.f32, neighb_obj_part_num)
         self.neighb_cell_list = []  # Neighb_cell_simple class
         self.m_neighb_search_range_list = []  # val_f() # TODO: use 'Dynamic' as search range
         self.m_neighb_search_template_list = []  # Neighb_search_template class
@@ -115,7 +114,7 @@ class Neighb_pool:
     ''' clear the cache pool'''
     @ti.kernel
     def clear_pool(self):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.tiGetObj().tiGetObjStackTop()[None]):
             self.tiSet_partNeighbBeginingPointer(part_id, -1)
             self.tiSet_partNeighbCurrnetPointer(part_id, -1) 
             self.tiSet_partNeighbSize(part_id, 0)
@@ -135,18 +134,17 @@ class Neighb_pool:
             raise Exception("neighb_obj already in list")
         if neighb_obj.m_neighb_search.neighb_cell in self.neighb_cell_list:
             raise Exception("neighb_cell already in list")
-        if self.obj.get_world() != neighb_obj.get_world():
+        if self.getObj().getObjWorld() != neighb_obj.getObjWorld():
             raise Exception("two obj are not in the same world")
 
         ''' append to lists '''
         self.neighb_obj_list.append(neighb_obj)
-        self.neighb_obj_pos_list.append(neighb_obj.pos)
         self.neighb_cell_list.append(neighb_obj.m_neighb_search.neighb_cell)
         self.m_neighb_search_range_list.append(search_range)
 
         ''' generate search template '''
         search_cell_range = int(ti.ceil(search_range[None] / neighb_obj.m_neighb_search.neighb_cell.cell_size[None]))
-        neighb_search_template = Neighb_search_template(self.obj.get_world().g_dim[None], search_cell_range)
+        neighb_search_template = Neighb_search_template(self.getObj().getObjWorld().g_dim[None], search_cell_range)
         self.m_neighb_search_template_list.append(neighb_search_template)
 
     ''' get a obj, neighb_obj attributes pair  one at a time, as inputs to register_a_neighbour() '''
@@ -155,7 +153,7 @@ class Neighb_pool:
     ):
         self.clear_pool()
         for i in range(len(self.neighb_obj_list)):
-            self.register_a_neighbour(self.neighb_obj_list[i].get_id()[None], self.m_neighb_search_range_list[i][None], self.neighb_obj_pos_list[i], self.neighb_cell_list[i], self.m_neighb_search_template_list[i])
+            self.register_a_neighbour(self.neighb_obj_list[i], self.m_neighb_search_range_list[i][None], self.neighb_cell_list[i], self.m_neighb_search_template_list[i])
         if not self.neighb_pool_size[None] > self.neighb_pool_used_space[None]:
             raise Exception(f"neighb_pool overflow, need {self.neighb_pool_used_space[None]} but only {self.neighb_pool_size[None]}")
         # print("debug: neighb_pool_used_space_ = ", self.neighb_pool_used_space_[None], " / ", self.neighb_pool_size_[None], " = ", self.neighb_pool_used_space_[None] / self.neighb_pool_size_[None]*100, " %")
@@ -163,17 +161,16 @@ class Neighb_pool:
     @ti.kernel
     def register_a_neighbour(
         self,
-        neighb_obj_id: ti.i32,
+        neighbObj: ti.template(),
         search_range: ti.f32,
-        neighb_pos: ti.template(),  # ti.Vector.field(dim, ti.f32, neighb_obj_part_num)
         neighb_cell: ti.template(),  # Neighb_cell_simple class
         neighb_search_template: ti.template(),  # Neighb_search_template class
     ):
-        for part_id in range(self.obj.tiGet_stack_top()[None]):
+        for part_id in range(self.tiGetObj().tiGetObjStackTop()[None]):
             size_before = self.tiGet_partNeighbSize(part_id)
 
             ''' locate the cell where the $obj particle$ is located '''
-            located_cell_vec = neighb_cell.compute_cell_vec(self.obj_pos[part_id])
+            located_cell_vec = neighb_cell.compute_cell_vec(self.tiGetObj().tiGetPos(part_id))
             ''' iterate over all neighbouring cells '''
             for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
                 ''' get the $cell vector$ of the neighbouring cell through the template'''
@@ -184,23 +181,23 @@ class Neighb_pool:
                 ''' get the neighbouring cell id by encoding the $cell vector$ '''
                 neighb_cell_id = neighb_cell.encode_cell_vec(neighb_cell_vec)
                 ''' get the number of particles in the neighbouring cell '''
-                part_num = neighb_cell.get_part_num_in_cell(neighb_cell_id)
+                part_num = neighb_cell.getObjPartNum_in_cell(neighb_cell_id)
                 for part_iter in range(part_num):
                     ''' get the particle id in the neighbouring cell '''
                     neighb_part_id = neighb_cell.get_part_id_in_cell(neighb_cell_id, part_iter)
-                    dist = (self.obj_pos[part_id] - neighb_pos[neighb_part_id]).norm()
+                    dist = (self.tiGetObj().tiGetPos(part_id) - neighbObj.tiGetPos(neighb_part_id)).norm()
                     ''' register the neighbouring particle '''
                     if dist < search_range:
-                        pointer = self.insert_a_part(part_id, neighb_obj_id, neighb_part_id, dist)
+                        pointer = self.insert_a_part(part_id, neighbObj.tiGetObjId()[None], neighb_part_id)
                         
                         ''' [DIY AREA] '''
                         ''' You can add attributes you want to be pre-computed here '''
-                        self.poolCachedAttr_dist[pointer] = dist
-                        self.poolCachedAttr_xijNorm[pointer] = (self.obj_pos[part_id] - neighb_pos[neighb_part_id]) / dist
-                        self.poolCachedAttr_W[pointer] = spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig)
-                        self.poolCachedAttr_gradW[pointer] = grad_spline_W(dist, self.obj.sph[part_id].h, self.obj.sph[part_id].sig_inv_h) * self.tiGet_cachedXijNorm(pointer)
+                        self.tiSet_cachedDist(pointer, dist)
+                        self.tiSet_cachedXijNorm(pointer, (self.tiGetObj().tiGetPos(part_id) - neighbObj.tiGetPos(neighb_part_id)) / dist)
+                        self.tiSet_cachedW(pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
+                        self.tiSet_cachedGradW(pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pointer))
 
-            self.tiSet_partNeighbObjSize(part_id, neighb_obj_id, self.tiGet_partNeighbSize(part_id) - size_before)
+            self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetObjId()[None], self.tiGet_partNeighbSize(part_id) - size_before)
 
     ''' insert a neighbouring particle into the linked list'''
     @ti.func
@@ -209,7 +206,6 @@ class Neighb_pool:
         part_id: ti.i32,
         neighb_obj_id: ti.i32,
         neighb_part_id: ti.i32,
-        dist: ti.f32,
     ) -> ti.i32:
         pointer = ti.atomic_add(self.neighb_pool_used_space[None], 1)
         self.tiAdd_partNeighbSize(part_id, 1)
@@ -265,7 +261,18 @@ class Neighb_pool:
     def tiGet_partNeighbCurrnetPointer(self, partId: ti.i32):
         return self.partNeighb_current[partId]
 
-    
+    @ti.func
+    def tiSet_cachedDist(self, pointer: ti.i32, val: ti.f32):
+        self.poolCachedAttr_dist[pointer] = val
+    @ti.func
+    def tiSet_cachedGradW(self, pointer: ti.i32, val: ti.template()):
+        self.poolCachedAttr_gradW[pointer] = val
+    @ti.func
+    def tiSet_cachedW(self, pointer: ti.i32, val: ti.f32):
+        self.poolCachedAttr_W[pointer] = val
+    @ti.func
+    def tiSet_cachedXijNorm(self, pointer: ti.i32, val: ti.template()):
+        self.poolCachedAttr_xijNorm[pointer] = val
     @ti.func
     def tiSet_neighbPartId(self, pointer: ti.i32, val: ti.i32):
         self.poolContainer_neighbPartId[pointer] = val

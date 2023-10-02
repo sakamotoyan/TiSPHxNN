@@ -18,7 +18,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+solver = SOLVER_ISM # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -28,7 +28,7 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.05 
+part_size = 0.08 
 # number of phases
 phase_num = 3 
 # max time step size
@@ -39,12 +39,12 @@ elif solver == SOLVER_JL21:
 #  diffusion amount: Cf = 0 yields no diffusion
 Cf = 0.0 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
-Cd = 0.0 
+Cd = 0.8 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
 kd = 0.0
 flag_strat_drift = True
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 1e-4
+kinematic_viscosity_fluid = 1e-3
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
@@ -76,8 +76,8 @@ fluid_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(tsph.val_i(fluid_part_num)) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, tsph.val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, tsph.val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
@@ -90,9 +90,9 @@ bound_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(tsph.val_i(bound_part_num))
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.get_part_size())
-bound_part.fill_open_stack_with_val(bound_part.volume, tsph.val_f(bound_part.get_part_size()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, tsph.val_f(1000*bound_part.get_part_size()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, tsph.val_f(bound_part.getObjPartSize()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, tsph.val_f(1000*bound_part.getObjPartSize()[None]**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, tsph.val_f(1000))
 bound_part.close_stack()
 
@@ -282,14 +282,14 @@ def loop_JL21():
     world.set_dt(dt)    
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.get_stack_top()[None]):
+    for part_id in range(fluid_part.getObjStackTop()[None]):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
             fluid_part.phase.val_frac[part_id, phase_id]
         fluid_part.rgb[part_id]
 
-    for bound_part_id in range(bound_part.get_stack_top()[None]):
+    for bound_part_id in range(bound_part.getObjStackTop()[None]):
         bound_part.pos[bound_part_id]
 
 ''' Viusalization and run '''
@@ -319,8 +319,8 @@ def vis_run(loop):
                 flag_write_img = True
         if gui.op_refresh_window:
             gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
-            # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.get_stack_top()[None],size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
+            # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:

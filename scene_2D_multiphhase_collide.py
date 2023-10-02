@@ -71,8 +71,8 @@ fluid_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(val_i(fluid_cube_data_1.num)) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)  # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
@@ -80,8 +80,8 @@ fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([1.0, 0.0])) # feed t
 fluid_part.close_stack() # close the stack
 fluid_part.open_stack(val_i(fluid_cube_data_2.num)) # open the stack to feed data for another cube
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.get_part_size()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.get_part_size()[None]**world.g_dim[None])) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None])) # feed the particle volume
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
 fluid_part.close_stack() # close the stack
 
@@ -254,7 +254,7 @@ def loop_JL21():
     # world.cfl_dt(0.4, max_time_step) 
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.get_stack_top()[None]):
+    for part_id in range(fluid_part.getObjStackTop()[None]):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
@@ -287,7 +287,7 @@ def vis_run(loop):
         
         if gui.op_refresh_window:
             gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.get_stack_top()[None],size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
