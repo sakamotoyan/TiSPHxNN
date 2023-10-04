@@ -10,7 +10,7 @@ from ..Obj import Obj
 from ...basic_op.type import *
 
 @ti.data_oriented
-class Particle(Obj, Mod_Solvers, Mod_GetAndSet, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch):
+class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod_GetAndSet):
     def __init__(
         self,
         part_num: int,

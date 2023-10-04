@@ -48,8 +48,8 @@ fluid_part.instantiate_from_template(part_template, world)
 fluid_part.open_stack(val_i(fluid_cube_data_1.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.getObjPartSize()**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density_2)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
@@ -61,8 +61,8 @@ fluid_part.close_stack()
 fluid_part.open_stack(val_i(fluid_cube_data_2.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.getObjPartSize()**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 # val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
@@ -163,7 +163,7 @@ def loop():
     # print("phase 1 total", frac_np[:,0].sum())
     # print("phase 2 total", frac_np[:,1].sum())
     # print("phase 3 total", frac_np[:,2].sum())
-    # for i in range(fluid_part.getObjStackTop()[None]):
+    # for i in range(fluid_part.getObjStackTop()):
     #     if frac_np[i].sum() < 0.999:
     #         print('low val_frac: \n',frac_np[i])
     # print('dt', world.g_dt[None])   
@@ -232,10 +232,10 @@ def vis_run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             if gui.show_bound:
-                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
-                # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
+                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop(),size=world.g_part_size[None])
+                # gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop(),size=world.g_part_size[None])
             else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
+                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop(), size=sense_grid_part.getObjPartSize()*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 

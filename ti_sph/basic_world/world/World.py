@@ -108,10 +108,10 @@ class World:
         return self.g_inv_dt2
     
     @ti.func
-    def tiGetWorldPartSize(self):
-        return self.g_part_size
-    def getWorldPartSize(self):
-        return self.g_part_size
+    def tiGetWorldPartSize(self)->ti.f32:
+        return self.g_part_size[None]
+    def getWorldPartSize(self)->float:
+        return self.g_part_size[None]
     def setWorldPartSize(self, size):
         self.g_part_size = val_f(size)
         self.refresh()

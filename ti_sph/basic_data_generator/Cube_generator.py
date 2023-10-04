@@ -27,7 +27,7 @@ class Cube_generator(Data_generator):
             span: float = -1,
             ):
         
-        temp_span = factor * self.obj.getObjPartSize()[None]
+        temp_span = factor * self.obj.getObjPartSize()
         if not span < 0:
             temp_span = span
             
@@ -38,7 +38,7 @@ class Cube_generator(Data_generator):
         return self.num
     
     def pushed_num_preview(self, factor: float = 1.0, span: float = -1):
-        temp_span = factor * self.obj.getObjPartSize()[None]
+        temp_span = factor * self.obj.getObjPartSize()
         if not span < 0:
             temp_span = span
             

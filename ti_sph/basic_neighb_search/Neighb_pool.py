@@ -62,7 +62,7 @@ class Neighb_pool(Solver):
         Solver.__init__(self, obj)
         
         if max_neighb_part_num == 0:
-            self.max_neighb_part_num = val_i(obj.getObjPartNum()[None] * self.getObj().getObjWorld().g_avg_neighb_part_num[None])
+            self.max_neighb_part_num = val_i(obj.getObjPartNum() * self.getObj().getObjWorld().g_avg_neighb_part_num[None])
         else:
             self.max_neighb_part_num = val_i(max_neighb_part_num[None])
 
@@ -76,14 +76,14 @@ class Neighb_pool(Solver):
         self.partNeighb_begin = ti.field(ti.i32)
         self.partNeighb_current = ti.field(ti.i32)
         self.partNeighb_size = ti.field(ti.i32)
-        ti.root.dense(ti.i, self.obj.getObjPartNum()[None]).place(
+        ti.root.dense(ti.i, self.obj.getObjPartNum()).place(
             self.partNeighb_begin,
             self.partNeighb_current,
             self.partNeighb_size)
 
         self.partNeighbObj_begin = ti.field(ti.i32)
         self.partNeighbObj_size = ti.field(ti.i32)
-        ti.root.dense(ti.ij, (self.obj.getObjPartNum()[None], self.max_neighb_obj_num[None])).place(
+        ti.root.dense(ti.ij, (self.obj.getObjPartNum(), self.max_neighb_obj_num[None])).place(
             self.partNeighbObj_begin,
             self.partNeighbObj_size)
 

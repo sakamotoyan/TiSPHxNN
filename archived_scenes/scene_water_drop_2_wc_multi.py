@@ -47,8 +47,8 @@ fluid_part.instantiate_from_template(part_template, world)
 fluid_part.open_stack(val_i(fluid_cube_data_1.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density_2[None]*fluid_part.getObjPartSize()**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density_2)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([0.0, 0.0, 1.0]))
 val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0
@@ -59,8 +59,8 @@ fluid_part.close_stack()
 fluid_part.open_stack(val_i(fluid_cube_data_2.num))
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()[None]**world.g_dim[None]))
-fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.getObjPartSize()[None]**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None]))
+fluid_part.fill_open_stack_with_val(fluid_part.mass, val_f(fluid_rest_density[None]*fluid_part.getObjPartSize()**world.g_dim[None]))
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3_f([1.0, 0.0, 1.0]))
 val_frac[0], val_frac[1], val_frac[2] = 0.0,0.0,1.0
@@ -75,8 +75,8 @@ bound_part.instantiate_from_template(part_template, world)
 bound_part.open_stack(val_i(box_data.num))
 bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()[None]**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.getObjPartSize()[None]**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()**world.g_dim[None]))
+bound_part.fill_open_stack_with_val(bound_part.mass, val_f(bound_rest_density[None]*bound_part.getObjPartSize()**world.g_dim[None]))
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 bound_part.fill_open_stack_with_vals(bound_part.phase.val_frac, val_frac)
 bound_part.close_stack()
@@ -171,10 +171,10 @@ def vis_run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             if gui.show_bound:
-                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop()[None],size=world.g_part_size[None])
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop()[None],size=world.g_part_size[None])
+                gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop(),size=world.g_part_size[None])
+                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop(),size=world.g_part_size[None])
             else:
-                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop()[None], size=sense_grid_part.getObjPartSize()[None]*1.0)
+                gui.scene_add_parts_colorful(obj_pos=sense_grid_part.pos, obj_color=sense_grid_part.rgb, index_count=sense_grid_part.getObjStackTop(), size=sense_grid_part.getObjPartSize()*1.0)
             
             gui.canvas.scene(gui.scene)  # Render the scene
 

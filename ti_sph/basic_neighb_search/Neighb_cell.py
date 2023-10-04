@@ -3,11 +3,12 @@ import numpy as np
 from ..basic_op.type import *
 from ..basic_op.vec_op import *
 from ..basic_obj.Obj_Particle import Particle
+from ..basic_solvers.Solver import Solver
 
 OUT_OF_RANGE = -1
 
 @ti.data_oriented
-class Neighb_cell:
+class Neighb_cell(Solver):
     def __init__(
             self,
             obj: Particle, # Particle class
@@ -34,9 +35,9 @@ class Neighb_cell:
         self.part_num_in_cell = ti.field(ti.i32, (self.cell_num[None]))
         self.cell_begin_pointer = ti.field(ti.i32, (self.cell_num[None]))
 
-        self.cell_id_of_part = ti.field(ti.i32, (self.part_num[None]))
-        self.part_pointer_shift = ti.field(ti.i32, (self.part_num[None])) # 用于计算part在cell中的偏移
-        self.part_id_container = ti.field(ti.i32, (self.part_num[None]))
+        self.cell_id_of_part = ti.field(ti.i32, (self.getObj().getObjPartNum()))
+        self.part_pointer_shift = ti.field(ti.i32, (self.getObj().getObjPartNum())) # 用于计算part在cell中的偏移
+        self.part_id_container = ti.field(ti.i32, (self.getObj().getObjPartNum()))
         
         
         self.push_index_timer = val_i(0)

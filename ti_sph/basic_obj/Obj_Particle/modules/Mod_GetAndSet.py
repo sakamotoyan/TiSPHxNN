@@ -11,20 +11,23 @@ class Mod_GetAndSet:
     def tiGetObjStackTop(self:ti.template()):
         return self.m_stack_top[None]
     @ti.func
-    def tiGetObjPartNum(self):
-        return self.m_part_num
+    def tiGetObjPartNum(self)->ti.i32:
+        return self.m_part_num[None]
     @ti.func
-    def tiGetObjPartSize(self):
-        return self.m_part_size
+    def tiGetObjPartSize(self)->ti.f32:
+        return self.m_part_size[None]
     @ti.func
     def tiCheckObjStackOpen(self):
         return self.m_if_stack_open
     @ti.func
-    def tiGetObjStackOpenNum(self):
-        return self.m_stack_open_num
+    def tiSetObjStackOpen(self, if_open):
+        self.m_if_stack_open = if_open
+    @ti.func
+    def tiGetObjStackOpenNum(self)->ti.i32:
+        return self.m_stack_open_num[None]
     @ti.func
     def tiSetObjStackOpenNum(self, num: ti.i32):
-        self.m_stack_open_num = num
+        self.m_stack_open_num[None] = num
     @ti.func
     def tiGetObjWorld(self)->World:
         return self.m_world
@@ -38,20 +41,22 @@ class Mod_GetAndSet:
     def tiSetObjId(self, id):
         self.m_id = id
 
-    def getObjStackTop(self):
-        return self.m_stack_top
-    def getObjPartNum(self):
-        return self.m_part_num
-    def getObjPartSize(self):
-        return self.m_part_size
+    def getObjStackTop(self)->int:
+        return self.m_stack_top[None]
+    def AddObjStackTop(self, num: int):
+        self.m_stack_top[None] += num
+    def getObjPartNum(self)->int:
+        return self.m_part_num[None]
+    def getObjPartSize(self)->float:
+        return self.m_part_size[None]
     def checkObjStackOpen(self):
         return self.m_if_stack_open
     def setObjStackOpen(self, if_open: bool):
         self.m_if_stack_open = if_open
-    def getObjStackOpenNum(self):
-        return self.m_stack_open_num
+    def getObjStackOpenNum(self)->int:
+        return self.m_stack_open_num[None]
     def setObjStackOpenNum(self, num: int):
-        self.m_stack_open_num = num
+        self.m_stack_open_num[None] = num
     def getObjWorld(self)->World:
         return self.m_world
     def setObjWorld(self, world):

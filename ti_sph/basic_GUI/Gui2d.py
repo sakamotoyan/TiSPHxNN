@@ -29,12 +29,17 @@ class Gui2d:
         # plt.grid(True)
 
         for obj in self.objs:
-            positoins = obj.pos.to_numpy()
+            positoins = obj.getPosArr().to_numpy()
             colors = obj.rgb.to_numpy()
 
             x = positoins[:, 0]
             y = positoins[:, 1]
 
-            plt.scatter(x, y, s=self.radius, c=colors/255) 
+            plt.scatter(x, y, s=self.radius, c=colors) 
+        
+        ax = plt.gca()
+        ax.set_facecolor('skyblue')
+        fig = plt.gcf()
+        fig.set_facecolor('skyblue')
 
-        plt.savefig(path, dpi=600)
+        plt.savefig(path, dpi=200)
