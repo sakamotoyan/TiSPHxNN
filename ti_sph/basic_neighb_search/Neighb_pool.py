@@ -67,7 +67,6 @@ class Neighb_pool(Solver):
             self.max_neighb_part_num = val_i(max_neighb_part_num[None])
 
         self.max_neighb_obj_num = val_i(self.getObj().getObjWorld().g_obj_num[None])
-        self.dim = self.getObj().getObjWorld().g_dim
 
         self.neighb_obj_list = []  # Particle class
         self.neighb_cell_list = []  # Neighb_cell_simple class
@@ -97,9 +96,9 @@ class Neighb_pool(Solver):
             self.poolContainer_next)
 
         self.poolCachedAttr_dist = ti.field(ti.f32)
-        self.poolCachedAttr_xijNorm = ti.Vector.field(self.dim[None], ti.f32)
+        self.poolCachedAttr_xijNorm = ti.Vector.field(self.getObj().getObjWorld().getWorldDim(), ti.f32)
         self.poolCachedAttr_W = ti.field(ti.f32)
-        self.poolCachedAttr_gradW = ti.Vector.field(self.dim[None], ti.f32)
+        self.poolCachedAttr_gradW = ti.Vector.field(self.getObj().getObjWorld().getWorldDim(), ti.f32)
         ti.root.dense(ti.i, self.max_neighb_part_num[None]).place(
             self.poolCachedAttr_dist,
             self.poolCachedAttr_xijNorm,
@@ -112,7 +111,7 @@ class Neighb_pool(Solver):
     ''' clear the cache pool'''
     @ti.kernel
     def clear_pool(self):
-        for part_id in range(self.tiGetObj().tiGetObjStackTop()[None]):
+        for part_id in range(self.tiGetObj().tiGetObjStackTop()):
             self.tiSet_partNeighbBeginingPointer(part_id, -1)
             self.tiSet_partNeighbCurrnetPointer(part_id, -1) 
             self.tiSet_partNeighbSize(part_id, 0)
@@ -164,7 +163,7 @@ class Neighb_pool(Solver):
         neighb_cell: ti.template(),  # Neighb_cell_simple class
         neighb_search_template: ti.template(),  # Neighb_search_template class
     ):
-        for part_id in range(self.tiGetObj().tiGetObjStackTop()[None]):
+        for part_id in range(self.tiGetObj().tiGetObjStackTop()):
             size_before = self.tiGet_partNeighbSize(part_id)
 
             ''' locate the cell where the $obj particle$ is located '''

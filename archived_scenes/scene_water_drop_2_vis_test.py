@@ -21,8 +21,8 @@ output_shift = 2000
 part_size = 0.05
 max_time_step = part_size/100
 world = World(dim=2)
-world.set_part_size(part_size)
-world.set_dt(max_time_step)
+world.setWorldPartSize(part_size)
+world.setWorldDt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)
@@ -137,7 +137,7 @@ def loop():
     world.add_acc_gravity()
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
-    world.acc2vel_adv()
+    world.acc2vel()
 
     world.step_df_incomp()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])

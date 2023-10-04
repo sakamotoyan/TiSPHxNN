@@ -128,7 +128,7 @@ class Neighb_cell:
         for cell_id in range(self.cell_num[None]):
             self.part_num_in_cell[cell_id] = 0 # 清空 网格粒子数量计数器
         
-        for part_id in range(self.obj.tiGetObjStackTop()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()):
             cell_id = self.encode_into_cell(self.pos[part_id]) # 计算粒子所在网格(编码后)
             if 0 < cell_id < self.cell_num[None]: # 如果粒子在网格范围内则 
                 self.cell_id_of_part[part_id] = cell_id # 记录粒子所在网格
@@ -141,7 +141,7 @@ class Neighb_cell:
             if self.part_num_in_cell[cell_id] > 0: # 如果网格内有粒子则 设置赋予初始指针
                 self.cell_begin_pointer[cell_id] = ti.atomic_add(timer, self.part_num_in_cell[cell_id])
         
-        for part_id in range(self.obj.tiGetObjStackTop()[None]):
+        for part_id in range(self.obj.tiGetObjStackTop()):
             cell_id = self.cell_id_of_part[part_id]
             if self.part_pointer_shift[part_id] != OUT_OF_RANGE:
                 part_pointer = self.cell_begin_pointer[cell_id] + self.part_pointer_shift[part_id]

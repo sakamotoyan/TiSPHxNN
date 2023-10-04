@@ -21,7 +21,7 @@ def cfl_dt(self, cfl_factor: float, max_dt: float):
     for part_obj in self.cfl_list:
         max_vel = max(self.find_max_vec(part_obj.vel, part_obj.getObjStackTop()[None]), max_vel)
     new_dt = min(max_dt, self.g_part_size[None] / max_vel * cfl_factor)
-    self.set_dt(new_dt)
+    self.setWorldDt(new_dt)
     return new_dt, max_vel
 
 def get_cfl_dt_obj(self, part_obj, cfl_factor: float, max_dt: float):

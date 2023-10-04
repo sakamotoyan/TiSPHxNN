@@ -48,9 +48,9 @@ kinematic_viscosity_fluid = 0.0
 # create a 2D world
 world = World(dim=2) 
 # set the particle diameter
-world.set_part_size(part_size) 
+world.setWorldPartSize(part_size) 
 # set the max time step size
-world.set_dt(max_time_step) 
+world.setWorldDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
 world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],[500,500,1000]) 
 
@@ -279,7 +279,7 @@ def loop_JL21():
     # fluid_part.m_solver_JL21.debug_check_val_frac()
 
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.set_dt(dt)    
+    world.setWorldDt(dt)    
 
 def write_part_info_ply():
     for part_id in range(fluid_part.getObjStackTop()[None]):

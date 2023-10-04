@@ -22,8 +22,8 @@ phase_num = 3
 part_size = 0.05
 max_time_step = part_size/100*0.4
 world = World(dim=2)
-world.set_part_size(part_size)
-world.set_dt(max_time_step)
+world.setWorldPartSize(part_size)
+world.setWorldDt(max_time_step)
 world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,1,0),vec3f(0,0.2,0.8)],[500,500,1000])
 
 kinematic_viscosity_air = val_f(1e-4)
@@ -159,7 +159,7 @@ def loop():
     world.update_pos_from_vel()
 
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.set_dt(dt)
+    world.setWorldDt(dt)
 
 
 

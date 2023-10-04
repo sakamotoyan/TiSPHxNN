@@ -21,8 +21,8 @@ output_shift = 0
 part_size = 0.05
 max_time_step = part_size/100
 world = World(dim=2, lb = -15, rt = 15)
-world.set_part_size(part_size)
-world.set_dt(max_time_step)
+world.setWorldPartSize(part_size)
+world.setWorldDt(max_time_step)
 
 # Speciliazed coefficents for this scene
 mov_vel = vec2_f([15.0, 0.0])

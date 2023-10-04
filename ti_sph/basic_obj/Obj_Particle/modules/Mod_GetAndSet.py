@@ -1,4 +1,6 @@
 import taichi as ti
+from ....basic_world import World
+
 
 @ti.data_oriented
 class Mod_GetAndSet:
@@ -7,7 +9,7 @@ class Mod_GetAndSet:
     ''' particle class attrs get&set '''
     @ti.func
     def tiGetObjStackTop(self:ti.template()):
-        return self.m_stack_top
+        return self.m_stack_top[None]
     @ti.func
     def tiGetObjPartNum(self):
         return self.m_part_num
@@ -24,7 +26,7 @@ class Mod_GetAndSet:
     def tiSetObjStackOpenNum(self, num: ti.i32):
         self.m_stack_open_num = num
     @ti.func
-    def tiGetObjWorld(self):
+    def tiGetObjWorld(self)->World:
         return self.m_world
     @ti.func
     def tiSetObjWorld(self, world):
@@ -50,7 +52,7 @@ class Mod_GetAndSet:
         return self.m_stack_open_num
     def setObjStackOpenNum(self, num: int):
         self.m_stack_open_num = num
-    def getObjWorld(self):
+    def getObjWorld(self)->World:
         return self.m_world
     def setObjWorld(self, world):
         self.m_world = world
@@ -95,11 +97,20 @@ class Mod_GetAndSet:
     def tiGetPos(self, i):
         return self.pos[i]
     @ti.func
+    def tiSetPos(self, i, pos):
+        self.pos[i] = pos
+    @ti.func
+    def tiAddPos(self, i, pos):
+        self.pos[i] += pos
+    @ti.func
     def tiGetPosArr(self):
         return self.pos
     @ti.func
     def tiGetVel(self, i):
         return self.vel[i]
+    @ti.func
+    def tiSetVel(self, i, vel):
+        self.vel[i] = vel
     @ti.func
     def tiGetVelArr(self):
         return self.vel
@@ -110,8 +121,18 @@ class Mod_GetAndSet:
     def tiGetVelAdv(self, i):
         return self.vel_adv[i]
     @ti.func
+    def tiSetVelAdv(self, i, vel_adv):
+        self.vel_adv[i] = vel_adv
+    @ti.func
     def tiGetAcc(self, i):
         return self.acc[i]
+    @ti.func
+    def tiSetAcc(self, i, acc):
+        self.acc[i] = acc
+    @ti.func
+    def tiAddAcc(self, i, acc):
+        self.acc[i] += acc
+
     @ti.func
     def tiGetMass(self, i):
         return self.mass[i]

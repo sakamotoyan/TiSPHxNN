@@ -34,7 +34,7 @@ class Cube_generator(Data_generator):
         self.generate_pos_based_on_span(temp_span)
         cube_pos_data = ti.Vector.field(self.dim, dtype=ti.f32, shape=self.num)
         cube_pos_data.from_numpy(self.np_pos)
-        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.tiGetObjStackTop()[None])
+        self.ker_push_pos(cube_pos_data, self.obj.pos, self.obj.tiGetObjStackTop())
         return self.num
     
     def pushed_num_preview(self, factor: float = 1.0, span: float = -1):

@@ -10,7 +10,6 @@ from .modules import cfl
 from .modules import solver_wcsph
 
 from ...basic_op.type import *
-from ...basic_obj.Obj_Particle import Particle
 
 @ti.data_oriented
 class World:
@@ -35,7 +34,6 @@ class World:
         self.dependent_init()
         self.part_obj_list = []
 
-    # Functions: init related
     def dependent_init(self):
         self.space_size = vecx_f(self.g_dim[None])
         self.space_center = vecx_f(self.g_dim[None])
@@ -45,18 +43,140 @@ class World:
         self.part_volume = val_f(self.g_part_size[None] ** self.g_dim[None])
         self.support_radius = val_f(self.g_part_size[None] * 2)
 
+    # Functions: init related
     def refresh(self):
-        self.dependent_init()
+        self.space_size[None] = self.g_space_rt[None] - self.g_space_lb[None]
+        self.space_center[None] = (self.g_space_rt[None] + self.g_space_lb[None]) / 2
+
+        self.part_volume = val_f(self.g_part_size[None] ** self.g_dim[None])
+        self.support_radius = val_f(self.g_part_size[None] * 2)
+
+    @ti.func
+    def tiGetWorldDim(self)->ti.i32:
+        return self.g_dim[None]
+    def getWorldDim(self)->ti.i32:
+        return self.g_dim[None]
+
+    @ti.func
+    def tiGetWorldSpaceLb(self):
+        return self.g_space_lb
+    def getWorldSpaceLb(self):
+        return self.g_space_lb
+
+    @ti.func
+    def tiGetWorldSpaceRt(self):
+        return self.g_space_rt
+    def getWorldSpaceRt(self):
+        return self.g_space_rt
     
-    def set_part_size(self, size):
-        self.g_part_size = val_f(size)
-        self.refresh()
+    @ti.func
+    def tiGetWorldGravity(self):
+        return self.g_gravity[None]
+    def getWorldGravity(self):  
+        return self.g_gravity
     
-    def set_dt(self, dt):
+    @ti.func
+    def tiGetWorldDt(self)->ti.f32:
+        return self.g_dt[None]
+    def getWorldDt(self)->ti.f32:
+        return self.g_dt[None]
+    @ti.func
+    def tiSetWorldDt(self, dt):
         self.g_dt[None] = dt
         self.g_inv_dt[None] = 1/dt
         self.g_neg_inv_dt[None] = -1/dt
         self.g_inv_dt2[None] = self.g_inv_dt[None] ** 2
+    def setWorldDt(self, dt):
+        self.g_dt[None] = dt
+        self.g_inv_dt[None] = 1/dt
+        self.g_neg_inv_dt[None] = -1/dt
+        self.g_inv_dt2[None] = self.g_inv_dt[None] ** 2
+    @ti.func
+    def tiGetWorldInvDt(self):
+        return self.g_inv_dt
+    def getWorldInvDt(self):
+        return self.g_inv_dt
+    @ti.func
+    def tiGetWorldNegInvDt(self):
+        return self.g_neg_inv_dt
+    def getWorldNegInvDt(self):
+        return self.g_neg_inv_dt
+    @ti.func
+    def tiGetWorldInvDt2(self):
+        return self.g_inv_dt2
+    def getWorldInvDt2(self):
+        return self.g_inv_dt2
+    
+    @ti.func
+    def tiGetWorldPartSize(self):
+        return self.g_part_size
+    def getWorldPartSize(self):
+        return self.g_part_size
+    def setWorldPartSize(self, size):
+        self.g_part_size = val_f(size)
+        self.refresh()
+    
+    @ti.func
+    def tiGetWorldAvgNeighbPartNum(self):
+        return self.g_avg_neighb_part_num
+    def getWorldAvgNeighbPartNum(self):
+        return self.g_avg_neighb_part_num
+    
+    @ti.func
+    def tiGetWorldObjNum(self):
+        return self.g_obj_num
+    def getWorldObjNum(self):
+        return self.g_obj_num
+    
+    @ti.func
+    def tiGetWorldSoundSpeed(self):
+        return self.g_sound_speed
+    def getWorldSoundSpeed(self):
+        return self.g_sound_speed
+    
+    @ti.func
+    def tiGetWorldPartVolume(self):
+        return self.part_volume
+    def getWorldPartVolume(self):
+        return self.part_volume
+    
+    @ti.func
+    def tiGetWorldSupportRadius(self):
+        return self.support_radius
+    def getWorldSupportRadius(self):
+        return self.support_radius
+    
+    @ti.func
+    def tiGetWorldSpaceSize(self):
+        return self.space_size
+    def getWorldSpaceSize(self):
+        return self.space_size
+    
+    @ti.func
+    def tiGetWorldSpaceCenter(self):
+        return self.space_center
+    def getWorldSpaceCenter(self):
+        return self.space_center
+
+    @ti.func
+    def tiGetWorldPhaseNum(self):
+        return self.g_phase_num
+    def getWorldPhaseNum(self):
+        return self.g_phase_num
+    
+    @ti.func
+    def tiGetWorldPhaseColor(self, phase_id: ti.i32):
+        return self.g_phase_color[phase_id]
+    def getWorldPhaseColor(self, phase_id: ti.i32):
+        return self.g_phase_color[phase_id]
+    
+    @ti.func
+    def tiGetWorldPhaseRestDensity(self, phase_id: ti.i32):
+        return self.g_phase_rest_density[None][phase_id]
+    def getWorldPhaseRestDensity(self, phase_id: ti.i32):
+        return self.g_phase_rest_density[None][phase_id]
+    
+
 
     def set_multiphase(self, phase_num, phase_color:List[vec3f], phase_rest_density:List[float]):
         self.g_phase_num = val_i(phase_num)
@@ -68,12 +188,18 @@ class World:
         print('world.g_phase_num\n', self.g_phase_num[None])
         print('world.g_phase_color\n', self.g_phase_color.to_numpy())
         print('world.g_phase_rest_density\n', self.g_phase_rest_density.to_numpy())
-    def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
-        obj = Particle(part_num, size, is_dynamic)
-        self.part_obj_list.append(obj)
-        obj.setObjId(val_i(self.part_obj_list.index(obj)))
-        obj.setObjWorld(self)
-        return obj
+        
+    # def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
+    #     obj = Particle(part_num, size, is_dynamic)
+    #     self.part_obj_list.append(obj)
+    #     obj.setObjId(val_i(self.part_obj_list.index(obj)))
+    #     obj.setObjWorld(self)
+    #     return obj
+    
+    def attachPartObj(self, partObj):
+        self.part_obj_list.append(partObj)
+        partObj.setObjId(val_i(self.part_obj_list.index(partObj)))
+        partObj.setObjWorld(self)
     
     def init_modules(self):
         neighb_search.init_neighb_search(self)
