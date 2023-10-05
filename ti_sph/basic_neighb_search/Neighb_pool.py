@@ -141,7 +141,7 @@ class Neighb_pool(Solver):
 
         ''' generate search template '''
         search_cell_range = int(ti.ceil(search_range[None] / neighb_obj.m_neighb_search.neighb_cell.cell_size[None]))
-        neighb_search_template = Neighb_search_template(self.getObj().getObjWorld().g_dim[None], search_cell_range)
+        neighb_search_template = Neighb_search_template(self.getObj().getObjWorld().getWorldDim(), search_cell_range)
         self.m_neighb_search_template_list.append(neighb_search_template)
 
     ''' get a obj, neighb_obj attributes pair  one at a time, as inputs to register_a_neighbour() '''

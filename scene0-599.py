@@ -13,10 +13,10 @@ ti.init(arch=ti.cuda, device_memory_GB=3) # Use GPU
 # ti.init(arch=ti.cpu) # Use CPU
 
 ''' GLOBAL SETTINGS '''
-fps = 60
-output_frame_num = 10
-sense_res = 128
 output_shift = 10
+output_frame_num = 200
+fps = 30
+sense_res = 128
 
 part_size = 0.05
 max_time_step = part_size/100
@@ -113,10 +113,11 @@ world.init_modules()
 world.neighb_search()
 
 sense_output = Output_manager(format_type = Output_manager.type.SEQ, data_source = sense_grid_part)
-sense_output.add_output_dataType("pos",2)
-sense_output.add_output_dataType("node_index",2)
-sense_output.add_output_dataType("sensed_density",1)
-sense_output.add_output_dataType("vel",2)
+sense_output.add_output_dataType("pos")
+sense_output.add_output_dataType("node_index")
+sense_output.add_output_dataType("sensed_density")
+sense_output.add_output_dataType("vel")
+sense_output.add_output_dataType("strain")
 
 # print('DEBUG sense_output', sense_output.np_node_index_organized)
 # save as numpy file
@@ -147,23 +148,6 @@ def loop():
     print(' ')
 
 
-
-def run(loop):
-    inv_fps = 1/fps
-    timer = 0
-    sim_time = 0
-    loop_count = 0
-
-    while True:
-        loop()
-        loop_count += 1
-        sim_time += world.g_dt[None]
-        if(sim_time > timer*inv_fps):
-            sense_output.export_to_numpy(index=output_shift+timer,path='./output')
-            timer += 1
-        if timer > output_frame_num:
-            break
-
 def run(loop):
     inv_fps = 1/fps
     timer = int(0)
@@ -173,10 +157,11 @@ def run(loop):
     gui2d_part = Gui2d(objs=[fluid_part, bound_part], radius=world.getWorldPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
     gui2d_grid = Gui2d(objs=[sense_grid_part], radius=sense_grid_part.getObjPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
 
-    while sim_time < 30.0:
+    while timer < output_frame_num:
         loop()
         loop_count += 1
         sim_time += world.getWorldDt()
+
         if(sim_time > timer*inv_fps):
             
             sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)

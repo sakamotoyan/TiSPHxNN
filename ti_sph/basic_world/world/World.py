@@ -54,7 +54,7 @@ class World:
     @ti.func
     def tiGetWorldDim(self)->ti.i32:
         return self.g_dim[None]
-    def getWorldDim(self)->ti.i32:
+    def getWorldDim(self)->int:
         return self.g_dim[None]
 
     @ti.func

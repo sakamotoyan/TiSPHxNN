@@ -75,7 +75,7 @@ class Sense_grid(Particle):
         super().__init__(part_num=self.get_node_num()[None], part_size=self.getObjPartSize(), is_dynamic=False)
         self.setObjWorld(world)
 
-        self.add_array("pos", vecxf(world.g_dim[None]).field())
+        self.add_array("pos", vecxf(world.getWorldDim()).field())
         self.add_array("size", ti.field(ti.f32))
         self.add_array("clampped", ti.field(ti.f32))
         self.add_array("clampped_rgb", vec3f.field())

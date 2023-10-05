@@ -14,6 +14,9 @@ vec4i = ti.types.vector(4, ti.i32)
 def vecxf(n):
     return ti.types.vector(n, ti.f32)
 
+def vecxm(n, m):
+    return ti.types.matrix(n, m, ti.f32)
+
 def vecxi(n):
     return ti.types.vector(n, ti.i32)
 

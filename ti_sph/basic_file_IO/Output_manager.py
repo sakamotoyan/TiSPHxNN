@@ -23,7 +23,7 @@ class Output_manager:
         self.obj = data_source
 
         self.data_name_list:List[str] = []
-        self.data_channel_list:List[int] = []
+        self.type_list:List[str] = []
 
         # TODO: Consider 3D case.
         if self.format_type is self.type.GRID:
@@ -33,48 +33,19 @@ class Output_manager:
             self.np_node_index_organized = np.empty((rows, cols, 2), dtype=int)
             self.np_data_organized = np.empty((rows, cols), dtype=float)
 
-    def add_output_dataType(self, name:str, channel:int = 1):
+    def add_output_dataType(self, name:str, type:str = 'scalar'):
         if not hasattr(self.obj, name):
             raise ValueError(f"{name} is not in {self.obj.__class__.__name__}.")
-        if channel > 1:
-            if channel > self.obj.__dict__[name].n:
-                raise ValueError(f"Channel {channel} is out of range of {name}({self.obj.__dict__[name].n} channels in total).")
         self.data_name_list.append(name)
-        self.data_channel_list.append(channel)
-    
-    # TODO: Consider 3D case.
-    def reshape_data(self, np_data):
-        A = self.np_node_index
-        B = np_data
-        A_organized = self.np_node_index_organized
-        B_organized = self.np_data_organized
-        A_organized[A[:, 0], A[:, 1]] = A
-        B_organized[A[:, 0], A[:, 1]] = B
-        
-        # A_organized = np.flip(A_organized, axis=0)
-        # B_organized = np.flip(B_organized, axis=0)
-        
-        return B_organized
+        self.type_list.append(type)
             
-
-    def export_to_numpy(self, index:int=0, path:str=".", truncate_num:int = 0):
+    
+    def export_to_numpy(self, index:int=0, path:str="."):
         
         for data_name in self.data_name_list:
-            file_name = f"{path}/{data_name}_i{index}"
 
-            if self.data_channel_list[self.data_name_list.index(data_name)] == 1:
-                file_name_channel = f"{file_name}_c0"
-                np_data = getattr(self.obj, data_name).to_numpy()[:]
-                if self.format_type is self.type.SEQ:
-                    np.save(file_name_channel, np_data)
-            else:
-                for channel in range(self.data_channel_list[self.data_name_list.index(data_name)]):
-                    file_name_channel = f"{file_name}_c{channel}"
-                    np_data = getattr(self.obj, data_name).to_numpy()[:, channel]
-                    if self.format_type is self.type.SEQ:
-                        np.save(file_name_channel, np_data)
-                    # elif self.format_type is self.type.SEQ and truncate:
-                    #     np.save(file_name_channel, np_data[:truncate_num])
-                    # elif self.format_type is self.type.GRID:
-                    #     np_data_reshape = self.reshape_data(np_data)
-                    #     np.save(file_name_channel, np_data_reshape)
+            file_name = f"{path}/{data_name}_{index}"
+            np_data = getattr(self.obj, data_name).to_numpy()
+
+            if self.format_type is self.type.SEQ:
+                np.save(file_name, np_data)

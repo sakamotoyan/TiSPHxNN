@@ -43,3 +43,4 @@ class Gui2d:
         fig.set_facecolor('skyblue')
 
         plt.savefig(path, dpi=200)
+        plt.close()
