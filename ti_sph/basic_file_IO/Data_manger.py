@@ -92,14 +92,18 @@ class Grid_Data_manager:
         cols = index_arr[:,1].max() + 1
         if len(data_arr.shape)==1:
             reshaped_data = np.empty((rows, cols), dtype=float)
+            reshaped_data[index_arr[:, 0], index_arr[:, 1]] = data_arr
         elif len(data_arr.shape)==2:
             reshaped_data = np.empty((rows, cols, data_arr.shape[1]), dtype=float)
+            for i in range(data_arr.shape[1]):
+                reshaped_data[index_arr[:, 0], index_arr[:, 1], i] = data_arr[:, i]
         elif len(data_arr.shape)==3:
             reshaped_data = np.empty((rows, cols, data_arr.shape[1], data_arr.shape[2]), dtype=float)
+            for i in range(data_arr.shape[1]):
+                for j in range(data_arr.shape[2]):
+                    reshaped_data[index_arr[:, 0], index_arr[:, 1], i, j] = data_arr[:, i, j]
         else:
             raise Exception("data_arr.shape is not supported")
-
-        reshaped_data[index_arr[:, 0], index_arr[:, 1]] = data_arr
 
         return reshaped_data
 

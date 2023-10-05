@@ -19,6 +19,11 @@ dm_vel.read_data(attr='vel',start_index=start_index,end_index=end_index)
 dm_vel.reshape_data_to_2d(index_attr='node_index')
 data_vel = dm_vel.export_single_frame_data('velocity', from_zero=True)
 
+dm_strain = Grid_Data_manager('./output', './output_organised')
+dm_strain.read_data(attr='strain',start_index=start_index,end_index=end_index)
+dm_strain.reshape_data_to_2d(index_attr='node_index')
+dm_strain = dm_strain.export_single_frame_data('strain', from_zero=True)
+
 for i in range(end_index-start_index):
     frame_data = data_density[i]
     frame_data = np.flipud(np.transpose(frame_data))
