@@ -38,9 +38,7 @@ class Neighb_cell(Solver):
         self.cell_id_of_part = ti.field(ti.i32, (self.getObj().getObjPartNum()))
         self.part_pointer_shift = ti.field(ti.i32, (self.getObj().getObjPartNum())) # 用于计算part在cell中的偏移
         self.part_id_container = ti.field(ti.i32, (self.getObj().getObjPartNum()))
-        
-        
-        self.push_index_timer = val_i(0)
+
     
     def attach_to_obj(self, obj):
         self.obj = obj
@@ -110,7 +108,7 @@ class Neighb_cell(Solver):
     @ti.func
     def getObjPartNum_in_cell(
         self,
-        cell_id: ti.template(),
+        cell_id: ti.i32,
     ):
         return self.part_num_in_cell[cell_id]
     

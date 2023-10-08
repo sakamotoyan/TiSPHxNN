@@ -18,6 +18,7 @@ def part_template(part_obj, world, verbose=False):
     part_obj.add_array("k_vis", ti.field(ti.f32))
     part_obj.add_array("acc", vecxf(part_obj.getObjWorld().g_dim[None]).field())
     part_obj.add_array("rgb", vecxf(3).field())
+    part_obj.add_array("strainRate", vecxm(part_obj.getObjWorld().getWorldDim(),part_obj.getObjWorld().getWorldDim()).field())
     
     part_obj.add_attr("statistics_linear_momentum", vecx_f(part_obj.getObjWorld().g_dim[None]))
     part_obj.add_attr("statistics_angular_momentum", vecx_f(3))

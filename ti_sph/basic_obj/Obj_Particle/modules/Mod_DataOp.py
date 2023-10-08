@@ -7,7 +7,7 @@ class Mod_DataOp(Mod_GetAndSet):
     def update_stack_top(self, num: int):
         self.AddObjStackTop(num)
 
-    def open_stack(self, open_num: ti.i32):
+    def open_stack(self, open_num: int):
         if self.m_if_stack_open:
             raise Exception("Particle Stack already opened!")
             exit(0)

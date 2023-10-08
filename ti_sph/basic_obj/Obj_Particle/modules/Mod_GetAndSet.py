@@ -329,4 +329,14 @@ class Mod_GetAndSet:
     def tiSetSphB(self, i, B):
         self.sph_wc[i].B = B
     
-    
+
+    def getStrainRate(self, i):
+        return self.strainRate[i]
+    @ti.func
+    def tiGetStrainRate(self, i: ti.i32):
+        return self.strainRate[i]
+    @ti.func
+    def tiAddStrainRate(self, i: ti.i32, strainRate):
+        self.strainRate[i] += strainRate
+    def getStrainRateArr(self):
+        return self.strainRate

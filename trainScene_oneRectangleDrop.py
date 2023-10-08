@@ -9,21 +9,23 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, kernel_profiler=True) 
-ti.init(arch=ti.cuda, device_memory_GB=3) # Use GPU
-# ti.init(arch=ti.cpu) # Use CPU
+ti.init(arch=ti.cuda, device_memory_GB=20) # Use GPU
+# ti.init(arch=ti.vulkan) # Use CPU
 
 ''' GLOBAL SETTINGS '''
-output_shift = 10
-output_frame_num = 200
+output_shift = 0
+output_frame_num = 2000
 fps = 30
 sense_res = 128
 
-part_size = 0.05
+part_size = 0.002
 max_time_step = part_size/100
-k_vis = 1e-4
+k_vis = 5e-5
 world = World(dim=2)
 world.setWorldPartSize(part_size)
 world.setWorldDt(max_time_step)
+
+print('default dt', world.getWorldDt())
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = 1000
@@ -101,10 +103,10 @@ sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_c
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_df(div_free_threshold=2e-4)
+fluid_part.add_solver_df(div_free_threshold=1e-4)
 
 bound_part.add_solver_sph()
-bound_part.add_solver_df(div_free_threshold=2e-4)
+bound_part.add_solver_df(div_free_threshold=1e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -117,7 +119,7 @@ sense_output.add_output_dataType("pos")
 sense_output.add_output_dataType("node_index")
 sense_output.add_output_dataType("sensed_density")
 sense_output.add_output_dataType("vel")
-sense_output.add_output_dataType("strain")
+sense_output.add_output_dataType("strainRate")
 
 # print('DEBUG sense_output', sense_output.np_node_index_organized)
 # save as numpy file
@@ -131,13 +133,15 @@ def loop():
     world.step_df_compute_alpha()
     world.step_df_div()
     print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    
+    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_sph.inloop_accumulate_strainRate)
 
     world.clear_acc()
     world.add_acc_gravity()
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     world.acc2vel()
-
+    
     world.step_df_incomp()
     print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
@@ -166,6 +170,8 @@ def run(loop):
             
             sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)
             sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
+            # sense_grid_part.m_solver_sph.sph_compute_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
+            sense_grid_part.m_solver_sph.sph_avg_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
             sense_output.export_to_numpy(index=output_shift+timer,path='./output')
 
             gui2d_part.save_img(path='./output/part_'+str(output_shift+timer)+'.png')

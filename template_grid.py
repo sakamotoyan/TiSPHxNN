@@ -13,7 +13,7 @@ def grid_template(part_obj, world, verbose=False):
 
     part_obj.add_array("sensed_density", ti.field(ti.f32))
     part_obj.add_array("vel", vecxf(part_obj.getObjWorld().getWorldDim()).field())
-    part_obj.add_array("strain", vecxm(part_obj.getObjWorld().getWorldDim(),part_obj.getObjWorld().getWorldDim()).field())
+    part_obj.add_array("strainRate", vecxm(part_obj.getObjWorld().getWorldDim(),part_obj.getObjWorld().getWorldDim()).field())
 
     sph = ti.types.struct(
         h=ti.f32,

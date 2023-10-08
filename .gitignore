@@ -12,3 +12,4 @@ imgui.ini
 *.npy
 output.csv
 *.ply
+*.gz
