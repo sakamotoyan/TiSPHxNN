@@ -86,9 +86,9 @@ class Gui3d:
                 self.op_save_img = not self.op_save_img
                 print("save image:", self.op_save_img)
 
-            # if self.window.event.key == "b":
-            #     self.show_bound = not self.show_bound
-            #     print("show boundary:", self.show_bound)
+            if self.window.event.key == "b":
+                self.show_bound = not self.show_bound
+                print("show boundary:", self.show_bound)
 
             # if self.window.event.key == "i":
             #     self.show_run_info = not self.show_run_info

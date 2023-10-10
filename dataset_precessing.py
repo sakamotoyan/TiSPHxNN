@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 
-start_index = 10
-end_index = 75
-res = 256
+start_index = 0
+end_index = 30
+res = 128
 
 dm_density = Grid_Data_manager('./output', './output_organised')
 dm_density.read_data(attr='sensed_density',start_index=start_index,end_index=end_index)
@@ -62,8 +62,8 @@ for i in range(end_index-start_index):
 
 # HSV visualization of velocity field
 # dm_vel.processed_data.shape = (frame_num, channel_num(2, for x and y each), vel_x, vel_y)
-x1, y1 = 1,0
-x2, y2 = 0,1
+x1, y1 = 0,0
+x2, y2 = 0,0
 g_strainRate = (np.array(dm_strainRate.processed_data)[:,:,:,x1,y1] + np.array(dm_strainRate.processed_data)[:,:,:,x2,y2])
 g_speed_min = g_strainRate.min()
 g_speed_max = g_strainRate.max()

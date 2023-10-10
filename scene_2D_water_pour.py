@@ -8,11 +8,45 @@ import numpy as np
 import csv
 np.set_printoptions(threshold=sys.maxsize)
 
+@ti.kernel
+def clear_selected(fluid_part:ti.template()):
+    for i in range(fluid_part.tiGetObjStackTop()):
+        fluid_part.selected[i] = 0
+
+@ti.kernel
+def select_part(fluid_part:ti.template()):
+    for i in range(fluid_part.tiGetObjStackTop()):
+        if fluid_part.sph.compression_ratio[i] < 0.9:
+            fluid_part.selected[i] = 1
+        else:
+            fluid_part.selected[i] = 0
+
+@ti.func
+def inloop_expand_selected(part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
+    cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
+    cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
+    if cached_dist>1e-6 and fluid_part.selected[part_id]==1 and neighb_obj.selected[neighb_part_id] != 1:
+        neighb_obj.selected[neighb_part_id] = 2
+
+@ti.kernel
+def confirm_selected(fluid_part:ti.template()):
+    for i in range(fluid_part.tiGetObjStackTop()):
+        if fluid_part.selected[i] == 2:
+            fluid_part.selected[i] = 1
+
+@ti.kernel
+def color_selected(fluid_part:ti.template()):
+    for i in range(fluid_part.tiGetObjStackTop()):
+        if fluid_part.selected[i] == 1:
+            fluid_part.rgb[i] = tsph.vec3f(1,0,0)
+        else:
+            fluid_part.rgb[i] = tsph.vec3f(0,0,1)
+
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-# ti.init(arch=ti.cuda, device_memory_GB=13) 
+ti.init(arch=ti.cuda, device_memory_GB=13) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
-ti.init(arch=ti.vulkan)
+# ti.init(arch=ti.vulkan)
 # ti.init(arch=ti.cpu)
 
 ''' SOLVER SETTINGS '''
@@ -28,7 +62,9 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.016 
+# part_size = 0.005 
+part_size = 0.01 
+dpi=200
 # number of phases
 phase_num = 3 
 # max time step size
@@ -44,30 +80,30 @@ Cd = 0.8
 kd = 0.0
 flag_strat_drift = True
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 5e-4
+kinematic_viscosity_fluid = 1e-3
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
-world = tsph.World(dim=3) 
+world = tsph.World(dim=2) 
 # set the particle diameter
 world.setWorldPartSize(part_size) 
 # set the max time step size
 world.setWorldDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
-world.set_multiphase(phase_num,[tsph.vec3f(0.8,0.2,0),tsph.vec3f(0,0.8,0.2),tsph.vec3f(0,0,1)],[300,500,1000]) 
+world.set_multiphase(phase_num,[tsph.vec3f(0.0,0.2,0.8),tsph.vec3f(0.8,0.2,0.0),tsph.vec3f(0.8,0.2,0.0)],[300,500,1000]) 
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-# pool_data = tsph.Squared_pool_3D_data(container_height=3, container_size=3, fluid_height=2, span=world.g_part_size[None], layer = 3)
-water_data = tsph.Cube_data(span=world.g_part_size[None], type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec3f(-0.6,0.0,-0.6), rt=tsph.vec3f(0.6,3.5,0.6))
-glass_data = tsph.Ply_data('./glassPoint.ply')
+pool_data = tsph.Squared_pool_2D_data(container_height=8, container_size=5, fluid_height=7, span=world.g_part_size[None]*1.004, layer = 3)
+# water_data = tsph.Cube_data(span=world.g_part_size[None], type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec3f(-0.6,0.0,-0.6), rt=tsph.vec3f(0.6,3.5,0.6))
+# glass_data = tsph.Ply_data('./glassPoint.ply')
 # particle number of fluid/boundary
-fluid_part_num = water_data.num
-bound_part_num = glass_data.num
+fluid_part_num = pool_data.fluid_part_num
+bound_part_num = pool_data.bound_part_num
 print("fluid_part_num", fluid_part_num)
 # position info of fluid/boundary (as numpy arrays)
-fluid_part_pos = water_data.pos
-bound_part_pos = glass_data.pos
+fluid_part_pos = pool_data.fluid_part_pos
+bound_part_pos = pool_data.bound_part_pos
 # initial velocity info of fluid
 
 '''INIT AN FLUID PARTICLE OBJECT'''
@@ -129,11 +165,6 @@ def prep_ism():
     fluid_part.m_solver_ism.update_color() # update the color
     fluid_part.m_solver_ism.recover_phase_vel_from_mixture() # recover the phase velocity from the mixture velocity
 
-    world.neighb_search() # perform the neighbor search
-    fluid_part.m_solver_JL21.update_rest_density_and_mass()
-    fluid_part.m_solver_JL21.update_color() # update the color
-    fluid_part.m_solver_JL21.recover_phase_vel_from_mixture() # recover the phase velocity from the mixture velocity
-
 ''' SIMULATION LOOPS '''
 def loop_ism():
     ''' color '''
@@ -154,7 +185,7 @@ def loop_ism():
     ''' [TIME START] DFSPH Part 2 '''
     world.step_vfsph_div(update_vel=False)
     ''' [TIME END] DFSPH Part 2 '''
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' [ISM] distribute pressure acc to phase acc and update phase vel '''
     '''  [TIME START] ISM Part 1 '''
@@ -179,7 +210,7 @@ def loop_ism():
     '''  [TIME START] DFSPH Part 3 '''
     world.step_vfsph_incomp(update_vel=False)
     '''  [TIME START] DFSPH Part 3 '''
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     ''' distribute pressure acc to phase acc and update phase vel '''
     '''  [TIME START] ISM Part 3 '''
@@ -212,69 +243,10 @@ def loop_ism():
     '''  [TIME END] CFL '''
 
     ''' statistical info '''
-    print(' ')
-    fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
-    fluid_part.m_solver_ism.statistics_angular_momentum()
-    fluid_part.m_solver_ism.debug_check_val_frac()
-
-    ''' update color based on the volume fraction '''
-    fluid_part.m_solver_JL21.update_color()
-
-    ''' neighb search'''
-    ''' [TIME START] neighb_search '''
-    world.neighb_search()
-    ''' [TIME END] neighb_search '''
-
-    ''' compute number density '''
-    ''' [TIME START] WCSPH Part 1 '''
-    world.step_sph_compute_number_density()
-    ''' [TIME END] WCSPH Part 1 '''
-
-    ''' gravity (not requird in this scene) accleration '''
-    ''' [TIME START] WCSPH Part 2 '''
-    world.clear_acc()
-    world.add_acc_gravity()
-
-    ''' viscosity force '''
-    fluid_part.m_solver_JL21.clear_vis_force()
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
-
-    ''' pressure force '''
-    fluid_part.m_solver_JL21.clear_pressure_force()
-    world.step_wcsph_add_acc_number_density_pressure()
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
-    ''' [TIME END] WCSPH Part 2 '''
-
-    ''' update phase vel (from all accelerations) '''
-    if flag_strat_drift:
-        ''' [TIME START] JL21 Part 1 '''
-        fluid_part.m_solver_JL21.update_phase_vel()
-        ''' [TIME END] JL21 Part 1 '''
-    else:
-        fluid_part.m_solver_JL21.vis_force_2_acc()
-        fluid_part.m_solver_JL21.pressure_force_2_acc()
-        fluid_part.m_solver_JL21.acc_2_vel()
-
-    ''' update particle position from velocity '''
-    ''' [TIME START] WCSPH Part 3 '''
-    world.update_pos_from_vel()
-    ''' [TIME END] WCSPH Part 3 '''
-
-    ''' phase change (spacial care with lambda scheme) '''
-    ''' [TIME START] JL21 Part 2 '''
-    fluid_part.m_solver_JL21.update_val_frac_lamb()
-    ''' [TIME END] JL21 Part 2 '''    
-
-    ''' statistical info '''
     # print(' ')
-    # fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
-    # fluid_part.m_solver_JL21.statistics_angular_momentum()
-    # fluid_part.m_solver_JL21.debug_check_val_frac()
-
-    dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.setWorldDt(dt)    
+    # fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
+    # fluid_part.m_solver_ism.statistics_angular_momentum()
+    # fluid_part.m_solver_ism.debug_check_val_frac()
 
 def write_part_info_ply():
     for part_id in range(fluid_part.getObjStackTop()):
@@ -288,50 +260,36 @@ def write_part_info_ply():
         bound_part.pos[bound_part_id]
 
 ''' Viusalization and run '''
-def vis_run(loop):
-    global flag_strat_drift
+def run(loop):
     inv_fps = 1/fps
-    timer = 0
-    sim_time = 0
-    loop_count = 0
-    flag_write_img = False
+    timer = int(0)
+    sim_time = float(0.0)
+    loop_count = int(0)
 
-    gui = tsph.Gui3d()
-    while gui.window.running:
+    gui2d_part = tsph.Gui2d(objs=[fluid_part, bound_part], radius=world.getWorldPartSize()*8, lb=tsph.vec2f([-4,-4]),rt=tsph.vec2f([4,4]), dpi=dpi)
 
-        gui.monitor_listen()
+    while timer < output_frame_num:
+        loop()
+        loop_count += 1
+        sim_time += world.getWorldDt()
 
-        if gui.op_system_run:
-            loop()
-            loop_count += 1
-            sim_time += world.g_dt[None]
-            print("loop ", loop_count)
+        if(sim_time > timer*inv_fps):
+            clear_selected(fluid_part)
+            select_part(fluid_part)
+            for i in range(40):
+                fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, inloop_expand_selected)
+                confirm_selected(fluid_part)
+            color_selected(fluid_part)
             
-            if(sim_time > timer*inv_fps):
-                if gui.op_write_file:
-                    write_part_info_ply()
-                timer += 1
-                flag_write_img = True
-        if gui.op_refresh_window:
-            gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop(),size=world.g_part_size[None])
-            if gui.show_bound:
-                gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop(),size=world.g_part_size[None])
-            gui.canvas.scene(gui.scene)  # Render the scene
 
-            if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
-                flag_write_img = False
+            gui2d_part.save_img(path='./output/part_'+str(timer)+'.jpg')
+            timer += 1
 
-            gui.window.show()
-        
-        if timer > output_frame_num:
-            break
 
 ''' RUN THE SIMULATION '''
 
 prep_ism()
-vis_run(loop_ism)
+run(loop_ism)
 
 
 
