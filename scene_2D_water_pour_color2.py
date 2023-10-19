@@ -16,7 +16,8 @@ def clear_selected(fluid_part:ti.template()):
 @ti.kernel
 def select_part(fluid_part:ti.template()):
     for i in range(fluid_part.tiGetObjStackTop()):
-        if fluid_part.sph.compression_ratio[i] < 0.9:
+        # if fluid_part.sph.compression_ratio[i] < 0.9:
+        if fluid_part.pos[i][1] > -1.0:
             fluid_part.selected[i] = 1
         else:
             fluid_part.selected[i] = 0
@@ -40,7 +41,7 @@ def color_selected(fluid_part:ti.template()):
         if fluid_part.selected[i] == 1:
             fluid_part.rgb[i] = tsph.vec3f(1,0,0)
         else:
-            fluid_part.rgb[i] = tsph.vec3f(0,0,1)
+            fluid_part.rgb[i] = tsph.vec3f(0.9,0.9,0.9)
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
@@ -274,6 +275,14 @@ def run(loop):
         sim_time += world.getWorldDt()
 
         if(sim_time > timer*inv_fps):
+            clear_selected(fluid_part)
+            select_part(fluid_part)
+            # for i in range(40):
+            #     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, inloop_expand_selected)
+            #     confirm_selected(fluid_part)
+            color_selected(fluid_part)
+            
+
             gui2d_part.save_img(path='./output/part_'+str(timer)+'.jpg')
             timer += 1
 

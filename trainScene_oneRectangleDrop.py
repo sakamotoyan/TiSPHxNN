@@ -9,7 +9,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, kernel_profiler=True) 
-ti.init(arch=ti.cuda, device_memory_GB=20) # Use GPU
+ti.init(arch=ti.cuda, device_memory_GB=15) # Use GPU
 # ti.init(arch=ti.vulkan) # Use CPU
 
 ''' GLOBAL SETTINGS '''
@@ -18,7 +18,7 @@ output_frame_num = 2000
 fps = 30
 sense_res = 128
 
-part_size = 0.002
+part_size = 0.003
 max_time_step = part_size/100
 k_vis = 5e-5
 world = World(dim=2)
@@ -132,7 +132,7 @@ def loop():
     world.step_sph_compute_density()
     world.step_df_compute_alpha()
     world.step_df_div()
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
     
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_sph.inloop_accumulate_strainRate)
 
@@ -143,13 +143,13 @@ def loop():
     world.acc2vel()
     
     world.step_df_incomp()
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     world.update_pos_from_vel()
 
     world.cfl_dt(0.5, max_time_step)
 
-    print(' ')
+    # print(' ')
 
 
 def run(loop):

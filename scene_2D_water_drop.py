@@ -28,9 +28,9 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-# part_size = 0.005 
-part_size = 0.01 
-dpi=200
+part_size = 0.005 
+# part_size = 0.01 
+dpi=1600
 # number of phases
 phase_num = 3 
 # max time step size
@@ -39,9 +39,9 @@ if solver == SOLVER_ISM:
 elif solver == SOLVER_JL21:
     max_time_step = part_size/100
 #  diffusion amount: Cf = 0 yields no diffusion
-Cf = 0.05 
+Cf = 0.0015 
 #  drift amount (for ism): Cd = 0 yields free driftand Cd = 1 yields no drift
-Cd = 0.1 
+Cd = 0.0 
 # drag coefficient (for JL21): kd = 0 yields maximum drift 
 kd = 0.0
 flag_strat_drift = True
@@ -56,12 +56,12 @@ world.setWorldPartSize(part_size)
 # set the max time step size
 world.setWorldDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
-world.set_multiphase(phase_num,[tsph.vec3f(0.9,0.9,0.9),tsph.vec3f(0.8,0.2,0.0),tsph.vec3f(1.0,0.0,0.0)],[300,500,2000]) 
+world.set_multiphase(phase_num,[tsph.vec3f(0.9,0.9,0.9),tsph.vec3f(0.8,0.2,0.0),tsph.vec3f(1.0,0.0,0.0)],[300,500,1500]) 
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-pool_data = tsph.Squared_pool_2D_data(container_height=8, container_size=5, fluid_height=4, span=world.g_part_size[None]*1.004, layer = 3)
-fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.7, pos=tsph.vec2f(0.0,1.0), span=world.g_part_size[None]*1.004)
+pool_data = tsph.Squared_pool_2D_data(container_height=8, container_size=5, fluid_height=4, span=world.g_part_size[None]*1.0005, layer = 3)
+fluid_part_sphere_data = tsph.Sphere_2D_data(radius=1.0, pos=tsph.vec2f(0.0,1.0), span=world.g_part_size[None]*1.0005)
 # water_data = tsph.Cube_data(span=world.g_part_size[None], type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec3f(-0.6,0.0,-0.6), rt=tsph.vec3f(0.6,3.5,0.6))
 # glass_data = tsph.Ply_data('./glassPoint.ply')
 # particle number of fluid/boundary

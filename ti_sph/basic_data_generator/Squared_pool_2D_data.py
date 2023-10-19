@@ -22,7 +22,7 @@ class Squared_pool_2D_data():
                             (self.grid_y > -self.container_height/2 + self.span*layer) & (self.grid_y < self.container_height/2 - self.span*layer) 
         self.mask_bound = ~self.mask_inner_space
         self.mask_fluid = self.mask_inner_space & (self.grid_y < self.fluid_empty_height) \
-            # & (self.grid_x < container_size/2/3)
+            & (self.grid_x < container_size/2/3)
 
         self.fluid_position_x = self.grid_x[self.mask_fluid]
         self.fluid_position_y = self.grid_y[self.mask_fluid]
