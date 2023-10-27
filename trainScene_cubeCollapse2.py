@@ -31,17 +31,21 @@ print('default dt', world.getWorldDt())
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = 1000
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+part_size, -4+part_size), rt=vec2f(4-part_size*3, -2), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0, -1.8), rt=vec2f(3, 3.5), span=world.g_part_size[None]*1.001)
+pool_data = Squared_pool_2D_data(container_height=8, container_size=8, fluid_height=6, span=world.g_part_size[None]*1.0005, layer = 3, fluid_empty_width=0.2)
+fluid_part_num = pool_data.fluid_part_num
+bound_part_num = pool_data.bound_part_num
+fluid_part_pos = pool_data.fluid_part_pos
+bound_part_pos = pool_data.bound_part_pos
+
 '''INIT AN FLUID PARTICLE OBJECT'''
-fluid_part_num = fluid_cube_data_1.num + fluid_cube_data_2.num
+fluid_part_num = fluid_part_num
 print("fluid_part_num", fluid_part_num)
 fluid_part = Particle(part_num=fluid_part_num, part_size=world.g_part_size, is_dynamic=True)
 world.attachPartObj(fluid_part)
 fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
-fluid_part.open_stack(fluid_cube_data_1.num)
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)
+fluid_part.open_stack(fluid_part_num)
+fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos)
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
 fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getObjPartSize()**world.getWorldDim())
 fluid_part.fill_open_stack_with_val(fluid_part.mass, fluid_rest_density*fluid_part.getObjPartSize()**world.getWorldDim())
@@ -50,25 +54,14 @@ fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3f([0.0, 0.0, 1.0]))
 fluid_part.fill_open_stack_with_val(fluid_part.k_vis, k_vis)
 fluid_part.close_stack()
 
-fluid_part.open_stack(fluid_cube_data_2.num)
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getObjPartSize()**world.getWorldDim())
-fluid_part.fill_open_stack_with_val(fluid_part.mass, fluid_rest_density*fluid_part.getObjPartSize()**world.getWorldDim())
-fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
-fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3f([1.0, 0.0, 0.0]))
-fluid_part.fill_open_stack_with_val(fluid_part.k_vis, k_vis)
-fluid_part.close_stack()
-
 
 ''' INIT BOUNDARY PARTICLE OBJECT '''
-box_data = Box_data(lb=vec2f(-4, -4), rt=vec2f(4, 4), span=world.g_part_size[None]*1.05, layers=3)
 bound_rest_density = 1000
-bound_part = Particle(part_num=box_data.num, part_size=world.g_part_size, is_dynamic=False)
+bound_part = Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
 world.attachPartObj(bound_part)
 bound_part.instantiate_from_template(part_template, world)
-bound_part.open_stack(box_data.num)
-bound_part.fill_open_stack_with_arr(bound_part.pos, box_data.pos)
+bound_part.open_stack(bound_part_num)
+bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
 bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
 bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getObjPartSize()**world.getWorldDim())
 bound_part.fill_open_stack_with_val(bound_part.mass, bound_rest_density*bound_part.getObjPartSize()**world.getWorldDim())
@@ -76,7 +69,6 @@ bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 fluid_part.fill_open_stack_with_val(bound_part.rgb, vec3f([0.0, 0.0, 0.0]))
 bound_part.fill_open_stack_with_val(bound_part.k_vis, k_vis)
 bound_part.close_stack()
-
 
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 sense_grid_part = Particle(part_num=sense_cube_data.num, part_size=sense_cell_size, is_dynamic=False)
@@ -136,7 +128,7 @@ def loop(is_log_loop=False):
     world.step_df_div()
     # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
     
-    if(is_log_loop):
+    if is_log_loop:
         fluid_part.m_solver_sph.sph_compute_strainRate(fluid_part, fluid_part.m_neighb_search.neighb_pool)
 
     world.clear_acc()
@@ -177,7 +169,6 @@ def run(loop):
             sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
             
             sense_grid_part.m_solver_sph.sph_avg_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
-
             sense_output.export_to_numpy(index=output_shift+timer,path='./output')
 
             gui2d_part.save_img(path='./output/part_'+str(output_shift+timer)+'.png')
@@ -186,6 +177,8 @@ def run(loop):
             # gui2d_grid.save_img(path='./output/grid_'+str(output_shift+timer)+'.png')
 
             timer += 1
+
+
 
 run(loop)
 

@@ -82,8 +82,7 @@ class SPH_solver(Solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_W = neighb_pool.tiGet_cachedW(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
-        if bigger_than_zero(cached_dist):
-            self.tiGetObj().tiAddStrainRate(part_id, neighb_obj.tiGetStrainRate(neighb_part_id) * neighb_obj.tiGetVolume(neighb_part_id) * cached_W)
+        self.tiGetObj().tiAddStrainRate(part_id, neighb_obj.tiGetStrainRate(neighb_part_id) * neighb_obj.tiGetVolume(neighb_part_id) * cached_W)
 
     def sph_compute_density(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphDensityArr())
@@ -109,11 +108,9 @@ class SPH_solver(Solver):
             ''' Compute Average Velocity '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)
 
-    def sph_compute_strainRate(self, neighb_pool):
+    def sph_compute_strainRate(self, neighb_obj, neighb_pool):
         self.getObj().clear(self.getObj().getStrainRateArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
-            ''' Compute Strain Rate '''
-            self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_strainRate)
+        self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_strainRate)
     
     def sph_avg_strainRate(self, neighb_pool):
         self.getObj().clear(self.getObj().getStrainRateArr())

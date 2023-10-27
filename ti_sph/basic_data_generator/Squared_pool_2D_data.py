@@ -5,7 +5,7 @@ import numpy as np
 
 @ti.data_oriented
 class Squared_pool_2D_data():
-    def __init__(self, container_height: ti.f32, container_size: ti.f32, fluid_height: ti.f32, span: ti.f32, layer:ti.i32):
+    def __init__(self, container_height: ti.f32, container_size: ti.f32, fluid_height: ti.f32, span: ti.f32, layer:ti.i32, fluid_empty_width: ti.f32 = 0):
 
         self.container_height = container_height
         self.container_size = container_size
@@ -22,7 +22,7 @@ class Squared_pool_2D_data():
                             (self.grid_y > -self.container_height/2 + self.span*layer) & (self.grid_y < self.container_height/2 - self.span*layer) 
         self.mask_bound = ~self.mask_inner_space
         self.mask_fluid = self.mask_inner_space & (self.grid_y < self.fluid_empty_height) \
-            & (self.grid_x < container_size/2/3)
+            & (self.grid_x < (container_size/2 - fluid_empty_width*container_size))
 
         self.fluid_position_x = self.grid_x[self.mask_fluid]
         self.fluid_position_y = self.grid_y[self.mask_fluid]
