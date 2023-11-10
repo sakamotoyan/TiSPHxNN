@@ -6,11 +6,28 @@ import matplotlib.colors as colors
 
 
 start_index = 0
-end_index = 1000
+end_index = 1089
 res = 128
 
 input_path = './output/t1r'
 output_path = './output_organised'
+
+def augment(a, steepness = 5, mildrange = 0.2):
+    if a < mildrange:
+        linear_val = a
+        root_val = a**(1/steepness) 
+        blend_factor = 3*(a/mildrange)**2 - 2*(a/mildrange)**3
+        return linear_val * (1 - blend_factor) + root_val * blend_factor
+    else:
+        return a**(1/steepness)
+
+def plot_func(func, range_min, range_max, steps=1000):
+    x = np.linspace(range_min, range_max, steps)
+    y = np.zeros_like(x)
+    for i in range(len(x)):
+        y[i] = func(x[i])
+    plt.plot(x,y)
+    plt.show()
 
 def process_density(export_data=False):
     dm_density = Grid_Data_manager(input_path, output_path)
@@ -24,7 +41,7 @@ def process_density(export_data=False):
         frame_data = np.flipud(np.transpose(frame_data))
         normalized_array = ((frame_data - frame_data.min()) * (255 - 0) / (frame_data.max() - frame_data.min())).astype(np.uint8)
         img = Image.fromarray(normalized_array, 'L')
-        img.save(f'./output_organised/density_{i}.jpg')
+        img.save(f'./output_organised/density_{i}.png')
 
 def process_vel(export_data=False):
     dm_vel = Grid_Data_manager(input_path, output_path)
@@ -59,7 +76,7 @@ def process_vel(export_data=False):
         plt.imsave(f'./output_organised/vel_hsv_{i}.png', rgb)
         plt.close()             # if from_zero, then i
 
-def process_strainRate(export_data=False, single_frame_contrast=False, use_density_mask=False, vis_data='compression'):
+def process_strainRate(export_data=False, use_density_mask=False, vis_data='compression', background_color='black'):
     dm_strainRate = Grid_Data_manager(input_path, output_path)
     dm_strainRate.read_data(attr='strainRate',start_index=start_index,end_index=end_index)
     dm_strainRate.reshape_data_to_2d(index_attr='node_index')
@@ -97,32 +114,25 @@ def process_strainRate(export_data=False, single_frame_contrast=False, use_densi
             density_mask = np.ones_like(val)
 
         rgb = np.zeros((val.shape[0],val.shape[1],3))
-        if single_frame_contrast:
-            for x in range(val.shape[0]):
-                for y in range(val.shape[1]):
-                    if val[x,y] > 0:
-                        rgb[x,y,0] = 1 * density_mask[x,y]
-                        rgb[x,y,1] = (1 - val[x,y]/val.max()) * density_mask[x,y]
-                        rgb[x,y,2] = (1 - val[x,y]/val.max()) * density_mask[x,y]
-                    else:
-                        rgb[x,y,0] = (1 - val[x,y]/val.min()) * density_mask[x,y]
-                        rgb[x,y,1] = (1 - val[x,y]/val.min()) * density_mask[x,y]
-                        rgb[x,y,2] = 1 * density_mask[x,y]
-        else:
-            for x in range(val.shape[0]):
-                for y in range(val.shape[1]):
-                    if val[x,y] > 0:
-                        rgb[x,y,0] = 1 * density_mask[x,y]
-                        rgb[x,y,1] = (1 - val[x,y]/max_measured_value) * density_mask[x,y]
-                        rgb[x,y,2] = (1 - val[x,y]/max_measured_value) * density_mask[x,y]
-                    else:
-                        rgb[x,y,0] = (1 - val[x,y]/min_measured_value) * density_mask[x,y]
-                        rgb[x,y,1] = (1 - val[x,y]/min_measured_value) * density_mask[x,y]
-                        rgb[x,y,2] = 1 * density_mask[x,y]
+
+        for x in range(val.shape[0]):
+            for y in range(val.shape[1]):
+                if val[x,y] > 0:
+                    normalised_val = augment(val[x,y]/max_measured_value)
+                    rgb[x,y,0] = 1 * density_mask[x,y]
+                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,2] = (1 - normalised_val) * density_mask[x,y]
+                else:
+                    normalised_val = augment(val[x,y]/min_measured_value)
+                    rgb[x,y,0] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,2] = 1 * density_mask[x,y]
 
         plt.imsave(f'./output_organised/strainRate_{vis_data}_{i}.png', rgb)
         plt.close()          
 
-process_strainRate(export_data=False, single_frame_contrast=False, use_density_mask=False, vis_data='rotation')
-# process_vel(export_data=False)
-# process_density(export_data=False)
+process_strainRate(export_data=False, use_density_mask=False, vis_data='shear')
+process_strainRate(export_data=False, use_density_mask=False, vis_data='compression')
+process_strainRate(export_data=False, use_density_mask=False, vis_data='rotation')
+process_vel(export_data=False)
+process_density(export_data=False)
