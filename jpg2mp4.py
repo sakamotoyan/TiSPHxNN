@@ -3,11 +3,11 @@ import os
 
 # Output MP4 file path
 output_path = './output_video/t1'
-input_path = './output_organised'
+input_path = './output_organised/'
 
 # Frame rate (frames per second) of the output video
 start_index = 0
-end_index = 1089
+end_index = 1069
 frame_rate = 30
 stride = 1
 

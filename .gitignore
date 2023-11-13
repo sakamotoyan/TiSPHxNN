@@ -13,3 +13,6 @@ imgui.ini
 output.csv
 *.ply
 *.gz
+output_organised
+output
+output_video

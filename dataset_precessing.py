@@ -4,13 +4,12 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
+input_path = './output/t1r'
+output_path = './output_organised/'
 
 start_index = 0
-end_index = 1089
+end_index = 1069
 res = 128
-
-input_path = './output/t1r'
-output_path = './output_organised'
 
 def augment(a, steepness = 5, mildrange = 0.2):
     if a < mildrange:
