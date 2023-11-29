@@ -9,14 +9,14 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, kernel_profiler=True) 
-ti.init(arch=ti.cuda, device_memory_GB=15) # Use GPU
-# ti.init(arch=ti.vulkan) # Use CPU
+ti.init(arch=ti.cuda, device_memory_GB=20) # Use GPU
+# ti.init(arch=ti.vulkan) # Use vulkan
 
 ''' GLOBAL SETTINGS '''
 output_shift = 0
 output_frame_num = 2000
 fps = 30
-sense_res = 128
+sense_res = 256
 
 sense_cell_size = val_f(7.0/sense_res)
 part_size = sense_cell_size[None] / 12

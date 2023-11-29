@@ -4,12 +4,12 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
-input_path = './output/t1r'
+input_path = './output/'
 output_path = './output_organised/'
 
 start_index = 0
-end_index = 1069
-res = 128
+end_index = 136
+res = 256
 
 def augment(a, steepness = 5, mildrange = 0.2):
     if a < mildrange:
@@ -74,6 +74,9 @@ def process_vel(export_data=False):
         rgb = colors.hsv_to_rgb(hsv)
         plt.imsave(f'./output_organised/vel_hsv_{i}.png', rgb)
         plt.close()             # if from_zero, then i
+    
+    return dm_vel
+    
 
 def process_strainRate(export_data=False, use_density_mask=False, vis_data='compression', background_color='black'):
     dm_strainRate = Grid_Data_manager(input_path, output_path)
@@ -130,8 +133,8 @@ def process_strainRate(export_data=False, use_density_mask=False, vis_data='comp
         plt.imsave(f'./output_organised/strainRate_{vis_data}_{i}.png', rgb)
         plt.close()          
 
-process_strainRate(export_data=False, use_density_mask=False, vis_data='shear')
-process_strainRate(export_data=False, use_density_mask=False, vis_data='compression')
-process_strainRate(export_data=False, use_density_mask=False, vis_data='rotation')
-process_vel(export_data=False)
-process_density(export_data=False)
+# process_strainRate(export_data=False, use_density_mask=False, vis_data='shear')
+# process_strainRate(export_data=False, use_density_mask=False, vis_data='compression')
+# process_strainRate(export_data=False, use_density_mask=False, vis_data='rotation')
+process_density(export_data=True)
+# dm_vel = process_vel(export_data=True)
