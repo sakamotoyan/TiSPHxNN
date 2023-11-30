@@ -135,6 +135,6 @@ def process_strainRate(export_data=False, use_density_mask=False, vis_data='comp
 
 # process_strainRate(export_data=False, use_density_mask=False, vis_data='shear')
 # process_strainRate(export_data=False, use_density_mask=False, vis_data='compression')
-# process_strainRate(export_data=False, use_density_mask=False, vis_data='rotation')
-process_density(export_data=True)
+process_strainRate(export_data=False, use_density_mask=False, vis_data='rotation')
+# process_density(export_data=True)
 # dm_vel = process_vel(export_data=True)

@@ -2,6 +2,7 @@ import os
 import numpy as np
 from typing import List
 from multiprocessing import Process
+import taichi as ti
 
 class Grid_Data_manager:
     def __init__(self, input_folder_path: str, output_folder_path: str) -> None:
@@ -67,6 +68,7 @@ class Grid_Data_manager:
 
         return reshaped_data
 
+@ti.data_oriented
 class Grid_Data:
     FRAME = 0
     SHAPE_X = 0
@@ -82,6 +84,15 @@ class Grid_Data:
     Soble_Y = np.transpose(np.flip(np.array([[ 1,  2,  1],
                                 [ 0,  0,  0],
                                 [-1, -2, -1]]), axis=0))
+    
+    TI_Soble_X = ti.Matrix([[-1, 0, 1],
+                            [-2, 0, 2],
+                            [-1, 0, 1]])
+    
+    TI_Soble_Y = ti.Matrix([[-1, -2, -1],
+                            [ 0,  0,  0],
+                            [ 1,  2,  1]])
+
 
     def __init__(self, path, attr_name, start_index: int, end_index: int) -> None:
         self.path = path
@@ -124,6 +135,10 @@ class Grid_Data:
         #     raise Exception("grid_x or grid_y is out of range")
         return np_single_frame_data[grid_x-1:grid_x+2, grid_y-1:grid_y+2]
     
+    @ti.func
+    def get_3x3_data_ti(self, ti_single_frame_data:ti.types.ndarray(), grid_x, grid_y):
+        return ti_single_frame_data[grid_x-1:grid_x+2, grid_y-1:grid_y+2]
+    
     def get_single_data(self, np_single_frame_data, grid_x, grid_y):
         # if (not -1 < grid_x < self.shape_x) or (not -1 < grid_y < self.shape_y):
         #     raise Exception("grid_x or grid_y is out of range")
@@ -142,4 +157,15 @@ class Grid_Data:
                         np.sum(self.get_3x3_data(np_single_frame_data, index_x, index_y)[...,channel] * self.Soble_Y)
         return np_conv_val
         
+    @ti.kernel
+    def Sobel_conv_ti(self, np_single_frame_data:ti.template(), ti_conv_val: ti.template(),channel:ti.i32, partial: ti.i32):
+        for index_x in range(1, self.shape_x-1):
+            for index_y in range(1, self.shape_y-1):
+                data3x3=ti.Matrix([[np_single_frame_data[index_x-1,index_y-1],np_single_frame_data[index_x  ,index_y-1],np_single_frame_data[index_x+1,index_y-1]],
+                                   [np_single_frame_data[index_x-1,index_y  ],np_single_frame_data[index_x  ,index_y  ],np_single_frame_data[index_x+1,index_y  ]],
+                                   [np_single_frame_data[index_x-1,index_y+1],np_single_frame_data[index_x  ,index_y+1],np_single_frame_data[index_x+1,index_y+1]]])
+                if partial == 0:
+                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_X).sum()
+                elif partial == 1:
+                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_Y).sum()
 
