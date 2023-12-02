@@ -4,6 +4,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import taichi as ti
+import os
 
 input_path = './output_organised/'
 output_path = './output_organised/'
@@ -30,7 +31,56 @@ def augment(a, steepness = 5, mildrange = 0.2):
     else:
         return a**(1/steepness)
 
-def process_vel2strainRate(start_index, end_index, export_data=False, use_density_mask=False, vis_data='rotation'):
+def process_strainRate_to(start_index, end_index, attr_name='strainRate', to='vorticity', use_density_mask=False):
+    data = []
+    dm_strainRate = Grid_Data(input_path, attr_name, start_index, end_index)
+    dm_density = Grid_Data(input_path, 'density', start_index, end_index)
+
+    ti_conved_density_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x, dm_density.shape_y))
+    ti_density_grad_px = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_grad_py = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_grad_mag = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+
+    for i in range(start_index, end_index):
+        np_strainRate_data = dm_strainRate.read_single_frame_data(i)
+        if to == 'vorticity':
+            np_vorticity_data = np_strainRate_data[...,1,0] - np_strainRate_data[...,0,1]
+            data.append(np_vorticity_data)
+    
+    for i in range(start_index, end_index):
+        np.save(os.path.join(output_path, f'{attr_name}2{to}_{i}.npy'), data[i-start_index])
+        
+    # np_data = np.array(data)
+    # min_data = np_data.min()
+    # max_data = np_data.max()
+
+    # print(min_data, max_data)
+
+    # for i in range(end_index-start_index):
+    #     val = np_data[i,...]
+    #     density_mask = np.ones_like(val)
+
+    #     rgb = np.zeros((val.shape[0],val.shape[1],3))
+
+    #     for x in range(val.shape[0]):
+    #         for y in range(val.shape[1]):
+    #             if val[x,y] > 0:
+    #                 normalised_val = augment(val[x,y]/max_data)
+    #                 rgb[x,y,0] = 1 * density_mask[x,y]
+    #                 rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,2] = (1 - normalised_val) * density_mask[x,y]
+    #             else:
+    #                 normalised_val = augment(val[x,y]/min_data)
+    #                 rgb[x,y,0] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,2] = 1 * density_mask[x,y]
+
+    #     output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
+    #     plt.imsave(os.path.join(output_path, f'{attr_name}2{to}_{i}.png'), output_rgb)
+    #     plt.close()
+
+
+def process_vel_to_strainRate(start_index, end_index, use_density_mask=False):
     data = []
     dm_vel = Grid_Data(input_path, 'velocity', start_index, end_index)
     dm_density = Grid_Data(input_path, 'density', start_index, end_index)
@@ -66,16 +116,15 @@ def process_vel2strainRate(start_index, end_index, export_data=False, use_densit
             ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_mag)
 
             ker_normalize(ti_density_grad_mag)
-            ker_invBinary(ti_density_grad_mag, 0.2)
-
-            ti_density_grad_px.from_numpy(np_density_data[1:-1,1:-1])
-            ker_normalize(ti_density_grad_px)
-            ker_binary(ti_density_grad_px, 0.5)
-            
+            ker_invBinary(ti_density_grad_mag, 0.2)        
             ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pupx)
             ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pupy)
             ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pvpx)
             ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pvpy)
+
+            ti_density_grad_px.from_numpy(np_density_data[1:-1,1:-1])
+            ker_normalize(ti_density_grad_px)
+            ker_binary(ti_density_grad_px, 0.5)
             ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pupx)
             ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pupy)
             ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pvpx)
@@ -87,38 +136,43 @@ def process_vel2strainRate(start_index, end_index, export_data=False, use_densit
         np_conv_val[...,Grid_Data.VAL_Y,Grid_Data.PARTIAL_Y] = ti_conv_val_pvpy.to_numpy()
 
         data.append(np_conv_val)
+
+    for i in range(start_index, end_index):
+        np.save(os.path.join(output_path, f'vel2strainRate_{i}.npy'), data[i-start_index])
     
-    if vis_data == 'rotation':
-        x1, y1 = 1,0
-        x2, y2 = 0,1
-        measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
+    # if vis_data == 'vorticity':
+    #     x1, y1 = 1,0
+    #     x2, y2 = 0,1
+    #     measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
 
-    min_measured_value = measured_value.min()
-    max_measured_value = measured_value.max()
+    # min_measured_value = measured_value.min()
+    # max_measured_value = measured_value.max()
 
-    print(min_measured_value, max_measured_value)
+    # print(min_measured_value, max_measured_value)
     
-    for i in range(end_index-start_index):
-        val = measured_value[i,...]
-        density_mask = np.ones_like(val)
+    # for i in range(end_index-start_index):
+    #     val = measured_value[i,...]
+    #     density_mask = np.ones_like(val)
 
-        rgb = np.zeros((val.shape[0],val.shape[1],3))
+    #     rgb = np.zeros((val.shape[0],val.shape[1],3))
 
-        for x in range(val.shape[0]):
-            for y in range(val.shape[1]):
-                if val[x,y] > 0:
-                    normalised_val = augment(val[x,y]/max_measured_value)
-                    rgb[x,y,0] = 1 * density_mask[x,y]
-                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
-                    rgb[x,y,2] = (1 - normalised_val) * density_mask[x,y]
-                else:
-                    normalised_val = augment(val[x,y]/min_measured_value)
-                    rgb[x,y,0] = (1 - normalised_val) * density_mask[x,y]
-                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
-                    rgb[x,y,2] = 1 * density_mask[x,y]
+    #     for x in range(val.shape[0]):
+    #         for y in range(val.shape[1]):
+    #             if val[x,y] > 0:
+    #                 normalised_val = augment(val[x,y]/max_measured_value)
+    #                 rgb[x,y,0] = 1 * density_mask[x,y]
+    #                 rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,2] = (1 - normalised_val) * density_mask[x,y]
+    #             else:
+    #                 normalised_val = augment(val[x,y]/min_measured_value)
+    #                 rgb[x,y,0] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+    #                 rgb[x,y,2] = 1 * density_mask[x,y]
 
-        output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
-        plt.imsave(f'./output_organised/vel2strainRate_{vis_data}_{i}.png', output_rgb)
-        plt.close()     
+    #     output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
+    #     plt.imsave(f'./output_organised/vel2strainRate_{vis_data}_{i}.png', output_rgb)
+    #     plt.close()     
 
-process_vel2strainRate(start_index, end_index, False, True, 'rotation')
+
+process_strainRate_to(start_index, end_index, to='vorticity', use_density_mask=False)
+process_vel_to_strainRate(start_index, end_index, False)
