@@ -22,14 +22,7 @@ ti.init(arch=ti.gpu)
 
 # print(dm_vel.Sobel_conv(dm_vel.read_single_frame_data(11)).shape)
 
-def augment(a, steepness = 5, mildrange = 0.2):
-    if a < mildrange:
-        linear_val = a
-        root_val = a**(1/steepness) 
-        blend_factor = 3*(a/mildrange)**2 - 2*(a/mildrange)**3
-        return linear_val * (1 - blend_factor) + root_val * blend_factor
-    else:
-        return a**(1/steepness)
+
 
 def process_strainRate_to(start_index, end_index, attr_name='strainRate', to='vorticity', use_density_mask=False):
     data = []
@@ -80,7 +73,7 @@ def process_strainRate_to(start_index, end_index, attr_name='strainRate', to='vo
     #     plt.close()
 
 
-def process_vel_to_strainRate(start_index, end_index, use_density_mask=False):
+def process_vel_to_strainRate(start_index, end_index, use_density_mask=False, further_to='vorticity'):
     data = []
     dm_vel = Grid_Data(input_path, 'velocity', start_index, end_index)
     dm_density = Grid_Data(input_path, 'density', start_index, end_index)
@@ -140,10 +133,12 @@ def process_vel_to_strainRate(start_index, end_index, use_density_mask=False):
     for i in range(start_index, end_index):
         np.save(os.path.join(output_path, f'vel2strainRate_{i}.npy'), data[i-start_index])
     
-    # if vis_data == 'vorticity':
-    #     x1, y1 = 1,0
-    #     x2, y2 = 0,1
-    #     measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
+    if further_to == 'vorticity':
+        x1, y1 = 1,0
+        x2, y2 = 0,1
+        measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
+        for i in range(start_index, end_index):
+            np.save(os.path.join(output_path, f'vel2{further_to}_{i}.npy'), measured_value[i-start_index])
 
     # min_measured_value = measured_value.min()
     # max_measured_value = measured_value.max()
@@ -174,5 +169,51 @@ def process_vel_to_strainRate(start_index, end_index, use_density_mask=False):
     #     plt.close()     
 
 
+def augment(a, steepness = 5, mildrange = 0.2):
+    if a < mildrange:
+        linear_val = a
+        root_val = a**(1/steepness) 
+        blend_factor = 3*(a/mildrange)**2 - 2*(a/mildrange)**3
+        return linear_val * (1 - blend_factor) + root_val * blend_factor
+    else:
+        return a**(1/steepness)
+    
+def vis1d(attr_name, start_index, end_index):
+    data = []
+    for i in range(start_index, end_index):
+        data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
+    np_data = np.array(data)
+    min_data = np_data.min()
+    max_data = np_data.max()
+
+    print(min_data, max_data)
+
+    for i in range(end_index-start_index):
+        val = np_data[i,...]
+        density_mask = np.ones_like(val)
+
+        rgb = np.zeros((val.shape[0],val.shape[1],3))
+
+        for x in range(val.shape[0]):
+            for y in range(val.shape[1]):
+                if val[x,y] > 0:
+                    normalised_val = augment(val[x,y]/max_data)
+                    rgb[x,y,0] = 1 * density_mask[x,y]
+                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,2] = (1 - normalised_val) * density_mask[x,y]
+                else:
+                    normalised_val = augment(val[x,y]/min_data)
+                    rgb[x,y,0] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,1] = (1 - normalised_val) * density_mask[x,y]
+                    rgb[x,y,2] = 1 * density_mask[x,y]
+
+        output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
+        plt.imsave(os.path.join(output_path, f'{attr_name}_{i}.png'), output_rgb)
+        plt.close()
+
+
 process_strainRate_to(start_index, end_index, to='vorticity', use_density_mask=False)
-process_vel_to_strainRate(start_index, end_index, False)
+process_vel_to_strainRate(start_index, end_index, False, further_to='vorticity')
+vis1d('vel2vorticity', start_index, end_index)
+vis1d('strainRate2vorticity', start_index, end_index)
+vis1d('density', start_index, end_index)
