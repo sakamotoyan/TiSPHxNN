@@ -160,14 +160,14 @@ class Grid_Data:
         return np_conv_val
         
     @ti.kernel
-    def Sobel_conv_ti(self, ti_single_frame_data:ti.template(), ti_conv_val: ti.template(), partial: ti.i32):
+    def Sobel_conv_ti(self, cell_size:ti.f32, ti_single_frame_data:ti.template(), ti_conv_val: ti.template(), partial: ti.i32):
         for index_x in range(1, self.shape_x-1):
             for index_y in range(1, self.shape_y-1):
                 data3x3=ti.Matrix([[ti_single_frame_data[index_x-1,index_y-1],ti_single_frame_data[index_x  ,index_y-1],ti_single_frame_data[index_x+1,index_y-1]],
                                    [ti_single_frame_data[index_x-1,index_y  ],ti_single_frame_data[index_x  ,index_y  ],ti_single_frame_data[index_x+1,index_y  ]],
                                    [ti_single_frame_data[index_x-1,index_y+1],ti_single_frame_data[index_x  ,index_y+1],ti_single_frame_data[index_x+1,index_y+1]]])
                 if partial == self.PARTIAL_X:
-                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_X).sum()
+                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_X).sum() / cell_size / 8
                 elif partial == self.PARTIAL_Y:
-                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_Y).sum()
+                    ti_conv_val[index_x-1, index_y-1] = (data3x3 * self.TI_Soble_Y).sum() / cell_size / 8
 

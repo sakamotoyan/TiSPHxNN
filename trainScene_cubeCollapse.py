@@ -18,7 +18,6 @@ output_frame_num = 2000
 fps = 30
 sense_res = 128
 
-
 sense_cell_size = val_f(7.0/sense_res)
 part_size = sense_cell_size[None] / 12
 

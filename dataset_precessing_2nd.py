@@ -29,16 +29,37 @@ def process_strainRate_to(start_index, end_index, attr_name='strainRate', to='vo
     dm_strainRate = Grid_Data(input_path, attr_name, start_index, end_index)
     dm_density = Grid_Data(input_path, 'density', start_index, end_index)
 
-    ti_conved_density_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x, dm_density.shape_y))
+    ti_vorticity = ti.field(dtype=ti.f32, shape=(dm_strainRate.shape_x-2, dm_strainRate.shape_y-2))
+
+    ti_density_data = ti.field(dtype=ti.f32, shape=(dm_density.shape_x, dm_density.shape_y))
     ti_density_grad_px = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
     ti_density_grad_py = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
-    ti_density_grad_mag = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_grad_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_map = ti.static(ti_density_grad_px)
 
     for i in range(start_index, end_index):
-        np_strainRate_data = dm_strainRate.read_single_frame_data(i)
+        np_strainRate_data = dm_strainRate.read_single_frame_data(i)[1:-1,1:-1]
         if to == 'vorticity':
             np_vorticity_data = np_strainRate_data[...,1,0] - np_strainRate_data[...,0,1]
-            data.append(np_vorticity_data)
+            ti_vorticity.from_numpy(np_vorticity_data)
+
+            if use_density_mask:
+                np_density_data = dm_density.read_single_frame_data(i)
+                ti_density_data.from_numpy(np_density_data)
+                dm_density.Sobel_conv_ti(1, ti_density_data, ti_density_grad_px, Grid_Data.PARTIAL_X)
+                dm_density.Sobel_conv_ti(1, ti_density_data, ti_density_grad_py, Grid_Data.PARTIAL_Y)
+                ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_map)
+
+                ker_normalize(ti_density_grad_map)
+                ker_invBinary(ti_density_grad_map, 0.2)        
+                ker_entry_wise_productEqual(ti_density_grad_map, ti_vorticity)
+
+                ti_density_map.from_numpy(np_density_data[1:-1,1:-1])
+                ker_normalize(ti_density_map)
+                ker_binary(ti_density_map, 0.5)
+                ker_entry_wise_productEqual(ti_density_map, ti_vorticity)
+
+            data.append(ti_vorticity.to_numpy())
     
     for i in range(start_index, end_index):
         np.save(os.path.join(output_path, f'{attr_name}2{to}_{i}.npy'), data[i-start_index])
@@ -73,15 +94,16 @@ def process_strainRate_to(start_index, end_index, attr_name='strainRate', to='vo
     #     plt.close()
 
 
-def process_vel_to_strainRate(start_index, end_index, use_density_mask=False, further_to='vorticity'):
+def process_vel_to_strainRate(start_index, end_index, cell_size, use_density_mask=False, further_to='vorticity'):
     data = []
     dm_vel = Grid_Data(input_path, 'velocity', start_index, end_index)
     dm_density = Grid_Data(input_path, 'density', start_index, end_index)
 
-    ti_conved_density_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x, dm_density.shape_y))
+    ti_density_data = ti.field(dtype=ti.f32, shape=(dm_density.shape_x, dm_density.shape_y))
     ti_density_grad_px = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
     ti_density_grad_py = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
-    ti_density_grad_mag = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_grad_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
+    ti_density_map = ti.static(ti_density_grad_px)
     
     ti_conved_val = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x, dm_vel.shape_y))
     ti_conv_val_pupx = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
@@ -95,33 +117,33 @@ def process_vel_to_strainRate(start_index, end_index, use_density_mask=False, fu
         np_conv_val = np.zeros((dm_vel.shape_x-2, dm_vel.shape_y-2,2,2))
         
         ti_conved_val.from_numpy(np_vel_data[...,Grid_Data.VAL_X])
-        dm_vel.Sobel_conv_ti(ti_conved_val, ti_conv_val_pupx, Grid_Data.PARTIAL_X)
-        dm_vel.Sobel_conv_ti(ti_conved_val, ti_conv_val_pupy, Grid_Data.PARTIAL_Y)
+        dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pupx, Grid_Data.PARTIAL_X)
+        dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pupy, Grid_Data.PARTIAL_Y)
         ti_conved_val.from_numpy(np_vel_data[...,Grid_Data.VAL_Y])
-        dm_vel.Sobel_conv_ti(ti_conved_val, ti_conv_val_pvpx, Grid_Data.PARTIAL_X)
-        dm_vel.Sobel_conv_ti(ti_conved_val, ti_conv_val_pvpy, Grid_Data.PARTIAL_Y)
+        dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pvpx, Grid_Data.PARTIAL_X)
+        dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pvpy, Grid_Data.PARTIAL_Y)
 
         if use_density_mask:
             np_density_data = dm_density.read_single_frame_data(i)
-            ti_conved_density_map.from_numpy(np_density_data)
-            dm_density.Sobel_conv_ti(ti_conved_density_map, ti_density_grad_px, Grid_Data.PARTIAL_X)
-            dm_density.Sobel_conv_ti(ti_conved_density_map, ti_density_grad_py, Grid_Data.PARTIAL_Y)
-            ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_mag)
+            ti_density_data.from_numpy(np_density_data)
+            dm_density.Sobel_conv_ti(cell_size, ti_density_data, ti_density_grad_px, Grid_Data.PARTIAL_X)
+            dm_density.Sobel_conv_ti(cell_size, ti_density_data, ti_density_grad_py, Grid_Data.PARTIAL_Y)
+            ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_map)
 
-            ker_normalize(ti_density_grad_mag)
-            ker_invBinary(ti_density_grad_mag, 0.2)        
-            ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pupx)
-            ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pupy)
-            ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pvpx)
-            ker_entry_wise_productEqual(ti_density_grad_mag, ti_conv_val_pvpy)
+            ker_normalize(ti_density_grad_map)
+            ker_invBinary(ti_density_grad_map, 0.2)        
+            ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pupx)
+            ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pupy)
+            ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pvpx)
+            ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pvpy)
 
-            ti_density_grad_px.from_numpy(np_density_data[1:-1,1:-1])
-            ker_normalize(ti_density_grad_px)
-            ker_binary(ti_density_grad_px, 0.5)
-            ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pupx)
-            ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pupy)
-            ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pvpx)
-            ker_entry_wise_productEqual(ti_density_grad_px, ti_conv_val_pvpy)
+            ti_density_map.from_numpy(np_density_data[1:-1,1:-1])
+            ker_normalize(ti_density_map)
+            ker_binary(ti_density_map, 0.5)
+            ker_entry_wise_productEqual(ti_density_map, ti_conv_val_pupx)
+            ker_entry_wise_productEqual(ti_density_map, ti_conv_val_pupy)
+            ker_entry_wise_productEqual(ti_density_map, ti_conv_val_pvpx)
+            ker_entry_wise_productEqual(ti_density_map, ti_conv_val_pvpy)
 
         np_conv_val[...,Grid_Data.VAL_X,Grid_Data.PARTIAL_X] = ti_conv_val_pupx.to_numpy()
         np_conv_val[...,Grid_Data.VAL_X,Grid_Data.PARTIAL_Y] = ti_conv_val_pupy.to_numpy()
@@ -168,6 +190,17 @@ def process_vel_to_strainRate(start_index, end_index, use_density_mask=False, fu
     #     plt.imsave(f'./output_organised/vel2strainRate_{vis_data}_{i}.png', output_rgb)
     #     plt.close()     
 
+def process_minus(attr_name_1, attr_name_2, start_index, end_index):
+    data_1 = []
+    data_2 = []
+    for i in range(start_index, end_index):
+        data_1.append(np.load(os.path.join(input_path, f'{attr_name_1}_{i}.npy')))
+        data_2.append(np.load(os.path.join(input_path, f'{attr_name_2}_{i}.npy')))
+    np_data_1 = np.array(data_1)
+    np_data_2 = np.array(data_2)
+    np_data = np_data_1 - np_data_2
+    for i in range(start_index, end_index):
+        np.save(os.path.join(output_path, f'{attr_name_1}_minus_{attr_name_2}_{i}.npy'), np_data[i-start_index])
 
 def augment(a, steepness = 5, mildrange = 0.2):
     if a < mildrange:
@@ -178,7 +211,7 @@ def augment(a, steepness = 5, mildrange = 0.2):
     else:
         return a**(1/steepness)
     
-def vis1d(attr_name, start_index, end_index):
+def scivis_R2toR1(attr_name, start_index, end_index):
     data = []
     for i in range(start_index, end_index):
         data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
@@ -208,12 +241,35 @@ def vis1d(attr_name, start_index, end_index):
                     rgb[x,y,2] = 1 * density_mask[x,y]
 
         output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
-        plt.imsave(os.path.join(output_path, f'{attr_name}_{i}.png'), output_rgb)
+        plt.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), output_rgb)
+        plt.close()
+
+def datavis_hist_R2toR1(attr_name, start_index, end_index, range_min, range_max, bins=128):
+    data = []
+    for i in range(start_index, end_index):
+        data = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
+
+        hist, bins = np.histogram(data, bins=128, range=(range_min, range_max))
+        plt.figure(figsize=(10, 6))
+        plt.ylim(0, data.shape[0]*data.shape[1])
+        plt.bar(bins[:-1], hist, width=np.diff(bins), edgecolor='black')
+        plt.title('Histogram of Data')
+        plt.xlabel('Vorticity value')
+        plt.ylabel('Number of nodes')
+        plt.grid(True)
+        plt.savefig(os.path.join(output_path, f'hist_{attr_name}_{i}.png'))
         plt.close()
 
 
-process_strainRate_to(start_index, end_index, to='vorticity', use_density_mask=False)
-process_vel_to_strainRate(start_index, end_index, False, further_to='vorticity')
-vis1d('vel2vorticity', start_index, end_index)
-vis1d('strainRate2vorticity', start_index, end_index)
-vis1d('density', start_index, end_index)
+# process_strainRate_to(start_index, end_index, to='vorticity', use_density_mask=True)
+# process_vel_to_strainRate(start_index, end_index, 7.0/256, True, further_to='vorticity')
+
+# process_minus('vel2vorticity', 'strainRate2vorticity', start_index, end_index)
+
+# scivis_R2toR1('strainRate2vorticity', start_index, end_index)
+# scivis_R2toR1('vel2vorticity', start_index, end_index)
+# scivis_R2toR1('vel2vorticity_minus_strainRate2vorticity', start_index, end_index)
+
+# datavis_hist_R2toR1('strainRate2vorticity', start_index, end_index, -300, 300)
+# datavis_hist_R2toR1('vel2vorticity', start_index, end_index, -300, 300)
+datavis_hist_R2toR1('vel2vorticity_minus_strainRate2vorticity', start_index, end_index, -10, 10)
