@@ -16,7 +16,7 @@ ti.init(arch=ti.cuda, device_memory_GB=20) # Use GPU
 output_shift = 0
 output_frame_num = 2000
 fps = 30
-sense_res = 256
+sense_res = 258
 
 sense_cell_size = val_f(7.0/sense_res)
 part_size = sense_cell_size[None] / 12
