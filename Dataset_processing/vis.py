@@ -59,3 +59,4 @@ def datavis_hist_R2toR1(input_path, output_path, start_index, end_index, attr_na
         # Save the figure
         fig.savefig(file_path)
         ax.clear()  # Clear the axes for the next iteration
+    print(f"datavis_hist_R2toR1(): Saved {len(file_paths)} files to {output_path}")

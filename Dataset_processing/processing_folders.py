@@ -52,3 +52,75 @@ def clear_folder(folder_path):
                 shutil.rmtree(file_path)
         except Exception as e:
             print(f"Failed to delete {file_path}. Reason: {e}")
+
+def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_path):
+    """
+    Concatenates datasets from multiple folders, renaming the files to maintain a continuous numbering
+    across folders for each attribute specified in attr_name_list.
+
+    This function first counts the number of files for each attribute in each folder, using these counts 
+    to determine the starting index for file renaming in each subsequent folder. It ensures that file 
+    numbering is continuous and consistent across all folders.
+
+    Args:
+    input_folder_path (str): The base directory containing the folders with the datasets.
+    folder_list (list of str): A list of folder names, in the order in which they should be processed.
+    attr_name_list (list of str): A list of attribute names to be used for filtering and renaming files.
+    output_folder_path (str): The directory where the concatenated and renamed files will be saved.
+
+    The function copies files from each folder in folder_list, renames them based on their attribute name
+    and a continuous numbering scheme, and then saves these files in output_folder_path.
+
+    Note:
+    - Assumes file names are in the format '{attribute_name}_{number}.npy'.
+    - The directories specified in input_folder_path and output_folder_path should exist.
+    - The function does not handle cases where the output folder already contains files with the same names
+      as the renamed files, which may lead to overwriting.
+    """
+    file_counters = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
+    file_counters_shift = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
+
+    for folder_idx in range(len(folder_list)):
+        for attr_idx in range(len(attr_name_list)):
+            folder_name = folder_list[folder_idx]
+            attr_name = attr_name_list[attr_idx]
+            folder_path = os.path.join(input_folder_path, folder_name)
+            for file_name in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, file_name)
+                if os.path.isfile(file_path) and file_name.endswith('.npy'):
+                    parts = file_name.rsplit('_', 1)
+                    if len(parts) == 2 and parts[0] == attr_name:
+                        file_counters[folder_name][attr_name] += 1
+
+    for folder_idx in range(len(folder_list)):
+        folder_name = folder_list[folder_idx]
+        for folder_sub_idx in range(folder_idx):
+            folder_sub_name = folder_list[folder_sub_idx]
+            for attr_idx in range(len(attr_name_list)):
+                attr_name = attr_name_list[attr_idx]
+                file_counters[folder_name][attr_name] += file_counters[folder_sub_name][attr_name] 
+    
+    for folder_idx in range(len(folder_list)-1):
+        for attr_idx in range(len(attr_name_list)):
+            folder_name = folder_list[folder_idx]
+            attr_name = attr_name_list[attr_idx]
+            folder_name_next = folder_list[folder_idx+1]
+            file_counters_shift[folder_name_next][attr_name] = file_counters[folder_name][attr_name]
+    file_counters_shift[folder_list[0]][attr_name_list[0]] = 0
+    file_counters = file_counters_shift
+
+    for folder_name in folder_list:
+        folder_path = os.path.join(input_folder_path, folder_name)
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            if os.path.isfile(file_path) and file_name.endswith('.npy'):
+                parts = file_name.rsplit('_', 1)
+                if len(parts) == 2 and parts[0] in attr_name_list:
+                    attribute_name = parts[0]
+                    old_file_number = int(parts[1].split('.')[0])
+                    new_file_number = old_file_number + file_counters[folder_name][attribute_name]
+                    new_file_name = f'{attribute_name}_{new_file_number}.npy'
+                    new_file_path = os.path.join(output_folder_path, new_file_name)
+                    shutil.copy(file_path, new_file_path)
+
+    print("Files have been concatenated and copied to:", output_folder_path)

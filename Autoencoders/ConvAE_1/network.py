@@ -34,7 +34,7 @@ class ConvAutoencoder_1(nn.Module):
             nn.ReLU(),  # Activation function
 
             nn.Flatten(),  # Flatten the output for feeding into a fully connected layer
-            nn.Linear(128 * 16 * 16, feature_vector_size)  # Fully connected layer to create the bottleneck
+            nn.Linear(128 * 16 * 16, feature_vector_size),  # Fully connected layer to create the bottleneck
         )
 
         # Decoder
@@ -59,7 +59,7 @@ class ConvAutoencoder_1(nn.Module):
             # Final layer that outputs the reconstructed image with 1 channel,
             # size [1, 256, 256]
             nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.Sigmoid()  # Sigmoid activation to ensure output values are in range [0, 1]
+            nn.Sigmoid(),  # Sigmoid activation to ensure output values are in range [0, 1]
         )
 
     def forward(self, x):
