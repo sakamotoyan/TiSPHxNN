@@ -3,8 +3,8 @@ import torch.nn as nn
 class ConvAutoencoder_1(nn.Module):
     """
     Convolutional autoencoder with 4 convolutional layers in the encoder and 4 transposed
-    INPUT: 2-channel image (u, v) with size [256, 256]
-    OUTPUT: 1-channel image with size [256, 256]
+    INPUT:  2-channel image (u, v) with size [256, 256]
+    OUTPUT: 2-channel image (u, v) with size [256, 256]
     """
     
     def __init__(self, feature_vector_size):
@@ -56,9 +56,9 @@ class ConvAutoencoder_1(nn.Module):
             nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),  # Activation function
 
-            # Final layer that outputs the reconstructed image with 1 channel,
-            # size [1, 256, 256]
-            nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
+            # Final layer that outputs the reconstructed image with 2 channels,
+            # size [2, 256, 256]
+            nn.ConvTranspose2d(16, 2, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.Sigmoid(),  # Sigmoid activation to ensure output values are in range [0, 1]
         )
 

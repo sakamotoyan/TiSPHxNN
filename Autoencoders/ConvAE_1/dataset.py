@@ -5,29 +5,54 @@ import numpy as np
 import torch
 
 class DatasetConvAutoencoder_1(Dataset):
-    def __init__(self, clipped_res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2):
+    def __init__(self, clipped_res, dataset_velocity, dataset_velocity_file_path, dataset_vorticity, dataset_vorticity_file_path, dataset_density, dataset_density_file_path):
         self.clipped_res = clipped_res
-        self.dataset_velocity = attr_name_1
-        self.dataset_vorticity = attr_name_2
-        self.dataset_velocity_file_path = dataset_file_path_1
-        self.dataset_vorticity_file_path = dataset_file_path_2
+        self.dataset_velocity = dataset_velocity
+        self.dataset_vorticity = dataset_vorticity
+        self.dataset_density = dataset_density
+        self.dataset_velocity_file_path = dataset_velocity_file_path
+        self.dataset_vorticity_file_path = dataset_vorticity_file_path
+        self.dataset_density_file_path = dataset_density_file_path
 
         self.len_velocity, self.start_number_velocity, self.end_number_velocity = self.check_files(self.dataset_velocity_file_path, self.dataset_velocity)
         self.len_vorticity, self.start_number_vorticity, self.end_number_vorticity = self.check_files(self.dataset_vorticity_file_path, self.dataset_vorticity)
+        self.len_density, self.start_number_density, self.end_number_density = self.check_files(self.dataset_density_file_path, self.dataset_density)
         self.len = self.len_velocity
         self.start_idx = self.start_number_velocity
 
-        if self.len_velocity != self.len_vorticity or self.start_number_velocity != self.start_number_vorticity or self.end_number_velocity != self.end_number_vorticity:
+        if self.len_velocity != self.len_vorticity != self.len_density or \
+            self.start_number_velocity != self.start_number_vorticity != self.start_number_density or \
+            self.end_number_velocity != self.end_number_vorticity != self.end_number_density:
             raise Exception(f"Attributes {self.dataset_velocity} and {self.dataset_vorticity} have different number of files or different number ranges.\
                              {self.len_velocity}, {self.len_vorticity}, {self.start_number_velocity}, {self.start_number_vorticity}, {self.end_number_velocity}, {self.end_number_vorticity}")
         
-        self.min_value_velocity_x = self.min_comp_value(self.dataset_velocity, self.dataset_velocity_file_path, 0)
-        self.max_value_velocity_x = self.max_comp_value(self.dataset_velocity, self.dataset_velocity_file_path, 0)
-        self.min_value_velocity_y = self.min_comp_value(self.dataset_velocity, self.dataset_velocity_file_path, 1)
-        self.max_value_velocity_y = self.max_comp_value(self.dataset_velocity, self.dataset_velocity_file_path, 1)
+        self.min_value_velocity_norm  = self.min_norm_value(self.dataset_velocity, self.dataset_velocity_file_path)
+        self.max_value_velocity_norm  = self.max_norm_value(self.dataset_velocity, self.dataset_velocity_file_path)
         self.min_value_vorticity = self.min_value(self.dataset_vorticity, self.dataset_vorticity_file_path)
         self.max_value_vorticity = self.max_value(self.dataset_vorticity, self.dataset_vorticity_file_path)
 
+    def __len__(self):
+        return self.len  # subtract 1 to avoid index error
+
+    def __getitem__(self, idx):
+        np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
+        np_vorticity = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res-2, :self.clipped_res-2]
+        np_density   = np.load(os.path.join(self.dataset_density_file_path,  f'{self.dataset_density}_{idx+self.start_idx}.npy'  ))[:self.clipped_res  , :self.clipped_res  ]
+        np_velocity_x = np_velocity[...,0]
+        np_velocity_y = np_velocity[...,1]
+
+        normalized_np_velocity_x = 2 * ((np_velocity_x - self.min_value_velocity_norm) / (self.max_value_velocity_norm - self.min_value_velocity_norm)) - 1
+        normalized_np_velocity_y = 2 * ((np_velocity_y - self.min_value_velocity_norm) / (self.max_value_velocity_norm - self.min_value_velocity_norm)) - 1
+        normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity)     / (self.max_value_vorticity     - self.min_value_vorticity))     - 1
+
+        normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
+        hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
+
+        inpput = torch.tensor(normalized_np_velocity, dtype=torch.float32)
+        target = torch.tensor(hist_np_vorticity , dtype=torch.int32)
+        aux    = torch.tensor(np_density, dtype=torch.float32)
+
+        return inpput, target, aux 
 
     def check_files(self, folder_path, attr_name):
         # List all files in the directory
@@ -65,6 +90,18 @@ class DatasetConvAutoencoder_1(Dataset):
         print(f"min_value(): min_value for {attr_name} is {min_value}")
         return min_value
     
+    def min_norm_value(self, attr_name, attr_file_path):
+        min_value = None
+        for i in range(self.start_idx, self.start_idx + self.len):
+            data = np.load(os.path.join(attr_file_path,f'{attr_name}_{i}.npy'))
+            norm = np.linalg.norm(data, axis=-1)
+            if i == self.start_idx:
+                min_value = np.min(norm)
+            else:
+                min_value = min(min_value, np.min(norm))
+        print(f"min_norm_value(): min_value for {attr_name} is {min_value}")
+        return min_value
+
     def min_comp_value(self, attr_name, attr_file_path, comp):
         min_value = None
         for i in range(self.start_idx, self.start_idx + self.len):
@@ -87,6 +124,18 @@ class DatasetConvAutoencoder_1(Dataset):
         print(f"max_value(): max_value for {attr_name} is {max_value}")
         return max_value
     
+    def max_norm_value(self, attr_name, attr_file_path):
+        max_value = None
+        for i in range(self.start_idx, self.start_idx + self.len):
+            data = np.load(os.path.join(attr_file_path,f'{attr_name}_{i}.npy'))
+            norm = np.linalg.norm(data, axis=-1)
+            if i == self.start_idx:
+                max_value = np.max(norm)
+            else:
+                max_value = max(max_value, np.max(norm))
+        print(f"max_norm_value(): max_value for {attr_name} is {max_value}")
+        return max_value
+
     def max_comp_value(self, attr_name, attr_file_path, comp):
         max_value = None
         for i in range(self.start_idx, self.start_idx + self.len):
@@ -98,21 +147,3 @@ class DatasetConvAutoencoder_1(Dataset):
         print(f"max_comp_value(): max_value for comp {comp} of {attr_name} is {max_value}")
         return max_value
 
-    def __len__(self):
-        return self.len  # subtract 1 to avoid index error
-
-    def __getitem__(self, idx):
-        np_velocity_x = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,0]
-        np_velocity_y = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res, 1]
-        np_vorticity  = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res, :self.clipped_res]
-
-        normalized_np_velocity_x = 2 * ((np_velocity_x - self.min_value_velocity_x) / (self.max_value_velocity_x - self.min_value_velocity_x)) - 1
-        normalized_np_velocity_y = 2 * ((np_velocity_y - self.min_value_velocity_y) / (self.max_value_velocity_y - self.min_value_velocity_y)) - 1
-        normalized_np_vorticity  = 2 * ((np_vorticity  -  self.min_value_vorticity) / (self.max_value_vorticity  -  self.min_value_vorticity)) - 1
-
-        chann1 = torch.tensor(normalized_np_velocity_x, dtype=torch.float32)
-        chann2 = torch.tensor(normalized_np_velocity_y, dtype=torch.float32)
-        chann3 = torch.tensor(normalized_np_vorticity , dtype=torch.float32)
-
-
-        return chann1, chann2, chann3

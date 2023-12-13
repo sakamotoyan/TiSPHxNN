@@ -60,7 +60,7 @@ def process_vel_to_strainRate(input_path, output_path, start_index, end_index, c
     ti_density_grad_map = ti.field(dtype=ti.f32, shape=(dm_density.shape_x-2, dm_density.shape_y-2))
     ti_density_map = ti.static(ti_density_grad_px)
     
-    ti_conved_val = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x, dm_vel.shape_y))
+    ti_conved_val    = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x,   dm_vel.shape_y))
     ti_conv_val_pupx = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
     ti_conv_val_pupy = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
     ti_conv_val_pvpx = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
