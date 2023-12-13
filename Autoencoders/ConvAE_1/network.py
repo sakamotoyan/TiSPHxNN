@@ -59,7 +59,7 @@ class ConvAutoencoder_1(nn.Module):
             # Final layer that outputs the reconstructed image with 2 channels,
             # size [2, 256, 256]
             nn.ConvTranspose2d(16, 2, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.Sigmoid(),  # Sigmoid activation to ensure output values are in range [0, 1]
+            nn.Tanh(),  # Activation function for [-1,1] output range
         )
 
     def forward(self, x):

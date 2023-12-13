@@ -49,7 +49,7 @@ class DatasetConvAutoencoder_1(Dataset):
         hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
 
         inpput = torch.tensor(normalized_np_velocity, dtype=torch.float32)
-        target = torch.tensor(hist_np_vorticity , dtype=torch.int32)
+        target = torch.tensor(hist_np_vorticity , dtype=torch.float32)
         aux    = torch.tensor(np_density, dtype=torch.float32)
 
         return inpput, target, aux 
