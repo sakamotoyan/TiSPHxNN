@@ -27,17 +27,17 @@ class TrainConvAutoencoder_1:
                                                  platform='cuda'):
         
 
-        self.batch_size = 32
+        self.batch_size = 16
         self.platform = platform
         self.network = ConvAutoencoder_1(feature_vector_size)
         self.network.to(platform)
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.network.parameters(), lr=0.001)
-        self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
-        self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
+        self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
     
-    def train(self, num_epochs, network_model_path, former_model_file_path=None):
+    def train_histBased(self, num_epochs, network_model_path, former_model_file_path=None):
         current_epochs_num = 0
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
@@ -49,17 +49,17 @@ class TrainConvAutoencoder_1:
                 loss = 0.0
                 self.optimizer.zero_grad()
                 
-                inputs = batch_inputs.to(self.platform) 
-                outputs = self.network(inputs)
+                inputs  = (batch_inputs + 1) / 2
+                batch_outputs = (self.network(inputs)) * 2 - 1
 
-                input_dv_dx = torch.diff(inputs[:, 1, :, :], dim=1, prepend=inputs[:, 1, :, -1].unsqueeze(1))
-                input_du_dy = torch.diff(inputs[:, 0, :, :], dim=2, prepend=inputs[:, 0, :, -1].unsqueeze(2))
-                input_vorticity = (input_dv_dx - input_du_dy)[:, 1:-1, 1:-1]
+                input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
+                input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
+                input_vorticity = (input_dv_dx - input_du_dy)
                 input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
 
-                output_dv_dx = torch.diff(outputs[:, 1, :, :], dim=1, prepend=outputs[:, 1, :, -1].unsqueeze(1))
-                output_du_dy = torch.diff(outputs[:, 0, :, :], dim=2, prepend=outputs[:, 0, :, -1].unsqueeze(2))
-                output_vorticity = (output_dv_dx - output_du_dy)[:, 1:-1, 1:-1]
+                output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
+                output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
+                output_vorticity = (output_dv_dx - output_du_dy)
                 output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
 
                 loss = self.criterion(output_vorticity_hist, input_vorticity_hist)
@@ -72,29 +72,102 @@ class TrainConvAutoencoder_1:
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
             torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
 
-    def test(self, num_epochs, network_model_path, former_model_file_path=None):
+    def train_vorticityBased(self, num_epochs, network_model_path, former_model_file_path=None):
         current_epochs_num = 0
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
             current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
             print(f"Loaded former model from {former_model_file_path}")
+        for epoch in range(num_epochs):
+            running_loss = 0.0
+            for batch_inputs, batch_targets, batch_aux in self.data_loader:
+                loss = 0.0
+                self.optimizer.zero_grad()
+                
+                inputs  = (batch_inputs + 1) / 2
+                batch_outputs = (self.network(inputs)) * 2 - 1
 
-            data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False)
-            counter = 0
+                input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
+                input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
+                input_vorticity = (input_dv_dx - input_du_dy)
+
+                output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
+                output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
+                output_vorticity = (output_dv_dx - output_du_dy)
+
+                loss = self.criterion(output_vorticity, input_vorticity)
+                loss.backward()
+                self.optimizer.step()
+
+                running_loss += loss.item()
+
+            average_loss = running_loss / len(self.data_loader)
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
+            if (epoch+1) % 10 == 0:
+                torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+
+    def train_velocityBased(self, num_epochs, network_model_path, former_model_file_path=None):
+        current_epochs_num = 0
+        if former_model_file_path is not None:
+            self.network.load_state_dict(torch.load(former_model_file_path))
+            current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
+            print(f"Loaded former model from {former_model_file_path}")
+        for epoch in range(num_epochs):
+            running_loss = 0.0
+            for batch_inputs, batch_targets, batch_aux in self.data_loader:
+                loss = 0.0
+                self.optimizer.zero_grad()
+                
+                inputs  = (batch_inputs + 1) / 2
+                batch_outputs = (self.network(inputs)) * 2 - 1
+
+                loss = self.criterion(batch_outputs, batch_inputs)
+                loss.backward()
+                self.optimizer.step()
+
+                running_loss += loss.item()
+
+            average_loss = running_loss / len(self.data_loader)
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
+            if (epoch+1) % 10 == 0:
+                torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+
+    def change_dataset(self, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3):
+        self.dataset = DatasetConvAutoencoder_1(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
+        self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+
+    def test(self, model_file_path, output_path):
+            
+        self.network.load_state_dict(torch.load(model_file_path))
+        print(f"Loaded former model from {model_file_path}")
+        test_data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False)
+        counter = 0
+
         with torch.no_grad():
-            for batch_inputs, batch_targets, batch_aux in data_loader:
-                inputs = batch_inputs.to(self.platform)
-                outputs = self.network(inputs)
-                input_dv_dx = torch.diff(inputs[:, 1, :, :], dim=1, prepend=inputs[:, 1, :, -1].unsqueeze(1))
-                input_du_dy = torch.diff(inputs[:, 0, :, :], dim=2, prepend=inputs[:, 0, :, -1].unsqueeze(2))
-                input_vorticity = (input_dv_dx - input_du_dy)[:, 1:-1, 1:-1]
+            for batch_inputs, batch_targets, batch_aux in test_data_loader:
+                inputs = (batch_inputs + 1) / 2
+                batch_outputs = (self.network(inputs)) * 2 - 1
+                input_dv_dx  = torch.diff(batch_inputs[:, 1, :, :],  dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
+                input_du_dy  = torch.diff(batch_inputs[:, 0, :, :],  dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
+                output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
+                output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
+
+                input_vorticity  = (input_dv_dx - input_du_dy)[:, 1:-1, 1:-1]
+                output_vorticity = (output_dv_dx - output_du_dy)[:, 1:-1, 1:-1]
                 input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
+                output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
                 # to numpy
-                input_vorticity = input_vorticity.cpu().numpy()
-                input_vorticity_hist = input_vorticity_hist.cpu().numpy()
+                input_vorticity  = input_vorticity.cpu().numpy()
+                output_vorticity = output_vorticity.cpu().numpy()
+                input_vorticity_hist  = input_vorticity_hist.cpu().numpy()
+                output_vorticity_hist = output_vorticity_hist.cpu().numpy()
                 for i in range(input_vorticity.shape[0]):
-                    np.save(os.path.join(network_model_path,f'input_vorticity_{counter}.npy'), input_vorticity[i,...])
-                    np.save(os.path.join(network_model_path,f'input_vorticity_hist_{counter}.npy'), input_vorticity_hist[i,...])
+                    np.save(os.path.join(output_path,f'input_vorticity_{counter}.npy'),  input_vorticity[i,...])
+                    np.save(os.path.join(output_path,f'output_vorticity_{counter}.npy'), output_vorticity[i,...])
+
+                    np.save(os.path.join(output_path,f'input_vorticity_hist_{counter}.npy'),  input_vorticity_hist[i,...])
+                    np.save(os.path.join(output_path,f'output_vorticity_hist_{counter}.npy'), output_vorticity_hist[i,...])
+
                     counter += 1
             
 

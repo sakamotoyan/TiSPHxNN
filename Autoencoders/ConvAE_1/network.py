@@ -33,15 +33,23 @@ class ConvAutoencoder_1(nn.Module):
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),  # Activation function
 
+            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
+            nn.ReLU(), 
+
             nn.Flatten(),  # Flatten the output for feeding into a fully connected layer
-            nn.Linear(128 * 16 * 16, feature_vector_size),  # Fully connected layer to create the bottleneck
+            nn.Linear(256 * 8 * 8, feature_vector_size),  # Fully connected layer to create the bottleneck
+            nn.ReLU(),
         )
 
         # Decoder
         self.decoder = nn.Sequential(
             # Expanding the flattened feature vector back to tensor shape [128, 16, 16]
-            nn.Linear(feature_vector_size, 128 * 16 * 16),
-            nn.Unflatten(1, (128, 16, 16)),  # Reshape to 3D tensor
+            nn.Linear(feature_vector_size, 256 * 8 * 8),
+            nn.ReLU(),
+            nn.Unflatten(1, (256, 8, 8)),  # Reshape to 3D tensor
+
+            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
 
             # Transposed convolution layers to upsample the image back to original dimensions
             # First layer upsamples from [128, 16, 16] to [64, 32, 32]
@@ -59,7 +67,7 @@ class ConvAutoencoder_1(nn.Module):
             # Final layer that outputs the reconstructed image with 2 channels,
             # size [2, 256, 256]
             nn.ConvTranspose2d(16, 2, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.Tanh(),  # Activation function for [-1,1] output range
+            nn.Sigmoid(),  # Activation function
         )
 
     def forward(self, x):

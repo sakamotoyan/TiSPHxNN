@@ -41,16 +41,18 @@ def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name):
 
 def datavis_hist(input_path, output_path, attr_name, start_index, end_index):
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_yscale('log')
-    ax.set_title('Histogram of Data')
-    ax.set_xlabel('Vorticity value')
-    ax.set_ylabel('Number of nodes')
-    ax.grid(True)
+
     file_paths = [os.path.join(output_path, f'{attr_name}_{i}.png') for i in range(start_index, end_index)]
     for i, file_path in zip(range(start_index, end_index), file_paths):
         hist = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
         x_values = np.arange(len(hist))*(1/128)-0.5
         y_values = hist
+
+        ax.set_yscale('log')
+        ax.set_title('Histogram of Data')
+        ax.set_xlabel('Vorticity value')
+        ax.set_ylabel('Number of nodes')
+        ax.grid(True)
         ax.bar(x_values, y_values, width=1/128, edgecolor='black')
         fig.savefig(file_path)
         ax.clear()
@@ -58,18 +60,18 @@ def datavis_hist(input_path, output_path, attr_name, start_index, end_index):
 def datavis_hist_R2toR1(input_path, output_path, start_index, end_index, attr_name, range_min, range_max, bins=128):
     data = []
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_yscale('log')
-    ax.set_title('Histogram of Data')
-    ax.set_xlabel('Vorticity value')
-    ax.set_ylabel('Number of nodes')
-    ax.grid(True)
     file_paths = [os.path.join(output_path, f'hist_{attr_name}_{i}.png') for i in range(start_index, end_index)]
 
     for i, file_path in zip(range(start_index, end_index), file_paths):
         
         data = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
-
         hist, bins = np.histogram(data, bins=bins, range=(range_min, range_max))
+
+        ax.set_yscale('log')
+        ax.set_title('Histogram of Data')
+        ax.set_xlabel('Vorticity value')
+        ax.set_ylabel('Number of nodes')
+        ax.grid(True)
         ax.bar(bins[:-1], hist, width=np.diff(bins), edgecolor='black')
 
         # Save the figure
