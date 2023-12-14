@@ -5,9 +5,10 @@ organized_path = './output/organized/'
 sciVis_path = './output/sciVis/'
 dataVis_path = './output/dataVis/'
 hist_path = './output/hist/'
+model_path = './output/dict/'
 
 start_index = 0
-end_index = 984
+end_index = 950
 
 ti.init(arch=ti.gpu)
 
@@ -25,8 +26,8 @@ ti.init(arch=ti.gpu)
 # gridExport_density(raw_path, organized_path, start_index, end_index)
 # gridExport_vel(raw_path, organized_path, start_index, end_index)
 # gridExport_strainRate(raw_path, organized_path, start_index, end_index)
-process_strainRate_to(organized_path, organized_path, start_index, end_index, to='vorticity', use_density_mask=True)
-process_vel_to_strainRate(organized_path, organized_path, start_index, end_index, 7.0/258, True, further_to='vorticity')
+# process_strainRate_to(organized_path, organized_path, start_index, end_index, to='vorticity', use_density_mask=True)
+# process_vel_to_strainRate(organized_path, organized_path, start_index, end_index, 7.0/258, True, further_to='vorticity')
 # process_minus(organized_path, organized_path, start_index, end_index, 'vel2vorticity', 'strainRate2vorticity')
 
 # process_abs(organized_path, organized_path, start_index, end_index, 'vel2vorticity')
@@ -40,13 +41,17 @@ process_vel_to_strainRate(organized_path, organized_path, start_index, end_index
 
 # process_hist(organized_path, hist_path, start_index, end_index, 'abs_strainRate2vorticity', 0, 300)
 
-datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'strainRate2vorticity', -100, 100)
-datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'vel2vorticity', -100, 100)
-datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity', -10, 10)
+# datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'strainRate2vorticity', -100, 100)
+# datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'vel2vorticity', -100, 100)
+# datavis_hist_R2toR1(organized_path, dataVis_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity', -10, 10)
 
 # analyze_filenames_in_folder(raw_path, 'npy')
 # analyze_filenames_in_folder(organized_path, 'npy')
 # analyze_filenames_in_folder(sciVis_path, 'png')
 # analyze_filenames_in_folder(dataVis_path, 'png')
 # analyze_filenames_in_folder(hist_path, 'npy')
+
+
+# scivis_R2toR1(model_path, model_path, start_index, end_index, 'input_vorticity')
+datavis_hist(model_path, model_path, 'input_vorticity_hist', start_index, end_index)
 

@@ -36,15 +36,12 @@ class TrainConvAutoencoder_1:
         self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, drop_last=True)
 
-        self.ti_aux_density       = ti.field(dtype=ti.f32, shape=(res,   res,   self.batch_size))
-        self.ti_output_velocity_x = ti.field(dtype=ti.f32, shape=(res,   res,   self.batch_size))
-        self.ti_output_velocity_y = ti.field(dtype=ti.f32, shape=(res,   res,   self.batch_size))
-        self.ti_output_vorticity  = ti.field(dtype=ti.f32, shape=(res-2, res-2, self.batch_size))
-
     
     def train(self, num_epochs, network_model_path, former_model_file_path=None):
+        current_epochs_num = 0
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
+            current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
             print(f"Loaded former model from {former_model_file_path}")
         for epoch in range(num_epochs):
             running_loss = 0.0
@@ -65,12 +62,6 @@ class TrainConvAutoencoder_1:
                 output_vorticity = (output_dv_dx - output_du_dy)[:, 1:-1, 1:-1]
                 output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
 
-            #     self.ti_aux_density.from_torch(batch_aux.permute(1,2,0))
-            #     self.ti_output_velocity_x.from_torch(outputs[:,0].permute(1,2,0))
-            #     self.ti_output_velocity_y.from_torch(outputs[:,1].permute(1,2,0))
-            #     self.compute_vorticity(self.ti_output_velocity_x, self.ti_output_velocity_y, self.ti_output_vorticity)
-            #     output_hist = torch.tensor([np.histogram(self.ti_output_vorticity.to_numpy()[:, :, i], bins=128, range=(-1, 1))[0] for i in range(self.batch_size)], dtype=torch.float32)
-
                 loss = self.criterion(output_vorticity_hist, input_vorticity_hist)
                 loss.backward()
                 self.optimizer.step()
@@ -79,9 +70,33 @@ class TrainConvAutoencoder_1:
 
             average_loss = running_loss / len(self.data_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch}.pth'))
+            torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
 
+    def test(self, num_epochs, network_model_path, former_model_file_path=None):
+        current_epochs_num = 0
+        if former_model_file_path is not None:
+            self.network.load_state_dict(torch.load(former_model_file_path))
+            current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
+            print(f"Loaded former model from {former_model_file_path}")
 
+            data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False)
+            counter = 0
+        with torch.no_grad():
+            for batch_inputs, batch_targets, batch_aux in data_loader:
+                inputs = batch_inputs.to(self.platform)
+                outputs = self.network(inputs)
+                input_dv_dx = torch.diff(inputs[:, 1, :, :], dim=1, prepend=inputs[:, 1, :, -1].unsqueeze(1))
+                input_du_dy = torch.diff(inputs[:, 0, :, :], dim=2, prepend=inputs[:, 0, :, -1].unsqueeze(2))
+                input_vorticity = (input_dv_dx - input_du_dy)[:, 1:-1, 1:-1]
+                input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
+                # to numpy
+                input_vorticity = input_vorticity.cpu().numpy()
+                input_vorticity_hist = input_vorticity_hist.cpu().numpy()
+                for i in range(input_vorticity.shape[0]):
+                    np.save(os.path.join(network_model_path,f'input_vorticity_{counter}.npy'), input_vorticity[i,...])
+                    np.save(os.path.join(network_model_path,f'input_vorticity_hist_{counter}.npy'), input_vorticity_hist[i,...])
+                    counter += 1
+            
 
     def differentiable_histogram(self, data, bins, min_value, max_value):
         """

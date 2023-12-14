@@ -99,7 +99,7 @@ class DatasetConvAutoencoder_1(Dataset):
                 min_value = np.min(norm)
             else:
                 min_value = min(min_value, np.min(norm))
-        print(f"min_norm_value(): min_value for {attr_name} is {min_value}")
+        print(f"min_norm_value(): min_norm_value for {attr_name} is {min_value}")
         return min_value
 
     def min_comp_value(self, attr_name, attr_file_path, comp):
@@ -133,7 +133,7 @@ class DatasetConvAutoencoder_1(Dataset):
                 max_value = np.max(norm)
             else:
                 max_value = max(max_value, np.max(norm))
-        print(f"max_norm_value(): max_value for {attr_name} is {max_value}")
+        print(f"max_norm_value(): max_norm_value for {attr_name} is {max_value}")
         return max_value
 
     def max_comp_value(self, attr_name, attr_file_path, comp):
