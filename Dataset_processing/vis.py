@@ -14,7 +14,7 @@ def augment(a, steepness = 5, mildrange = 0.2):
 augment_vectorized = np.vectorize(augment)
 
 
-def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name):
+def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name, stride=1):
     data = []
     for i in range(start_index, end_index):
         data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
@@ -26,6 +26,8 @@ def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name):
     rgb = np.zeros((np_data.shape[1],np_data.shape[2],3))
 
     for i in range(end_index-start_index):
+        if i % stride != 0:
+            continue
         val = np_data[i,...]
         rgb.fill(0)
 

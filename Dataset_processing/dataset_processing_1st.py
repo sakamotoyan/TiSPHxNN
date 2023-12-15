@@ -21,11 +21,11 @@ def show_attrs_in_path(path, attr):
             data = np.load(path + filename)
             print(filename, data[attr].shape)
 
-def gridExport_density(input_path, output_path, start_index, end_index, vis=False):
+def gridExport_density(input_path, output_path, start_index, end_index, vis=False, operations=[]):
     dm_density = ts.Grid_Data_manager(input_path, output_path)
     dm_density.read_data(attr='sensed_density',start_index=start_index,end_index=end_index)
     dm_density.reshape_data_to_2d(index_attr='node_index')
-    dm_density.export_single_frame_data('density', from_zero=True)
+    dm_density.export_single_frame_data('density', operations=operations)
 
     if vis:
         for i in range(end_index-start_index):
@@ -35,11 +35,11 @@ def gridExport_density(input_path, output_path, start_index, end_index, vis=Fals
             img = Image.fromarray(normalized_array, 'L')
             img.save(f'./output_organised/density_{i}.png')
 
-def gridExport_vel(input_path, output_path, start_index, end_index, vis=False):
+def gridExport_vel(input_path, output_path, start_index, end_index, vis=False, operations=[]):
     dm_vel = ts.Grid_Data_manager(input_path, output_path)
     dm_vel.read_data(attr='vel',start_index=start_index,end_index=end_index)
     dm_vel.reshape_data_to_2d(index_attr='node_index')
-    dm_vel.export_single_frame_data('velocity', from_zero=True)
+    dm_vel.export_single_frame_data('velocity', operations=operations)
 
     if vis:
         g_speed = np.sqrt(np.array(dm_vel.processed_data)[:,:,:,0]**2 + np.array(dm_vel.processed_data)[:,:,:,1]**2)
@@ -71,10 +71,10 @@ def gridExport_vel(input_path, output_path, start_index, end_index, vis=False):
     return dm_vel
     
 
-def gridExport_strainRate(input_path, output_path, start_index, end_index):
+def gridExport_strainRate(input_path, output_path, start_index, end_index, operations=[]):
     dm_strainRate = ts.Grid_Data_manager(input_path, output_path)
     dm_strainRate.read_data(attr='strainRate',start_index=start_index,end_index=end_index)
     dm_strainRate.reshape_data_to_2d(index_attr='node_index')
-    dm_strainRate.export_single_frame_data('strainRate', from_zero=True)
+    dm_strainRate.export_single_frame_data('strainRate', operations=operations)
 
 

@@ -1,22 +1,64 @@
 from Dataset_processing import *
 
-raw_path = './output/raw/'
-raw_test_path = './output/raw_test/'
-raw_train_path = './output/raw_train/'
-
-organized_path = './output/organized/'
-organized_test_path = './output/organized_test/'
-organized_train_path = './output/organized_train/'
-
-sciVis_path = './output/sciVis/'
-dataVis_path = './output/dataVis/'
-hist_path = './output/hist/'
-model_path = './output/dict/'
-model_output_path = './output/network/'
-
-
-
 ti.init(arch=ti.gpu)
+
+
+'''
+Training dataset generation
+'''
+number_of_frames = 798
+main_path = './dataset_train'
+rawdata_folder = 'rawdata'
+dataset_folder = 'dataset'
+datavis_folder = 'datavis'
+clear_folder(os.path.join(main_path, rawdata_folder))
+clear_folder(os.path.join(main_path, dataset_folder))
+clear_folder(os.path.join(main_path, datavis_folder))
+
+operation_list = ['flipud', 'fliplr', 'transpose', 'flipud_fliplr']
+length = len(operation_list)+1
+
+concatDataset('.\\',
+                ['raw_t1', 'raw_t2'],
+                ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
+                os.path.join(main_path, rawdata_folder))
+gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+gridExport_vel(           os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
+process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
+
+'''
+Testing dataset generation
+'''
+number_of_frames = 186
+main_path = './dataset_test'
+rawdata_folder = 'rawdata'
+dataset_folder = 'dataset'
+datavis_folder = 'datavis'
+clear_folder(os.path.join(main_path, rawdata_folder))
+clear_folder(os.path.join(main_path, dataset_folder))
+clear_folder(os.path.join(main_path, datavis_folder))
+
+operation_list = []
+length = len(operation_list)+1
+
+concatDataset('.\\',
+                ['raw_t3'],
+                ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
+                os.path.join(main_path, rawdata_folder))
+gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+gridExport_vel(           os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
+process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
+
 
 # clear_folder(raw_path)
 # clear_folder(raw_test_path)
@@ -33,23 +75,28 @@ ti.init(arch=ti.gpu)
 #               ['raw_t1', 'raw_t2', 'raw_t3'],
 #               ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
 #               raw_path)
-# concatDataset('\\Users\\xuyan\\Documents\\GitHub\\output',
-#                 ['raw_t1', 'raw_t2'],
-#                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
-#                 raw_train_path)
+
 # concatDataset('\\Users\\xuyan\\Documents\\GitHub\\output',
 #                 ['raw_t3'],
 #                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
 #                 raw_test_path)
 
 # start_index = 0
-# end_index = 950
-# gridExport_density(raw_path, organized_path, start_index, end_index)
-# gridExport_vel(raw_path, organized_path, start_index, end_index)
-# gridExport_strainRate(raw_path, organized_path, start_index, end_index)
-# process_strainRate_to(organized_path, organized_path, start_index, end_index, to='vorticity', use_density_mask=True)
-# process_vel_to_strainRate(organized_path, organized_path, start_index, end_index, 7.0/258, True, further_to='vorticity')
-# process_minus(organized_path, organized_path, start_index, end_index, 'vel2vorticity', 'strainRate2vorticity')
+# end_index = 984
+# operation_list = ['flipud', 'fliplr', 'transpose', 'flipud_fliplr']
+# organized_path = './output/organized/'
+# organized_vis_path = './output/organized_vis/'
+# length = len(operation_list)+1
+# gridExport_density(raw_path, organized_path, start_index, end_index, operations=operation_list)
+# gridExport_vel(raw_path, organized_path, start_index, end_index, operations=operation_list)
+# gridExport_strainRate(raw_path, organized_path, start_index, end_index, operations=operation_list)
+# process_strainRate_to(organized_path, organized_path, start_index, end_index*length, to='vorticity', use_density_mask=True)
+# process_vel_to_strainRate(organized_path, organized_path, start_index, end_index*length, 7.0/258, True, further_to='vorticity')
+# process_minus(organized_path, organized_path, start_index, end_index*length, 'vel2vorticity', 'strainRate2vorticity')
+# scivis_R2toR1(organized_path, organized_vis_path, start_index, end_index*length, 'density')
+# scivis_R2toR1(organized_path, organized_vis_path, start_index, end_index*length, 'strainRate2vorticity')
+# scivis_R2toR1(organized_path, organized_vis_path, start_index, end_index*length, 'vel2vorticity')
+# scivis_R2toR1(organized_path, organized_vis_path, start_index, end_index*length, 'vel2vorticityMINUSstrainRate2vorticity')
 
 # start_index = 0
 # end_index = 798
@@ -69,15 +116,15 @@ ti.init(arch=ti.gpu)
 # process_vel_to_strainRate(organized_test_path, organized_test_path, start_index, end_index, 7.0/258, True, further_to='vorticity')
 # process_minus(organized_test_path, organized_test_path, start_index, end_index, 'vel2vorticity', 'strainRate2vorticity')
 
-start_index = 0
-end_index = 798
-scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'density')
-scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'strainRate2vorticity')
-scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticity')
-scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity')
-datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'strainRate2vorticity', -100, 100)
-datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticity', -100, 100)
-datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity', -10, 10)
+# start_index = 0
+# end_index = 798
+# scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'density')
+# scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'strainRate2vorticity')
+# scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticity')
+# scivis_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity')
+# datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'strainRate2vorticity', -100, 100)
+# datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticity', -100, 100)
+# datavis_hist_R2toR1(organized_train_path, organized_train_path, start_index, end_index, 'vel2vorticityMINUSstrainRate2vorticity', -10, 10)
 
 # process_abs(organized_path, organized_path, start_index, end_index, 'vel2vorticity')
 # process_abs(organized_path, organized_path, start_index, end_index, 'strainRate2vorticity')

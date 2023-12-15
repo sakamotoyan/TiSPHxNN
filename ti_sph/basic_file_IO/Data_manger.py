@@ -27,15 +27,32 @@ class Grid_Data_manager:
         np.save(os.path.join(self.output_folder_path, name+'.npy'), exported_data)
         return exported_data
     
-    def export_single_frame_data(self, name:str='data', from_zero:bool=False):
-        exported_data = self.processed_data
-        if from_zero:
-            for i in range(self.start_index, self.end_index):
-                np.save(os.path.join(self.output_folder_path, name+'_'+str(i-self.start_index)+'.npy'), exported_data[i-self.start_index])
-        else:
-            for i in range(self.start_index, self.end_index):
-                np.save(os.path.join(self.output_folder_path, name+'_'+str(i)+'.npy'), exported_data[i-self.start_index])
-        return exported_data
+    def export_single_frame_data(self, name:str='data', operations:List[str]=[]):
+        length = len(operations)+1
+        for i in range(self.start_index, self.end_index):
+            exported_data_list = []
+            exported_data = self.processed_data[i-self.start_index]
+            exported_data_list.append(exported_data)
+
+            for operation in operations:
+                if operation == 'flipud':
+                    exported_data_list.append(np.flipud(exported_data))
+                elif operation == 'fliplr':
+                    exported_data_list.append(np.fliplr(exported_data))
+                elif operation == 'transpose':
+                    if len(exported_data.shape)==2:
+                        exported_data_list.append(np.transpose(exported_data))
+                    elif len(exported_data.shape)==3:
+                        exported_data_list.append(np.transpose(exported_data, (1,0,2)))
+                    elif len(exported_data.shape)==4:
+                        exported_data_list.append(np.transpose(exported_data, (1,0,2,3)))
+                    else:
+                        raise Exception("exported_data.shape is not supported")
+                elif operation == 'flipud_fliplr':
+                    exported_data_list.append(np.flipud(np.fliplr(exported_data)))
+            
+            for j in range(length):
+                np.save(os.path.join(self.output_folder_path, name+'_'+str((i-self.start_index)*length+j)+'.npy'), exported_data_list[j])
     
     def reshape_data_to_2d(self, index_attr:str):
         for i in range(self.start_index, self.end_index):

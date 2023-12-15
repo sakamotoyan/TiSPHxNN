@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchview import draw_graph
 from torch.utils.data import DataLoader
 
 import os
@@ -27,7 +28,7 @@ class TrainConvAutoencoder_1:
                                                  platform='cuda'):
         
 
-        self.batch_size = 16
+        self.batch_size = 64
         self.platform = platform
         self.network = ConvAutoencoder_1(feature_vector_size)
         self.network.to(platform)
@@ -108,10 +109,12 @@ class TrainConvAutoencoder_1:
 
     def train_velocityBased(self, num_epochs, network_model_path, former_model_file_path=None):
         current_epochs_num = 0
+        
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
             current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
             print(f"Loaded former model from {former_model_file_path}")
+
         for epoch in range(num_epochs):
             running_loss = 0.0
             for batch_inputs, batch_targets, batch_aux in self.data_loader:
@@ -136,6 +139,10 @@ class TrainConvAutoencoder_1:
         self.dataset = DatasetConvAutoencoder_1(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
+    def draw_graph(self, model_file_path):
+        model_graph = draw_graph(self.network, input_size=(self.batch_size, 2, 256, 256), device=self.platform, directory=model_file_path)
+        model_graph.visual_graph.render()
+
     def test(self, model_file_path, output_path):
             
         self.network.load_state_dict(torch.load(model_file_path))
@@ -152,8 +159,8 @@ class TrainConvAutoencoder_1:
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
                 output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
 
-                input_vorticity  = (input_dv_dx - input_du_dy)[:, 1:-1, 1:-1]
-                output_vorticity = (output_dv_dx - output_du_dy)[:, 1:-1, 1:-1]
+                input_vorticity  = (input_dv_dx - input_du_dy)
+                output_vorticity = (output_dv_dx - output_du_dy)
                 input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
                 output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
                 # to numpy
