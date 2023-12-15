@@ -117,7 +117,7 @@ class TrainConvAutoencoder_1:
 
         for epoch in range(num_epochs):
             running_loss = 0.0
-            for batch_inputs, batch_targets, batch_aux in self.data_loader:
+            for batch_inputs, _, _ in self.data_loader:
                 loss = 0.0
                 self.optimizer.zero_grad()
                 

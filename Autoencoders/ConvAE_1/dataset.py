@@ -75,9 +75,9 @@ class DatasetConvAutoencoder_1(Dataset):
             np_velocity_x = np_velocity[...,0]
             np_velocity_y = np_velocity[...,1]
 
-            normalized_np_velocity_x = 2 * ((np_velocity_x - self.min_value_velocity_norm) / (self.max_value_velocity_norm - self.min_value_velocity_norm)) - 1
-            normalized_np_velocity_y = 2 * ((np_velocity_y - self.min_value_velocity_norm) / (self.max_value_velocity_norm - self.min_value_velocity_norm)) - 1
-            normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity)     / (self.max_value_vorticity     - self.min_value_vorticity))     - 1
+            normalized_np_velocity_x = np_velocity_x / self.max_value_velocity_norm
+            normalized_np_velocity_y = np_velocity_y / self.max_value_velocity_norm
+            normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity) / (self.max_value_vorticity - self.min_value_vorticity)) - 1
 
             normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
             hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))

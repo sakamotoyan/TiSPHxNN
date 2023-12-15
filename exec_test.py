@@ -8,10 +8,10 @@ platform = 'cuda'
 feature_vector_size=64
 res = 256
 
-number_of_frames = 700
-main_folder_path = './dataset_train'
+number_of_frames = 500 # 186 700
+main_folder_path = './dataset_test'
 model_folder_path = os.path.join('./dataset_train', 'model')
-model_epoch = 449
+model_epoch = 999
 
 attr_name_1 = 'velocity'
 attr_name_2 = 'strainRate2vorticity'

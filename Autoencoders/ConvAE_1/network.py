@@ -13,47 +13,47 @@ class ConvAutoencoder_1(nn.Module):
         # Encoder
         self.encoder = nn.Sequential(
             # First convolutional layer taking input with 2 channels and producing 16 channels,
-            # kernel_size=4 (3x3 kernel), stride=2 (reduces dimension by half), and padding=1.
+            # kernel_size=3 (3x3 kernel), stride=2 (reduces dimension by half), and padding=1.
             # Output tensor size: [batch_size, 16, 128, 128]
-            nn.Conv2d(2, 4, kernel_size=4, stride=2, padding=1),  
+            nn.Conv2d(2, 4, kernel_size=3, stride=2, padding=1),  
             nn.ReLU(),
 
-            nn.Conv2d(4, 8, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(4, 8, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),  
 
-            nn.Conv2d(8, 16, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),  
 
-            nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
             nn.ReLU(), 
 
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
             nn.ReLU(), 
-            nn.Flatten(),
+            # nn.Flatten(),
 
-            nn.Linear(64 * 8 * 8, feature_vector_size), 
-            nn.ReLU(),
+            # nn.Linear(64 * 8 * 8, feature_vector_size), 
+            # nn.ReLU(),
         )
 
         # Decoder
         self.decoder = nn.Sequential(
-            nn.Linear(feature_vector_size, 64 * 8 * 8),
-            nn.ReLU(),
-            nn.Unflatten(1, (64, 8, 8)),  
+            # nn.Linear(feature_vector_size, 64 * 8 * 8),
+            # nn.ReLU(),
+            # nn.Unflatten(1, (64, 8, 8)),  
 
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
             
-            nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),  
 
-            nn.ConvTranspose2d(8, 4, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(8, 4, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(), 
 
-            nn.ConvTranspose2d(4, 2, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(4, 2, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.Sigmoid(),  
         )
 
