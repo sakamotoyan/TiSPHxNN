@@ -29,17 +29,17 @@ class ConvAutoencoder_1(nn.Module):
 
             nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
             nn.ReLU(), 
-            # nn.Flatten(),
+            nn.Flatten(),
 
-            # nn.Linear(64 * 8 * 8, feature_vector_size), 
-            # nn.ReLU(),
+            nn.Linear(64 * 8 * 8, feature_vector_size), 
+            nn.ReLU(),
         )
 
         # Decoder
         self.decoder = nn.Sequential(
-            # nn.Linear(feature_vector_size, 64 * 8 * 8),
-            # nn.ReLU(),
-            # nn.Unflatten(1, (64, 8, 8)),  
+            nn.Linear(feature_vector_size, 64 * 8 * 8),
+            nn.ReLU(),
+            nn.Unflatten(1, (64, 8, 8)),  
 
             nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),

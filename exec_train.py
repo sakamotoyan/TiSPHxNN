@@ -4,7 +4,7 @@ import taichi as ti
 from Autoencoders.ConvAE_1 import *
 from Dataset_processing import *
 
-feature_vector_size=64
+feature_vector_size=128
 res = 256
 
 attr_name_1 = 'velocity'
