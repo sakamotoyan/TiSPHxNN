@@ -8,10 +8,9 @@ platform = 'cuda'
 feature_vector_size=128
 res = 256
 
-number_of_frames = 186 # 186 700
-main_folder_path = './dataset_test'
+main_folder_path = './dataset_train'
 model_folder_path = os.path.join('./dataset_train', 'model')
-model_epoch = 599
+model_epoch = 419
 
 attr_name_1 = 'velocity'
 attr_name_2 = 'strainRate2vorticity'
@@ -30,6 +29,7 @@ vel_model_file_path   = os.path.join(model_folder_path,  f'epochs_{model_epoch}.
 test_result_vel_path  = os.path.join(main_folder_path, 'test_output')
 model.test(vel_model_file_path,  test_result_vel_path)
 
+number_of_frames = 780
 scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'output_vorticity', stride=1)
 
 # scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, 750, 'input_vorticity')

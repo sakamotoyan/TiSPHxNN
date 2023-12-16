@@ -42,10 +42,11 @@ def process_strainRate_to(input_path, output_path, start_index, end_index, attr_
                 ts.ker_binary(ti_density_map, 0.5)
                 ts.ker_entry_wise_productEqual(ti_density_map, ti_vorticity)
 
-            data.append(ti_vorticity.to_numpy())
+            # data.append(ti_vorticity.to_numpy())
+            np.save(os.path.join(output_path, f'{attr_name}2{to}_{i}.npy'), ti_vorticity.to_numpy())
     
-    for i in range(start_index, end_index):
-        np.save(os.path.join(output_path, f'{attr_name}2{to}_{i}.npy'), data[i-start_index])
+    # for i in range(start_index, end_index):
+    #     np.save(os.path.join(output_path, f'{attr_name}2{to}_{i}.npy'), data[i-start_index])
         
 
 
@@ -65,6 +66,10 @@ def process_vel_to_strainRate(input_path, output_path, start_index, end_index, c
     ti_conv_val_pupy = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
     ti_conv_val_pvpx = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
     ti_conv_val_pvpy = ti.field(dtype=ti.f32, shape=(dm_vel.shape_x-2, dm_vel.shape_y-2))
+
+    if further_to == 'vorticity':
+        x1, y1 = 1,0
+        x2, y2 = 0,1
 
     for i in range(start_index, end_index):
         np_vel_data = dm_vel.read_single_frame_data(i)
@@ -106,17 +111,22 @@ def process_vel_to_strainRate(input_path, output_path, start_index, end_index, c
         np_conv_val[...,ts.Grid_Data.VAL_Y, ts.Grid_Data.PARTIAL_X] = ti_conv_val_pvpx.to_numpy()
         np_conv_val[...,ts.Grid_Data.VAL_Y, ts.Grid_Data.PARTIAL_Y] = ti_conv_val_pvpy.to_numpy()
 
-        data.append(np_conv_val)
+        # data.append(np_conv_val)
+        np.save(os.path.join(output_path, f'vel2strainRate_{i}.npy'), np_conv_val)
 
-    for i in range(start_index, end_index):
-        np.save(os.path.join(output_path, f'vel2strainRate_{i}.npy'), data[i-start_index])
+        if further_to == 'vorticity':
+            measured_value = (np_conv_val[:,:,x1,y1] - np_conv_val[:,:,x2,y2])
+            np.save(os.path.join(output_path, f'vel2{further_to}_{i}.npy'), measured_value)
+
+    # for i in range(start_index, end_index):
+    #     np.save(os.path.join(output_path, f'vel2strainRate_{i}.npy'), data[i-start_index])
     
-    if further_to == 'vorticity':
-        x1, y1 = 1,0
-        x2, y2 = 0,1
-        measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
-        for i in range(start_index, end_index):
-            np.save(os.path.join(output_path, f'vel2{further_to}_{i}.npy'), measured_value[i-start_index])
+    # if further_to == 'vorticity':
+    #     x1, y1 = 1,0
+    #     x2, y2 = 0,1
+    #     measured_value = (np.array(data)[:,:,:,x1,y1] - np.array(data)[:,:,:,x2,y2])
+    #     for i in range(start_index, end_index):
+    #         np.save(os.path.join(output_path, f'vel2{further_to}_{i}.npy'), measured_value[i-start_index])
 
 
 def process_minus(input_path, output_path, start_index, end_index, attr_name_1, attr_name_2):

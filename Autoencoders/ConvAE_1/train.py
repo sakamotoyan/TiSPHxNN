@@ -4,6 +4,8 @@ import torch.optim as optim
 from torchview import draw_graph
 from torch.utils.data import DataLoader
 
+import matplotlib.pyplot as plt
+
 import os
 import taichi as ti
 import numpy as np
@@ -36,6 +38,7 @@ class TrainConvAutoencoder_1:
         self.optimizer = optim.Adam(self.network.parameters(), lr=0.001)
         self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
+        self.loss_list = []
 
     
     def train_histBased(self, num_epochs, network_model_path, former_model_file_path=None):
@@ -71,7 +74,9 @@ class TrainConvAutoencoder_1:
 
             average_loss = running_loss / len(self.data_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+            if (epoch+1) % 20 == 0:
+                torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+                self.save_loss_fig(epoch+current_epochs_num, network_model_path)
 
     def train_vorticityBased(self, num_epochs, network_model_path, former_model_file_path=None):
         current_epochs_num = 0
@@ -104,8 +109,9 @@ class TrainConvAutoencoder_1:
 
             average_loss = running_loss / len(self.data_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            if (epoch+1) % 10 == 0:
+            if (epoch+1) % 20 == 0:
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+                self.save_loss_fig(epoch+current_epochs_num, network_model_path)
 
     def train_velocityBased(self, num_epochs, network_model_path, former_model_file_path=None):
         current_epochs_num = 0
@@ -132,8 +138,18 @@ class TrainConvAutoencoder_1:
 
             average_loss = running_loss / len(self.data_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            if (epoch+1) % 10 == 0:
+            self.loss_list.append(average_loss)
+            if (epoch+1) % 20 == 0:
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
+                self.save_loss_fig(epoch+current_epochs_num, network_model_path)
+
+    def save_loss_fig(self, epoch, path='./dataset_train'):
+        plt.plot(self.loss_list)
+        plt.title('Loss')
+        plt.xlabel('epoch (batch_size=64)')
+        save_path = os.path.join(path, f'loss_{epoch}.png')
+        plt.savefig(save_path)
+        plt.close()
 
     def change_dataset(self, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3):
         self.dataset = DatasetConvAutoencoder_1(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)

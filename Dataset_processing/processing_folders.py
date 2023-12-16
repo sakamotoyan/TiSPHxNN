@@ -77,6 +77,7 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
     - The function does not handle cases where the output folder already contains files with the same names
       as the renamed files, which may lead to overwriting.
     """
+    total_number_of_frames = 0
     file_counters = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
     file_counters_shift = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
 
@@ -91,6 +92,8 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
                     parts = file_name.rsplit('_', 1)
                     if len(parts) == 2 and parts[0] == attr_name:
                         file_counters[folder_name][attr_name] += 1
+
+    total_number_of_frames = int(sum(file_counters[i][attr_name_list[0]] for i in folder_list))
 
     for folder_idx in range(len(folder_list)):
         folder_name = folder_list[folder_idx]
@@ -123,4 +126,6 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
                     new_file_path = os.path.join(output_folder_path, new_file_name)
                     shutil.copy(file_path, new_file_path)
 
-    print("Files have been concatenated and copied to:", output_folder_path)
+    print("concatDataset(): Files have been concatenated and copied to:", output_folder_path)
+    print("concatDataset(): Total number of frames:", total_number_of_frames)
+    return total_number_of_frames

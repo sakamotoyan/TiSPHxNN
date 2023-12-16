@@ -6,7 +6,6 @@ ti.init(arch=ti.gpu)
 '''
 Training dataset generation
 '''
-number_of_frames = 798
 main_path = './dataset_train'
 rawdata_folder = 'rawdata'
 dataset_folder = 'dataset'
@@ -18,7 +17,7 @@ clear_folder(os.path.join(main_path, datavis_folder))
 operation_list = ['flipud', 'fliplr', 'transpose', 'flipud_fliplr']
 length = len(operation_list)+1
 
-concatDataset('.\\',
+number_of_frames = concatDataset('.\\',
                 ['raw_t1', 'raw_t2'],
                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
                 os.path.join(main_path, rawdata_folder))
@@ -34,30 +33,30 @@ scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, d
 '''
 Testing dataset generation
 '''
-number_of_frames = 186
-main_path = './dataset_test'
-rawdata_folder = 'rawdata'
-dataset_folder = 'dataset'
-datavis_folder = 'datavis'
-clear_folder(os.path.join(main_path, rawdata_folder))
-clear_folder(os.path.join(main_path, dataset_folder))
-clear_folder(os.path.join(main_path, datavis_folder))
+# number_of_frames = 186
+# main_path = './dataset_test'
+# rawdata_folder = 'rawdata'
+# dataset_folder = 'dataset'
+# datavis_folder = 'datavis'
+# clear_folder(os.path.join(main_path, rawdata_folder))
+# clear_folder(os.path.join(main_path, dataset_folder))
+# clear_folder(os.path.join(main_path, datavis_folder))
 
-operation_list = []
-length = len(operation_list)+1
+# operation_list = []
+# length = len(operation_list)+1
 
-concatDataset('.\\',
-                ['raw_t3'],
-                ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
-                os.path.join(main_path, rawdata_folder))
-gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
-gridExport_vel(           os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
-gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
-process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
-process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
-scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density')
-scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
-scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
+# concatDataset('.\\',
+#                 ['raw_t3'],
+#                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
+#                 os.path.join(main_path, rawdata_folder))
+# gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+# gridExport_vel(           os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+# gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
+# process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
+# process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
+# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density')
+# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
+# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
 
 
 # clear_folder(raw_path)
