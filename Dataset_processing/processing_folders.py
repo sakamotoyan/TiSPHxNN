@@ -79,7 +79,6 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
     """
     total_number_of_frames = 0
     file_counters = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
-    file_counters_shift = {folder: {attr_name: 0 for attr_name in attr_name_list} for folder in folder_list}
 
     for folder_idx in range(len(folder_list)):
         for attr_idx in range(len(attr_name_list)):
@@ -94,23 +93,31 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
                         file_counters[folder_name][attr_name] += 1
 
     total_number_of_frames = int(sum(file_counters[i][attr_name_list[0]] for i in folder_list))
+    print("concatDataset(): Files have been concatenated and copied to:", output_folder_path)
 
-    for folder_idx in range(len(folder_list)):
-        folder_name = folder_list[folder_idx]
-        for folder_sub_idx in range(folder_idx):
-            folder_sub_name = folder_list[folder_sub_idx]
-            for attr_idx in range(len(attr_name_list)):
-                attr_name = attr_name_list[attr_idx]
-                file_counters[folder_name][attr_name] += file_counters[folder_sub_name][attr_name] 
-    
     for folder_idx in range(len(folder_list)-1):
+        folder_name = folder_list[folder_idx]
+        next_folder_name = folder_list[folder_idx+1]
         for attr_idx in range(len(attr_name_list)):
-            folder_name = folder_list[folder_idx]
             attr_name = attr_name_list[attr_idx]
-            folder_name_next = folder_list[folder_idx+1]
-            file_counters_shift[folder_name_next][attr_name] = file_counters[folder_name][attr_name]
-    file_counters_shift[folder_list[0]][attr_name_list[0]] = 0
-    file_counters = file_counters_shift
+            file_counters[next_folder_name][attr_name] += file_counters[folder_name][attr_name]
+    
+    print("concatDataset(): File counters:", file_counters)
+
+    
+    for folder_idx in range(len(folder_list)-1, 0, -1):
+        folder_name = folder_list[folder_idx]
+        previoud_folder_name = folder_list[folder_idx-1]
+        for attr_idx in range(len(attr_name_list)):
+            attr_name = attr_name_list[attr_idx]
+            file_counters[folder_name][attr_name] = file_counters[previoud_folder_name][attr_name]
+    first_folder_name = folder_list[0]
+    for attr_idx in range(len(attr_name_list)):
+        attr_name = attr_name_list[attr_idx]
+        file_counters[first_folder_name][attr_name] = 0
+
+
+    print("concatDataset(): File counters:", file_counters)
 
     for folder_name in folder_list:
         folder_path = os.path.join(input_folder_path, folder_name)
@@ -126,6 +133,6 @@ def concatDataset(input_folder_path, folder_list, attr_name_list, output_folder_
                     new_file_path = os.path.join(output_folder_path, new_file_name)
                     shutil.copy(file_path, new_file_path)
 
-    print("concatDataset(): Files have been concatenated and copied to:", output_folder_path)
+    
     print("concatDataset(): Total number of frames:", total_number_of_frames)
     return total_number_of_frames
