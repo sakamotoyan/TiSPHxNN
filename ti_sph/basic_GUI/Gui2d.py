@@ -38,7 +38,7 @@ class Gui2d:
             x = positoins[:, 0]
             y = positoins[:, 1]
 
-            plt.scatter(x, y, s=self.radius, c=colors, edgecolors='none') 
+            plt.scatter(x, y, s=self.radius*10, c=colors, edgecolors='none') 
         
         ax = plt.gca()
         ax.set_facecolor('white')

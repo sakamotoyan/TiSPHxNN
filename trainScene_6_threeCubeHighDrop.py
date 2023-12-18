@@ -9,7 +9,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, kernel_profiler=True) 
-ti.init(arch=ti.cuda, device_memory_GB=20) # Use GPU
+ti.init(arch=ti.cuda, device_memory_GB=5) # Use GPU
 # ti.init(arch=ti.vulkan) # Use CPU
 
 ''' GLOBAL SETTINGS '''
@@ -19,7 +19,7 @@ fps = 30
 sense_res = 258
 
 sense_cell_size = val_f(7.0/sense_res)
-part_size = sense_cell_size[None] / 12
+part_size = sense_cell_size[None] / 0.5
 
 max_time_step = part_size/100
 k_vis = 5e-5

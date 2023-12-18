@@ -2,13 +2,13 @@ import cv2
 import os
 
 # Output MP4 file path
-output_path = './output_video/t1'
-input_path = './output_organised/'
+output_path = './dataset_test/test_output'
+input_path = output_path
 
 # Frame rate (frames per second) of the output video
 start_index = 0
-end_index = 1069
-frame_rate = 30
+end_index = 186
+frame_rate = 24
 stride = 1
 
 
@@ -37,8 +37,13 @@ def process(file_name):
     # Release the video writer
     out.release()
 
-process('density')
-process('strainRate_compression')
-process('strainRate_rotation')
-process('strainRate_shear')
-process('vel_hsv')
+# process('sci_input_velocity')
+process('sci_output_velocity')
+# process('sci_input_vorticity')
+process('sci_output_vorticity')
+# process('input_vorticity_hist')
+process('output_vorticity_hist')
+# process('strainRate_compression')
+# process('strainRate_rotation')
+# process('strainRate_shear')
+# process('vel_hsv')

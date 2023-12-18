@@ -5,12 +5,13 @@ from Autoencoders.ConvAE_1 import *
 from Dataset_processing import *
 
 platform = 'cuda'
-feature_vector_size=128
+feature_vector_size = 128
 res = 256
 
 main_folder_path = './dataset_test'
 model_folder_path = os.path.join('./dataset_train', 'model')
-model_epoch = 419
+model_epoch = 39
+model_epoch = 779
 
 attr_name_1 = 'velocity'
 attr_name_2 = 'strainRate2vorticity'
@@ -30,11 +31,15 @@ test_result_vel_path  = os.path.join(main_folder_path, 'test_output')
 model.test(vel_model_file_path,  test_result_vel_path)
 
 number_of_frames = 186
+# scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
 scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'output_vorticity', stride=1)
+# scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
+scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'output_velocity')
+# datavis_hist( test_result_vel_path,  test_result_vel_path,  'input_vorticity_hist',  0, number_of_frames)
+datavis_hist( test_result_vel_path,  test_result_vel_path,  'output_vorticity_hist', 0, number_of_frames)
 
 # scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, 750, 'input_vorticity')
-# datavis_hist( test_result_vel_path,  test_result_vel_path,  'output_vorticity_hist', 0, 750)
-# datavis_hist( test_result_vel_path,  test_result_vel_path,  'input_vorticity_hist',  0, 750)
+
 
 
 # vort_model_file_path = os.path.join('output', 'dict_vort', 'epochs_999.pth')
