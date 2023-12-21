@@ -5,13 +5,13 @@ from Autoencoders.ConvAE_1 import *
 from Dataset_processing import *
 
 platform = 'cuda'
-feature_vector_size = 128
+feature_vector_size = 512
 res = 256
 
 main_folder_path = './dataset_test'
 model_folder_path = os.path.join('./dataset_train', 'model')
 model_epoch = 39
-model_epoch = 779
+model_epoch = 659
 
 attr_name_1 = 'velocity'
 attr_name_2 = 'strainRate2vorticity'
