@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-dropout_probability = 0.0
+dropout_probability = 0.2
 leakiness = 0.01
 class ConvAutoencoder_1(nn.Module):
     

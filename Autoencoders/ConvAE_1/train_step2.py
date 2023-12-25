@@ -38,13 +38,12 @@ class TrainConvAutoencoder_1:
         self.network.to(platform)
         self.criterion = nn.MSELoss()
 
-        # for param in self.network.encoder.parameters():
-        #     param.requires_grad = False
-        # for param in self.network.decoder.parameters():
-        #     param.requires_grad = False
-        # self.optimizer = optim.Adam(self.network.bottleneck.parameters(), lr=lr)
-
-        self.optimizer = optim.Adam(self.network.parameters(), lr=lr)
+        for param in self.network.encoder.parameters():
+            param.requires_grad = False
+        for param in self.network.decoder.parameters():
+            param.requires_grad = False
+        self.optimizer = optim.Adam(self.network.bottleneck.parameters(), lr=lr)
+        
         self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []

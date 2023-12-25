@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-dropout_probability = 0.0
+dropout_probability = 0.2
 leakiness = 0.01
 class ConvAutoencoder_1(nn.Module):
     
@@ -33,10 +33,10 @@ class ConvAutoencoder_1(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.Flatten(),
 
-            nn.Linear(128 * 16 * 16, 2048), 
+            nn.Linear(128 * 16 * 16, 4096), 
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
 
-            nn.Linear(2048, 128 * 16 * 16),
+            nn.Linear(4096, 128 * 16 * 16),
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
 
             nn.Unflatten(1, (128, 16, 16)),
