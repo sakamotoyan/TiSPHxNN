@@ -33,10 +33,10 @@ class ConvAutoencoder_1(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.Flatten(),
 
-            nn.Linear(128 * 16 * 16, 2048), 
+            nn.Linear(128 * 16 * 16, 128), 
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
 
-            nn.Linear(2048, 128 * 16 * 16),
+            nn.Linear(128, 128 * 16 * 16),
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
 
             nn.Unflatten(1, (128, 16, 16)),

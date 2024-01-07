@@ -2,7 +2,7 @@ import cv2
 import os
 
 # Output MP4 file path
-output_path = './dataset_test/test_output'
+output_path = './output'
 input_path = output_path
 
 # Frame rate (frames per second) of the output video

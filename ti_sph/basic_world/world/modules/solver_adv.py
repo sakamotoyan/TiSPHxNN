@@ -3,7 +3,7 @@ import taichi as ti
 def init_solver_adv(self):
     self.adv_solver_list = []
     for part_obj in self.part_obj_list:
-        if (part_obj.m_is_dynamic is not False) or (part_obj.m_solver_adv is not None):
+        if (part_obj.m_solver_adv is not None):
             self.adv_solver_list.append(part_obj)
 
 def clear_acc(self):

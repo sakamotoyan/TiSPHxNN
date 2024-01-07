@@ -35,23 +35,25 @@ class Mod_Solvers:
     def add_solver_JL21(self, kd, Cf, k_vis):
         self.m_solver_JL21 = JL21_mixture_solver(self, kd, Cf, k_vis, self.m_world)
 
-    def get_solverSPH(self)->SPH_solver:
+    def getSolverSPH(self)->SPH_solver:
         return self.m_solver_sph
     @ti.func
-    def tiGet_solverSPH(self):
+    def tiGetSolverSPH(self):
         return self.m_solver_sph
     @ti.func
-    def tiGet_solverAdv(self):
+    def tiGetSolverAdv(self):
+        return self.m_solver_adv
+    def getSolverAdv(self):
         return self.m_solver_adv
     @ti.func
-    def tiGet_solverDF(self):
+    def tiGetSolverDF(self):
         return self.m_solver_df
     @ti.func
-    def tiGet_solverWCSPH(self):
+    def tiGetSolverWCSPH(self):
         return self.m_solver_wcsph
     @ti.func
-    def tiGet_solverISM(self):
+    def tiGetSolverISM(self):
         return self.m_solver_ism
     @ti.func
-    def tiGet_solverJL21(self):
+    def tiGetSolverJL21(self):
         return self.m_solver_JL21

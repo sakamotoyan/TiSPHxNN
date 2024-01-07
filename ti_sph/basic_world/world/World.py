@@ -23,6 +23,7 @@ class World:
         self.g_space_rt.fill(rt)
         self.g_gravity[None][1] = -9.8
         self.g_dt = val_f(0.001)
+        self.g_time = val_f(0)
         self.g_inv_dt = val_f(1/self.g_dt[None])
         self.g_neg_inv_dt = val_f(-1/self.g_dt[None])
         self.g_inv_dt2 = val_f(self.g_inv_dt[None] ** 2)
@@ -50,6 +51,23 @@ class World:
 
         self.part_volume = val_f(self.g_part_size[None] ** self.g_dim[None])
         self.support_radius = val_f(self.g_part_size[None] * 2)
+
+    @ti.func
+    def tiGetPartSize(self) -> ti.f32:
+        return self.g_part_size[None]
+    def getPartSize(self) -> ti.f32:
+        return self.g_part_size[None]
+    
+    @ti.func
+    def tiGetTime(self) -> ti.f32:
+        return self.g_time[None]
+    def getTime(self) -> ti.f32:
+        return self.g_time[None]
+    @ti.func
+    def tiSetTime(self, time):
+        self.g_time[None] = time
+    def setTime(self, time):
+        self.g_time[None] = time
 
     @ti.func
     def tiGetWorldDim(self)->ti.i32:
@@ -127,6 +145,8 @@ class World:
         return self.g_obj_num
     def getWorldObjNum(self):
         return self.g_obj_num
+    def setWorldObjNum(self, num):
+        self.g_obj_num = val_i(num)
     
     @ti.func
     def tiGetWorldSoundSpeed(self):

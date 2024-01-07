@@ -27,5 +27,5 @@ model = TrainConvAutoencoder_1(res, attr_name_1, dataset_file_path_1,
                                attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, platform, False)
 
 # model.train_velocityBased(num_epochs=8000, network_model_path=model_path,  former_model_file_path=None)
-model.train_vorticityBased(num_epochs=8000, network_model_path=model_path, former_model_file_path=None, save_step=100)
+model.train_vorticityBased(num_epochs=8000, network_model_path=model_path, former_model_file_path='./epochs_7199.pth', save_step=100)
 # model.train_histBased(     num_epochs=8000, network_model_path=model_path, former_model_file_path=None)

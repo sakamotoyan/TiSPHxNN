@@ -10,6 +10,7 @@ class Adv_slover(Solver):
 
         Solver.__init__(self, obj)
         self.clean_acc = vecxf(self.getObj().getObjWorld().getWorldDim())(0)
+        self.chche_1 = vecxf(self.getObj().getObjWorld().getWorldDim())(0)
     
     @ti.kernel
     def clear_acc(self):
@@ -35,6 +36,24 @@ class Adv_slover(Solver):
     def add_acc_gravity(self):
         for i in range(self.tiGetObj().tiGetObjStackTop()):
             self.tiGetObj().tiAddAcc(i, self.tiGetObj().tiGetObjWorld().tiGetWorldGravity())
+
+    '''
+    harmonic acceleration
+    '''
+    @ti.kernel
+    def add_acc_harmonic(self, axis: ti.i32, dir: ti.f32, period: ti.f32, amplitude: ti.f32, world_time: ti.f32, delay: ti.f32):
+
+        time = world_time - delay
+        if time > 0:
+            acc = self.chche_1
+            acc.fill(0)
+            
+            angular_frequency = ti.math.pi * 2 / period
+            acc[axis] = -amplitude * (angular_frequency ** 2) * ti.math.cos(angular_frequency * time) * dir
+            
+            for i in range(self.tiGetObj().tiGetObjStackTop()):
+                self.tiGetObj().tiAddAcc(i, acc)
+
 
     @ti.kernel
     def acc2vel_adv(self):
