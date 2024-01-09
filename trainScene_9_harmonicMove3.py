@@ -11,14 +11,14 @@ np.set_printoptions(threshold=sys.maxsize)
 class mode(Enum):
     DEBUG = 0
     RELEASE = 1
-MODE = mode.DEBUG
+MODE = mode.RELEASE
 dpi = 200
 
 ''' TAICHI SETTINGS '''
 if(MODE == mode.DEBUG):
     ti.init(arch=ti.cuda, debug=True, device_memory_GB=6)
 elif(MODE == mode.RELEASE):
-    ti.init(arch=ti.cuda, device_memory_GB=20) 
+    ti.init(arch=ti.cuda, device_memory_GB=22) 
 
 ''' GLOBAL SETTINGS '''
 output_shift = 0
@@ -27,7 +27,7 @@ fps = 30
 sense_res = 258
 
 sense_cell_size = val_f(7.0/sense_res)
-part_size = sense_cell_size[None] / 12
+part_size = sense_cell_size[None] / 10
 if(MODE == mode.DEBUG): part_size *= 24
 
 max_time_step = part_size/100
@@ -35,7 +35,7 @@ k_vis = 5e-5
 world = World(dim=2)
 world.setWorldPartSize(part_size)
 world.setWorldDt(max_time_step)
-world.setWorldObjNum(4)
+world.setWorldObjNum(5)
 
 print('default dt', world.getWorldDt())
 
@@ -46,8 +46,9 @@ fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+span, 
 fluid_part_num = fluid_cube_data_1.num
 
 box_data   = Box_data(lb=vec2f(-6, -4), rt=vec2f(4, 4), span=world.getPartSize()*1.001, layers=3)
-rod_data_1 = Box_data(lb=vec2f(-5-span*2, 0), rt=vec2f(-5+span*2, 4-span*4), span=world.getPartSize()*1.001, layers=3)
-rod_data_2 = Box_data(lb=vec2f(-5-span*2, -3), rt=vec2f(-5+span*2, -1), span=world.getPartSize()*1.001, layers=3)
+rod_data_1 = Box_data(lb=vec2f(-5.5,  1.5), rt=vec2f(-5.0,  3.0), span=world.getPartSize()*1.001, layers=3)
+rod_data_2 = Box_data(lb=vec2f(-5.5, -1.0), rt=vec2f(-5.0,  0.5), span=world.getPartSize()*1.001, layers=3)
+rod_data_3 = Box_data(lb=vec2f(-5.5, -3.5), rt=vec2f(-5.0, -2.0), span=world.getPartSize()*1.001, layers=3)
 # rod_data = Box_data(lb=vec2f(-5-span*2, -4+span*3), rt=vec2f(-5+span*2, 4-span*4), span=world.getPartSize()*1.001, layers=3)
 
 '''INIT AN FLUID PARTICLE OBJECT'''
@@ -112,6 +113,19 @@ rod_part_2.fill_open_stack_with_val(rod_part_2.rgb, vec3f([0.0, 0.0, 0.0]))
 rod_part_2.fill_open_stack_with_val(rod_part_2.k_vis, k_vis)
 rod_part_2.close_stack()
 
+rod_part_3 = Particle(part_num=rod_data_3.num, part_size=world.g_part_size, is_dynamic=False)
+world.attachPartObj(rod_part_3)
+rod_part_3.instantiate_from_template(part_template, world)
+rod_part_3.open_stack(rod_data_3.num)
+rod_part_3.fill_open_stack_with_arr(rod_part_3.pos, rod_data_3.pos)
+rod_part_3.fill_open_stack_with_val(rod_part_3.size, rod_part_3.getObjPartSize())
+rod_part_3.fill_open_stack_with_val(rod_part_3.volume, rod_part_3.getObjPartSize()**world.getWorldDim())
+rod_part_3.fill_open_stack_with_val(rod_part_3.mass, rod_rest_density*rod_part_3.getObjPartSize()**world.getWorldDim())
+rod_part_3.fill_open_stack_with_val(rod_part_3.rest_density, rod_rest_density)
+rod_part_3.fill_open_stack_with_val(rod_part_3.rgb, vec3f([0.0, 0.0, 0.0]))
+rod_part_3.fill_open_stack_with_val(rod_part_3.k_vis, k_vis)
+rod_part_3.close_stack()
+
 sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 sense_grid_part = Particle(part_num=sense_cube_data.num, part_size=sense_cell_size, is_dynamic=False)
 world.attachPartObj(sense_grid_part)
@@ -127,7 +141,8 @@ sense_grid_part.close_stack()
 neighb_list=[fluid_part, 
              bound_part, 
              rod_part_1, 
-             rod_part_2
+             rod_part_2,
+             rod_part_3
              ]
 
 
@@ -135,12 +150,14 @@ fluid_part.add_module_neighb_search()
 bound_part.add_module_neighb_search()
 rod_part_1.add_module_neighb_search()
 rod_part_2.add_module_neighb_search()
+rod_part_3.add_module_neighb_search()
 sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part.getObjPartNum()*32))
 
 fluid_part.add_neighb_objs(neighb_list)
 bound_part.add_neighb_objs(neighb_list)
 rod_part_1.add_neighb_objs(neighb_list)
 rod_part_2.add_neighb_objs(neighb_list)
+rod_part_3.add_neighb_objs(neighb_list)
 sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=val_f(sense_cell_size[None]*2))
 
 
@@ -158,6 +175,10 @@ rod_part_1.add_solver_df(div_free_threshold=1e-4)
 rod_part_2.add_solver_sph()
 rod_part_2.add_solver_adv()
 rod_part_2.add_solver_df(div_free_threshold=1e-4)
+
+rod_part_3.add_solver_sph()
+rod_part_3.add_solver_adv()
+rod_part_3.add_solver_df(div_free_threshold=1e-4)
 
 sense_grid_part.add_solver_sph()
 
@@ -192,8 +213,9 @@ def loop(is_log_loop=False):
 
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    rod_part_1.getSolverAdv().add_acc_harmonic(axis=0, dir = -1, period=2, amplitude=0.3, world_time=world.getTime(), delay=0.5)
-    rod_part_2.getSolverAdv().add_acc_harmonic(axis=0, dir = -1, period=2, amplitude=0.3, world_time=world.getTime(), delay=0)
+    rod_part_1.getSolverAdv().add_acc_harmonic(axis=0, dir = -1, period=2, amplitude=0.5, world_time=world.getTime(), delay=1)
+    rod_part_2.getSolverAdv().add_acc_harmonic(axis=0, dir = -1, period=2, amplitude=0.5, world_time=world.getTime(), delay=0.5)
+    rod_part_3.getSolverAdv().add_acc_harmonic(axis=0, dir = -1, period=2, amplitude=0.5, world_time=world.getTime(), delay=0)
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_adv.inloop_accumulate_vis_acc)
     world.acc2vel()
@@ -212,8 +234,8 @@ def run(loop):
     sim_time = float(0.0)
     loop_count = int(0)
 
-    gui2d_part = Gui2d(objs=[fluid_part, bound_part, rod_part_1, rod_part_2], radius=world.getWorldPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]),dpi=dpi)
-    gui2d_grid = Gui2d(objs=[sense_grid_part], radius=sense_grid_part.getObjPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
+    gui2d_part = Gui2d(objs=[fluid_part, bound_part, rod_part_1, rod_part_2, rod_part_3], radius=world.getWorldPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]),dpi=dpi)
+    gui2d_grid = Gui2d(objs=[sense_grid_part], radius=sense_grid_part.getObjPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]), dpi=dpi)
 
     while timer < output_frame_num:
         is_log_loop = sim_time > timer*inv_fps
@@ -234,8 +256,8 @@ def run(loop):
 
             gui2d_part.save_img(path='./output/part_'+str(output_shift+timer)+'.png')
             
-            # sense_grid_part.clamp_val_to_arr(sense_grid_part.sph.density, 0, 1000, sense_grid_part.rgb)
-            # gui2d_grid.save_img(path='./output/grid_'+str(output_shift+timer)+'.png')
+            sense_grid_part.clamp_val_to_arr(sense_grid_part.sph.density, 0, 1000, sense_grid_part.rgb)
+            gui2d_grid.save_img(path='./output/grid_'+str(output_shift+timer)+'.png')
 
             timer += 1
 
