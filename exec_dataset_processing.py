@@ -6,7 +6,7 @@ ti.init(arch=ti.gpu)
 '''
 Training dataset generation
 '''
-main_path = './dataset_train'
+main_path = '../dataset_train'
 rawdata_folder = 'rawdata'
 dataset_folder = 'dataset'
 datavis_folder = 'datavis'
@@ -14,11 +14,13 @@ clear_folder(os.path.join(main_path, rawdata_folder))
 clear_folder(os.path.join(main_path, dataset_folder))
 clear_folder(os.path.join(main_path, datavis_folder))
 
-operation_list = ['flipud', 'fliplr', 'transpose', 'flipud_fliplr']
+operation_list = [
+    'flipud', 'fliplr', 'transpose', 'flipud_fliplr'
+    ]
 length = len(operation_list)+1
 
-number_of_frames = concatDataset('./',
-                ['raw_t1', 'raw_t2', 'raw_t4', 'raw_t5', 'raw_t6', 'raw_t7'],
+number_of_frames = concatDataset('../',
+                ['raw_t1', 'raw_t2', 'raw_t3', 'raw_t4', 'raw_t5', 'raw_t6'],
                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
                 os.path.join(main_path, rawdata_folder))
 gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)

@@ -17,6 +17,7 @@ Training process:
 '''
 main_folder_path = '../dataset_train'
 model_path  = os.path.join('./model')
+output_path = os.path.join(main_folder_path, 'test_output')
 # clear_folder(model_path)
 
 dataset_file_path_1 = os.path.join(main_folder_path, 'dataset')
@@ -26,6 +27,9 @@ dataset_file_path_3 = os.path.join(main_folder_path, 'dataset')
 model = TrainConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, 
                                attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, platform, False)
 
-# model.train_velocityBased(num_epochs=8000, network_model_path=model_path,  former_model_file_path=None)
-model.train_vorticityBased(num_epochs=8000, network_model_path=model_path, former_model_file_path='./epochs_7199.pth', save_step=100)
+# model.train_velocityBased (num_epochs=8000, network_model_path=model_path,  former_model_file_path=None)
+# model.output_bottleneck(   model_file_path='./model/epochs_299.pth', output_path=output_path)
+model.train_vorticityBased(num_epochs=8000, network_model_path=model_path, strategy='skip_bottleneck', former_model_file_path=None, save_step=100)
 # model.train_histBased(     num_epochs=8000, network_model_path=model_path, former_model_file_path=None)
+
+# datavis_1darray(output_path, output_path, 'bottleneck', 0, 659)

@@ -72,6 +72,35 @@ def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name):
         plt.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), rgb)
         plt.close()             # if from_zero, then i
 
+def datavis_1darray(input_path, output_path, attr_name, start_index, end_index):
+    val_max = float('-inf')
+    val_min = float('inf')
+    for i in range(start_index, end_index):
+        val = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
+        val_max = max(val_max, val.max())
+        val_min = min(val_min, val.min())
+
+    print(f"datavis_1darray(): max value for {attr_name} is {val_max}")
+    print(f"datavis_1darray(): min value for {attr_name} is {val_min}")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+
+    for i in range(start_index, end_index):
+        val = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
+        x_values = np.arange(len(val))
+        y_values = val
+
+        ax.set_title('1D array of Data')
+        ax.set_xlabel('Feature')
+        ax.set_ylabel('Value')
+        ax.grid(True)
+        ax.set_ylim(val_min*2, val_max)
+        ax.bar(x_values, y_values, edgecolor='black')
+        fig.savefig(os.path.join(output_path, f'1darray_{attr_name}_{i}.png'))
+        ax.clear()
+
+
 def datavis_hist(input_path, output_path, attr_name, start_index, end_index):
     fig, ax = plt.subplots(figsize=(10, 6))
 

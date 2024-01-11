@@ -39,27 +39,27 @@ class DatasetConvAutoencoder_1(Dataset):
 
     def __getitem__(self, idx):
         '''
-        np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
-        np_vorticity = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res-2, :self.clipped_res-2]
-        np_density   = np.load(os.path.join(self.dataset_density_file_path,  f'{self.dataset_density}_{idx+self.start_idx}.npy'  ))[:self.clipped_res  , :self.clipped_res  ]
-
-        np_velocity_x = np_velocity[...,0]
-        np_velocity_y = np_velocity[...,1]
-
-        normalized_np_velocity_x = np_velocity_x / self.max_value_velocity_norm
-        normalized_np_velocity_y = np_velocity_y / self.max_value_velocity_norm
-        normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity) / (self.max_value_vorticity - self.min_value_vorticity)) - 1
-
-        normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
-        hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
-
-        torch_input = torch.tensor(normalized_np_velocity, dtype=torch.float32, device=self.platform)
-        # torch_target = torch.tensor(hist_np_vorticity , dtype=torch.float32, device=self.platform)
-        # torch_aux    = torch.tensor(np_density, dtype=torch.float32, device=self.platform)
-
-        return torch_input\
-            # , torch_target, torch_aux
+        Velocity
         '''
+        # np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
+        # np_velocity_x = np_velocity[...,0]
+        # np_velocity_y = np_velocity[...,1]
+        # normalized_np_velocity_x = np_velocity_x / self.max_value_velocity_norm
+        # normalized_np_velocity_y = np_velocity_y / self.max_value_velocity_norm
+        # normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
+        # torch_input = torch.tensor(normalized_np_velocity, dtype=torch.float32, device=self.platform)
+        '''
+        Vorticity & its histogram
+        '''
+        # np_vorticity = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res-2, :self.clipped_res-2]
+        # normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity) / (self.max_value_vorticity - self.min_value_vorticity)) - 1
+        # hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
+        # torch_target = torch.tensor(hist_np_vorticity , dtype=torch.float32, device=self.platform)
+        '''
+        Density
+        '''
+        # np_density   = np.load(os.path.join(self.dataset_density_file_path,  f'{self.dataset_density}_{idx+self.start_idx}.npy'  ))[:self.clipped_res  , :self.clipped_res  ]
+        # torch_aux    = torch.tensor(np_density, dtype=torch.float32, device=self.platform)
 
         return self.torch_input[idx]
 
@@ -67,33 +67,19 @@ class DatasetConvAutoencoder_1(Dataset):
 
     def read_all_to_device(self):
         input = []
-        target = []
-        aux = []
         for idx in range(self.start_idx, self.start_idx + self.len):
             np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
-            np_vorticity = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res-2, :self.clipped_res-2]
-            np_density   = np.load(os.path.join(self.dataset_density_file_path,  f'{self.dataset_density}_{idx+self.start_idx}.npy'  ))[:self.clipped_res  , :self.clipped_res  ]
-
             np_velocity_x = np_velocity[...,0]
             np_velocity_y = np_velocity[...,1]
-
             normalized_np_velocity_x = np_velocity_x / self.max_value_velocity_norm
             normalized_np_velocity_y = np_velocity_y / self.max_value_velocity_norm
-            normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity) / (self.max_value_vorticity - self.min_value_vorticity)) - 1
-
             normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
-            hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
 
             input.append(normalized_np_velocity)
-            target.append(hist_np_vorticity)
-            aux.append(np_density)
 
         torch_input = torch.tensor(input, dtype=torch.float32, device=self.platform)
-        # torch_target = torch.tensor(target, dtype=torch.float32, device=self.platform)
-        # torch_aux = torch.tensor(aux, dtype=torch.float32, device=self.platform)
 
-        return torch_input\
-            # , torch_target, torch_aux
+        return torch_input
 
 
     def check_files(self, folder_path, attr_name):

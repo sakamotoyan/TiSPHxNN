@@ -88,7 +88,7 @@ class TrainConvAutoencoder_1:
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
                 self.save_loss_fig(epoch+current_epochs_num, network_model_path)
 
-    def train_vorticityBased(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20):
+    def train_vorticityBased(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20):
         current_epochs_num = 0
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
@@ -103,7 +103,7 @@ class TrainConvAutoencoder_1:
                 self.optimizer.zero_grad()
                 
                 inputs  = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs)) * 2 - 1
+                batch_outputs = (self.network(inputs, strategy=strategy)) * 2 - 1
 
                 input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
@@ -188,7 +188,7 @@ class TrainConvAutoencoder_1:
     #     model_graph = draw_graph(self.network, input_size=(self.batch_size, 2, 256, 256), device=self.platform, directory=model_file_path)
     #     model_graph.visual_graph.render()
 
-    def test(self, model_file_path, output_path):
+    def test(self, model_file_path, output_path, strategy):
             
         self.network.load_state_dict(torch.load(model_file_path))
         print(f"Loaded former model from {model_file_path}")
@@ -201,7 +201,7 @@ class TrainConvAutoencoder_1:
         with torch.no_grad():
             for batch_inputs in test_data_loader:
                 inputs = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs)) * 2 - 1
+                batch_outputs = (self.network(inputs, strategy = strategy)) * 2 - 1
                 input_dv_dx  = torch.diff(batch_inputs[:, 1, :, :],  dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy  = torch.diff(batch_inputs[:, 0, :, :],  dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
@@ -237,6 +237,19 @@ class TrainConvAutoencoder_1:
             self.save_loss_fig(0, output_path, 'vort', loss_vort)
             self.save_loss_fig(0, output_path, 'hist', loss_hist)
             
+    def output_bottleneck(self, model_file_path, output_path):
+        self.network.load_state_dict(torch.load(model_file_path))
+        print(f"Loaded former model from {model_file_path}")
+        test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        counter = 0
+        self.network.bottleneck[1].register_forward_hook(self.network.get_activation('bottleneck'))
+        with torch.no_grad():
+            for batch_inputs in test_data_loader:
+                inputs = (batch_inputs + 1) / 2
+                batch_outputs = (self.network(inputs, strategy='whole')) * 2 - 1
+                batch_bottleneck = self.network.feature_maps['bottleneck'][0].cpu().numpy()
+                np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
+                counter += 1
 
     def differentiable_histogram(self, data, bins, min_value, max_value):
         """
