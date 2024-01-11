@@ -30,7 +30,7 @@ sense_cell_size = val_f(7.0/sense_res)
 part_size = sense_cell_size[None] / 10
 if(MODE == mode.DEBUG): part_size *= 24
 
-max_time_step = part_size/100
+max_time_step = part_size/200
 k_vis = 5e-5
 world = World(dim=2)
 world.setWorldPartSize(part_size)
@@ -42,10 +42,10 @@ print('default dt', world.getWorldDt())
 '''BASIC SETTINGS FOR objects'''
 span = world.getPartSize()*1.001
 
-fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+span, -4+span), rt=vec2f(4-span*3, 3), span=span)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-4+span, -4+span), rt=vec2f(5-span*3, 3), span=span)
 fluid_part_num = fluid_cube_data_1.num
-
-box_data   = Box_data(lb=vec2f(-6, -4), rt=vec2f(4, 4), span=world.getPartSize()*1.001, layers=3)
+sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(1,0))
+box_data   = Box_data(lb=vec2f(-6, -4), rt=vec2f(5, 4), span=world.getPartSize()*1.001, layers=3)
 rod_data_1 = Box_data(lb=vec2f(-5.5,  1.5), rt=vec2f(-5.0,  3.0), span=world.getPartSize()*1.001, layers=3)
 rod_data_2 = Box_data(lb=vec2f(-5.5, -1.0), rt=vec2f(-5.0,  0.5), span=world.getPartSize()*1.001, layers=3)
 rod_data_3 = Box_data(lb=vec2f(-5.5, -3.5), rt=vec2f(-5.0, -2.0), span=world.getPartSize()*1.001, layers=3)
@@ -126,7 +126,6 @@ rod_part_3.fill_open_stack_with_val(rod_part_3.rgb, vec3f([0.0, 0.0, 0.0]))
 rod_part_3.fill_open_stack_with_val(rod_part_3.k_vis, k_vis)
 rod_part_3.close_stack()
 
-sense_cube_data = Cube_data(type=Cube_data.FIXED_GRID_RES, span=sense_cell_size[None], grid_res=vec2i(sense_res,sense_res),grid_center=vec2f(0,0))
 sense_grid_part = Particle(part_num=sense_cube_data.num, part_size=sense_cell_size, is_dynamic=False)
 world.attachPartObj(sense_grid_part)
 sense_grid_part.instantiate_from_template(grid_template, world)

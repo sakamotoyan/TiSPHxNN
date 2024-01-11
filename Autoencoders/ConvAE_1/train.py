@@ -31,6 +31,7 @@ class TrainConvAutoencoder_1:
         
 
         self.batch_size = 64
+        self.lr = lr
         self.platform = platform
         self.network = ConvAutoencoder_1()
         if multi_gpu:
@@ -38,19 +39,13 @@ class TrainConvAutoencoder_1:
         self.network.to(platform)
         self.criterion = nn.MSELoss()
 
-        # for param in self.network.encoder.parameters():
-        #     param.requires_grad = False
-        # for param in self.network.decoder.parameters():
-        #     param.requires_grad = False
-        # self.optimizer = optim.Adam(self.network.bottleneck.parameters(), lr=lr)
-
-        self.optimizer = optim.Adam(self.network.parameters(), lr=lr)
         self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []
 
     
     def train_histBased(self, num_epochs, network_model_path, former_model_file_path=None):
+        self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
         current_epochs_num = 0
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
@@ -88,14 +83,25 @@ class TrainConvAutoencoder_1:
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
                 self.save_loss_fig(epoch+current_epochs_num, network_model_path)
 
-    def train_vorticityBased(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20):
+    def train_vorticityBased(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20, freeze_param=False):
         current_epochs_num = 0
+        
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))
             current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
             print(f"Loaded former model from {former_model_file_path}")
         else:
             self.network.apply(self.init_weights)
+        
+        if freeze_param:
+            for param in self.network.encoder.parameters():
+                param.requires_grad = False
+            for param in self.network.decoder.parameters():
+                param.requires_grad = False
+            self.optimizer = optim.Adam(self.network.bottleneck.parameters(), lr=self.lr)
+        else:
+            self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
+
         for epoch in range(num_epochs):
             running_loss = 0.0
             for batch_inputs in self.data_loader:
@@ -138,6 +144,8 @@ class TrainConvAutoencoder_1:
 
     def train_velocityBased(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20):
         current_epochs_num = 0
+
+        self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
         
         if former_model_file_path is not None:
             self.network.load_state_dict(torch.load(former_model_file_path))

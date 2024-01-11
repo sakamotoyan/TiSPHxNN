@@ -47,12 +47,11 @@ class ConvAutoencoder_1(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.Linear(L5 * feature_size * feature_size, feature_vector_size), 
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
+            nn.Linear(feature_vector_size, L5 * feature_size * feature_size),
+            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
         )
 
         self.unflatten = nn.Sequential(
-            nn.Linear(feature_vector_size, L5 * feature_size * feature_size),
-            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
-
             nn.Unflatten(1, (L5, feature_size, feature_size)),
         )
 
@@ -86,11 +85,6 @@ class ConvAutoencoder_1(nn.Module):
             encoded = self.encoder(input)
             decoded = self.decoder(encoded)
             return decoded
-        if strategy == 'output_bottleneck':
-            encoded = self.encoder(input)
-            flatten = self.flatten(encoded)
-            bottleneck = self.bottleneck(flatten)
-            return bottleneck
         
     def get_activation(self, name):
         def hook(model, input, output):
