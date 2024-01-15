@@ -4,7 +4,7 @@ dropout_probability = 0.2
 leakiness = 0.01
 
 input_res = 256
-feature_vector_size = 64
+feature_vector_size = 8192
 
 L0 = 2
 L1 = 8
@@ -47,11 +47,11 @@ class ConvAutoencoder_1(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.Linear(L5 * feature_size * feature_size, feature_vector_size), 
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
-            nn.Linear(feature_vector_size, L5 * feature_size * feature_size),
-            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
         )
 
         self.unflatten = nn.Sequential(
+            nn.Linear(feature_vector_size, L5 * feature_size * feature_size),
+            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
             nn.Unflatten(1, (L5, feature_size, feature_size)),
         )
 

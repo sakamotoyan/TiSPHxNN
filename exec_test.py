@@ -7,9 +7,15 @@ from Dataset_processing import *
 platform = 'cuda'
 res = 256
 
-model_epoch = 12499
+strategy_list = ['skip_bottleneck', 'whole']
+main_folder_path_list = ['../dataset_train', '../dataset_test']
 
-main_folder_path = '../dataset_train'
+strategy = strategy_list[1]
+main_folder_path = main_folder_path_list[0]
+model_epoch = 19999
+number_of_frames = 186 #186 659
+
+
 model_folder_path = os.path.join('./model')
 vel_model_file_path   = os.path.join(model_folder_path,  f'epochs_{model_epoch}.pth')
 test_result_vel_path  = os.path.join('./output')
@@ -30,12 +36,11 @@ dataset_file_path_3 = os.path.join(main_folder_path, 'dataset')
 model = TrainConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, 
                                attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, platform, False)
 
-model.test(vel_model_file_path,  test_result_vel_path, 'skip_bottleneck')
+model.test(vel_model_file_path, test_result_vel_path, strategy)
 
-number_of_frames = 166
-scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
+# scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
 scivis_R2toR1(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_vorticity', stride=1)
-scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
+# scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
 scivis_R2toR2(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_velocity')
 # datavis_hist( test_result_vel_path,  test_result_vel_path,  'input_vorticity_hist',  0, number_of_frames)
 # datavis_hist( test_result_vel_path,  vis_path,  'output_vorticity_hist', 0, number_of_frames)

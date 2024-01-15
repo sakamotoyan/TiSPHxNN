@@ -98,7 +98,10 @@ class TrainConvAutoencoder_1:
                 param.requires_grad = False
             for param in self.network.decoder.parameters():
                 param.requires_grad = False
-            self.optimizer = optim.Adam(self.network.bottleneck.parameters(), lr=self.lr)
+            self.optimizer = optim.Adam([
+                {'params':self.network.bottleneck.parameters()},
+                {'params': self.network.unflatten.parameters()}], 
+                lr=self.lr)
         else:
             self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
 

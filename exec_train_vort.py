@@ -6,11 +6,11 @@ from Dataset_processing import *
 
 strategy_list = ['skip_bottleneck', 'whole']
 model_path = os.path.join('./model')
-model_file_list = [None, os.path.join(model_path,'epochs_7999.pth')]
+model_file_list = [None, os.path.join(model_path,'epochs_39999.pth')]
 
 if_freeze_parameters = True
-strategy = strategy_list[0]
-model_file = model_file_list[0]
+strategy = strategy_list[1]
+model_file = model_file_list[1]
 
 res = 256
 
@@ -34,7 +34,7 @@ model = TrainConvAutoencoder_1(res, attr_name_1, dataset_file_path_1,
 
 # model.train_velocityBased (num_epochs=8000, network_model_path=model_path,  former_model_file_path=None)
 # model.output_bottleneck(   model_file_path='./model/epochs_299.pth', output_path=output_path)
-model.train_vorticityBased(num_epochs=20000, network_model_path=model_path, strategy=strategy, former_model_file_path=model_file, save_step=100, freeze_param=if_freeze_parameters)
+model.train_vorticityBased(num_epochs=40000, network_model_path=model_path, strategy=strategy, former_model_file_path=model_file, save_step=100, freeze_param=if_freeze_parameters)
 # model.train_histBased(     num_epochs=8000, network_model_path=model_path, former_model_file_path=None)
 
 # datavis_1darray(output_path, output_path, 'bottleneck', 0, 659)
