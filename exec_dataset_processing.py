@@ -31,6 +31,9 @@ number_of_frames = concatDataset('../',
                     'raw_t8',
                     'raw_t9',
                     'raw_t10',
+                    # 'raw_t11',
+                    # 'raw_t12',
+                    # 'raw_t13',
                  ],
                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
                 os.path.join(main_path, rawdata_folder))
@@ -38,9 +41,11 @@ gridExport_density(       os.path.join(main_path, rawdata_folder), os.path.join(
 gridExport_vel(           os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
 gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames, operations=operation_list)
 process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
+process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
 
-# # process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
-# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density')
+
+# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density', stride=1)
+# scivis_R2toR2(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'velocity', channel_at_end=True)
 # scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
 # scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
 

@@ -41,10 +41,13 @@ def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name, st
         output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
         image.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), output_rgb)
 
-def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name):
+def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name, channel_at_end=False):
     data = []
     for i in range(start_index, end_index):
-        data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
+        frame_data = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
+        if channel_at_end:
+            frame_data = np.transpose(frame_data, (2,0,1))
+        data.append(frame_data)
     np_data = np.array(data)
 
     g_speed = np.sqrt(np_data[:,0,:,:]**2 + np_data[:,1,:,:]**2)

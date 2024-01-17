@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
+
 # from torchview import draw_graph
 from torch.utils.data import DataLoader
 
@@ -43,47 +45,7 @@ class TrainConvAutoencoder_1:
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []
 
-    
-    def train_histBased(self, num_epochs, network_model_path, former_model_file_path=None):
-        self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
-        current_epochs_num = 0
-        if former_model_file_path is not None:
-            self.network.load_state_dict(torch.load(former_model_file_path))
-            current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
-            print(f"Loaded former model from {former_model_file_path}")
-        for epoch in range(num_epochs):
-            running_loss = 0.0
-            for batch_inputs in self.data_loader:
-                loss = 0.0
-                self.optimizer.zero_grad()
-                
-                inputs  = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs)) * 2 - 1
-
-                input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
-                input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
-                input_vorticity = (input_dv_dx - input_du_dy)
-                input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
-
-                output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
-                output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
-                output_vorticity = (output_dv_dx - output_du_dy)
-                output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
-
-                loss = self.criterion(output_vorticity_hist, input_vorticity_hist)
-                loss.backward()
-                self.optimizer.step()
-
-                running_loss += loss.item()
-
-            average_loss = running_loss / len(self.data_loader)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            self.loss_list.append(average_loss)
-            if (epoch+1) % 20 == 0:
-                torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
-                self.save_loss_fig(epoch+current_epochs_num, network_model_path)
-
-    def train_vorticityBased(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20, freeze_param=False):
+    def train_vorticityBased(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20, freeze_param=False, crop=False, exclude_threshold=None):
         current_epochs_num = 0
         
         if former_model_file_path is not None:
@@ -110,6 +72,9 @@ class TrainConvAutoencoder_1:
             for batch_inputs in self.data_loader:
                 loss = 0.0
                 self.optimizer.zero_grad()
+
+                # if crop: 
+                #     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
                 
                 inputs  = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs, strategy=strategy)) * 2 - 1
@@ -117,10 +82,12 @@ class TrainConvAutoencoder_1:
                 input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
                 input_vorticity = (input_dv_dx - input_du_dy)
+                input_vorticity = input_vorticity.unsqueeze(1)
 
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
                 output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
                 output_vorticity = (output_dv_dx - output_du_dy)
+                output_vorticity = output_vorticity.unsqueeze(1)
 
                 loss = self.criterion(output_vorticity, input_vorticity)
                 # lambda_l1 = 0.1
@@ -145,38 +112,6 @@ class TrainConvAutoencoder_1:
             torch.nn.init.xavier_uniform_(m.weight)
             m.bias.data.fill_(0.01)
 
-    def train_velocityBased(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20):
-        current_epochs_num = 0
-
-        self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
-        
-        if former_model_file_path is not None:
-            self.network.load_state_dict(torch.load(former_model_file_path))
-            current_epochs_num = int(former_model_file_path.rsplit('_', 1)[1].split('.')[0]) + 1
-            print(f"Loaded former model from {former_model_file_path}")
-
-        for epoch in range(num_epochs):
-            running_loss = 0.0
-            for batch_inputs in self.data_loader:
-                loss = 0.0
-                self.optimizer.zero_grad()
-                
-                inputs  = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs)) * 2 - 1
-
-                loss = self.criterion(batch_outputs, batch_inputs)
-                loss.backward()
-                self.optimizer.step()
-
-                running_loss += loss.item()
-
-            average_loss = running_loss / len(self.data_loader)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
-            self.loss_list.append(average_loss)
-            if (epoch+1) % save_step == 0:
-                torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
-                self.save_loss_fig(epoch+current_epochs_num, network_model_path)
-
     def save_loss_fig(self, epoch, path='./dataset_train', name=None, attr=None):
         if attr is not None:
             plt.plot(attr)
@@ -195,11 +130,7 @@ class TrainConvAutoencoder_1:
         self.dataset = DatasetConvAutoencoder_1(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-    # def draw_graph(self, model_file_path):
-    #     model_graph = draw_graph(self.network, input_size=(self.batch_size, 2, 256, 256), device=self.platform, directory=model_file_path)
-    #     model_graph.visual_graph.render()
-
-    def test(self, model_file_path, output_path, strategy):
+    def test(self, model_file_path, output_path, strategy, crop=False, exclude_threshold=None):
             
         self.network.load_state_dict(torch.load(model_file_path))
         print(f"Loaded former model from {model_file_path}")
@@ -211,6 +142,10 @@ class TrainConvAutoencoder_1:
 
         with torch.no_grad():
             for batch_inputs in test_data_loader:
+                
+                # if crop: 
+                #     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
+
                 inputs = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs, strategy = strategy)) * 2 - 1
                 input_dv_dx  = torch.diff(batch_inputs[:, 1, :, :],  dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
@@ -220,8 +155,8 @@ class TrainConvAutoencoder_1:
 
                 input_vorticity  = (input_dv_dx - input_du_dy)
                 output_vorticity = (output_dv_dx - output_du_dy)
-                input_vorticity_hist = self.differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
-                output_vorticity_hist = self.differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
+                input_vorticity_hist = self.func_differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
+                output_vorticity_hist = self.func_differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
 
                 loss_vel.append(self.criterion(batch_outputs, batch_inputs).item())
                 loss_vort.append(self.criterion(output_vorticity, input_vorticity).item())
@@ -262,7 +197,34 @@ class TrainConvAutoencoder_1:
                 np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
                 counter += 1
 
-    def differentiable_histogram(self, data, bins, min_value, max_value):
+    def func_random_crop_and_upsample(self, data, crop_size=(128, 128), upsample_size=(256, 256), excllude_threshold=None):
+        batch_size, num_channel, height, width = data.shape
+        cropped_data = []
+
+        for i in range(batch_size):
+            # Randomly choose the top-left pixel of the cropping area
+            top = torch.randint(0, height - crop_size[0] + 1, (1,)).item()
+            left = torch.randint(0, width - crop_size[1] + 1, (1,)).item()
+
+            # Perform the crop
+            crop = data[i, :, top:top + crop_size[0], left:left + crop_size[1]]
+
+            # Upsample the cropped image
+            upsampled_crop = F.interpolate(crop.unsqueeze(0), size=upsample_size, mode='bilinear', align_corners=False)
+
+            if excllude_threshold is not None:
+                # Compute sum of square root for each element
+                sum_of_square_root = torch.sqrt(torch.sum(torch.pow(upsampled_crop, 2)))
+                if sum_of_square_root < excllude_threshold:
+                    continue
+            
+            cropped_data.append(upsampled_crop)
+
+        # Concatenate all the upsampled images back into a single tensor
+        new_data = torch.cat(cropped_data, dim=0)
+        return new_data
+
+    def func_differentiable_histogram(self, data, bins, min_value, max_value):
         """
         Compute a differentiable histogram.
         

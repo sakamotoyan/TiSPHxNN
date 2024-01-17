@@ -10,7 +10,7 @@ model_file_list = [None, os.path.join(model_path,'epochs_39999.pth')]
 
 if_freeze_parameters = False
 if_crop = True
-strategy = strategy_list[0]
+strategy = strategy_list[1]
 model_file = model_file_list[0]
 exclude_threshold = None
 
