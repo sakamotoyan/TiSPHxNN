@@ -21,7 +21,7 @@ if(MODE == mode.DEBUG):
 elif(MODE == mode.RELEASE):
     ti.init(arch=ti.cuda, device_memory_GB=22) 
 
-output_path = os.path.join('/workspace/dataset/raw_t14')
+output_path = os.path.join('./output')
 
 ''' GLOBAL SETTINGS '''
 output_shift = 0

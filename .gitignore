@@ -18,3 +18,5 @@ output
 output_video
 dist
 build
+
+.tmp.driveupload

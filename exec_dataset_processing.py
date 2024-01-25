@@ -6,7 +6,7 @@ ti.init(arch=ti.gpu)
 '''
 Training dataset generation
 '''
-main_path = '../dataset_train'
+main_path = './dataset_train'
 rawdata_folder = 'rawdata'
 dataset_folder = 'dataset'
 datavis_folder = 'datavis'
@@ -19,7 +19,7 @@ operation_list = [
     ]
 length = len(operation_list)+1
 
-number_of_frames = concatDataset('../',
+number_of_frames = concatDataset('./',
                 [
                     'raw_t1', 
                     'raw_t2', 

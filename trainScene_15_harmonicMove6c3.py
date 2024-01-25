@@ -19,15 +19,15 @@ dpi = 200
 if(MODE == mode.DEBUG):
     ti.init(arch=ti.cuda, debug=True, device_memory_GB=6)
 elif(MODE == mode.RELEASE):
-    ti.init(arch=ti.cuda, device_memory_GB=22) 
+    ti.init(arch=ti.cuda, device_memory_GB=10) 
 
-output_path = os.path.join('/workspace/dataset/raw_t15')
+output_path = os.path.join('./output')
 
 ''' GLOBAL SETTINGS '''
 output_shift = 0
 output_frame_num = 2000
 fps = 30
-sense_res = 518
+sense_res = 258
 
 sense_cell_size = val_f(7.0/sense_res)
 part_size = sense_cell_size[None] / 4
@@ -330,10 +330,3 @@ def run(loop):
             timer += 1
 
 run(loop)
-
-
-
-
-
-
-

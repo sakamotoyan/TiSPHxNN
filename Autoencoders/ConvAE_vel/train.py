@@ -12,11 +12,11 @@ import os
 import taichi as ti
 import numpy as np
 
-from .network import ConvAutoencoder_1
-from .dataset import DatasetConvAutoencoder_1
+from .network import ConvAutoencoder
+from .dataset import DatasetConvAutoencoder
 
 @ti.data_oriented
-class TrainConvAutoencoder_1:
+class TrainConvAutoencoder:
 
     TI_Soble_X = ti.Matrix([[-1, 0, 1],
                             [-2, 0, 2],
@@ -27,21 +27,22 @@ class TrainConvAutoencoder_1:
                             [ 1,  2,  1]])
     
     def __init__(self, res, attr_name_1, dataset_file_path_1, 
-                                                 attr_name_2, dataset_file_path_2, 
-                                                 attr_name_3, dataset_file_path_3,
-                                                 platform='cuda', multi_gpu=False, lr = 0.0001):
+                            attr_name_2, dataset_file_path_2, 
+                            attr_name_3, dataset_file_path_3,
+                            platform='cuda', multi_gpu=False, lr = 0.00005,
+                            type = 'train', network='ConvAutoencoder_vel'):
         
 
         self.batch_size = 64
         self.lr = lr
         self.platform = platform
-        self.network = ConvAutoencoder_1()
+        self.network = ConvAutoencoder(type=type)
         if multi_gpu:
             self.network = nn.DataParallel(self.network)
         self.network.to(platform)
         self.criterion = nn.MSELoss()
 
-        self.dataset = DatasetConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
+        self.dataset = DatasetConvAutoencoder(res, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, self.platform)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []
 
@@ -70,11 +71,11 @@ class TrainConvAutoencoder_1:
         for epoch in range(num_epochs):
             running_loss = 0.0
             for batch_inputs in self.data_loader:
+                batch_inputs = batch_inputs.to(self.platform)
                 loss = 0.0
                 self.optimizer.zero_grad()
-
-                # if crop: 
-                #     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
+                if crop: 
+                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
                 
                 inputs  = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs, strategy=strategy)) * 2 - 1
@@ -90,20 +91,16 @@ class TrainConvAutoencoder_1:
                 output_vorticity = output_vorticity.unsqueeze(1)
 
                 loss = self.criterion(output_vorticity, input_vorticity)
-                # lambda_l1 = 0.1
-                # l1_reg = torch.tensor(0., device=self.platform)
-                # for param in self.network.parameters():
-                #     l1_reg += torch.norm(param, 1)
-                # total_loss = loss + lambda_l1 * l1_reg
                 loss.backward()
                 self.optimizer.step()
 
                 running_loss += loss.item()
 
             average_loss = running_loss / len(self.data_loader)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
             self.loss_list.append(average_loss)
-            if (epoch+1) % save_step == 0:
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
+
+            if (epoch+1) % save_step == 0:    
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
                 self.save_loss_fig(epoch+current_epochs_num, network_model_path)
 
@@ -127,7 +124,7 @@ class TrainConvAutoencoder_1:
         plt.close()
 
     def change_dataset(self, attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3):
-        self.dataset = DatasetConvAutoencoder_1(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
+        self.dataset = DatasetConvAutoencoder(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
     def test(self, model_file_path, output_path, strategy, crop=False, exclude_threshold=None):
@@ -142,9 +139,9 @@ class TrainConvAutoencoder_1:
 
         with torch.no_grad():
             for batch_inputs in test_data_loader:
-                
-                # if crop: 
-                #     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
+                batch_inputs = batch_inputs.to(self.platform)
+                if crop: 
+                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
 
                 inputs = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs, strategy = strategy)) * 2 - 1
@@ -197,7 +194,7 @@ class TrainConvAutoencoder_1:
                 np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
                 counter += 1
 
-    def func_random_crop_and_upsample(self, data, crop_size=(128, 128), upsample_size=(256, 256), excllude_threshold=None):
+    def func_random_crop_and_upsample(self, data, crop_size=(128, 128), upsample_size=(256, 256), exclude_threshold=None):
         batch_size, num_channel, height, width = data.shape
         cropped_data = []
 
@@ -212,10 +209,10 @@ class TrainConvAutoencoder_1:
             # Upsample the cropped image
             upsampled_crop = F.interpolate(crop.unsqueeze(0), size=upsample_size, mode='bilinear', align_corners=False)
 
-            if excllude_threshold is not None:
+            if exclude_threshold is not None:
                 # Compute sum of square root for each element
                 sum_of_square_root = torch.sqrt(torch.sum(torch.pow(upsampled_crop, 2)))
-                if sum_of_square_root < excllude_threshold:
+                if sum_of_square_root < exclude_threshold:
                     continue
             
             cropped_data.append(upsampled_crop)

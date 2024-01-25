@@ -1,7 +1,6 @@
 import os
-import taichi as ti
 
-from Autoencoders.ConvAE_1 import *
+from Autoencoders.ConvAE_vel import *
 from Dataset_processing import *
 
 platform = 'cuda'
@@ -13,14 +12,14 @@ main_folder_path_list = ['../dataset_train', '../dataset_test']
 strategy = strategy_list[0]
 main_folder_path = main_folder_path_list[1]
 if_crop = False
-model_epoch = 999
+model_epoch = 5899
 number_of_frames = 166 #186 659
 
 
 model_folder_path = os.path.join('./model')
 vel_model_file_path   = os.path.join(model_folder_path,  f'epochs_{model_epoch}.pth')
-test_result_vel_path  = os.path.join('./output')
-vis_path              = os.path.join('./output')
+test_result_vel_path  = os.path.join('../output')
+vis_path              = os.path.join('../output')
 
 clear_folder(test_result_vel_path)
 clear_folder(vis_path)
@@ -34,15 +33,17 @@ Testing process:
 dataset_file_path_1 = os.path.join(main_folder_path, 'dataset')
 dataset_file_path_2 = os.path.join(main_folder_path, 'dataset')
 dataset_file_path_3 = os.path.join(main_folder_path, 'dataset')
-model = TrainConvAutoencoder_1(res, attr_name_1, dataset_file_path_1, 
-                               attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3, platform, False)
+model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1, 
+                                    attr_name_2, dataset_file_path_2, 
+                                    attr_name_3, dataset_file_path_3, 
+                                    platform, type='test')
 
 model.test(vel_model_file_path, test_result_vel_path, strategy, if_crop)
 
-scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
 scivis_R2toR1(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_vorticity', stride=1)
-scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
-scivis_R2toR2(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_velocity')
+scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
+# scivis_R2toR2(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_velocity')
+# scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
 # datavis_hist( test_result_vel_path,  test_result_vel_path,  'input_vorticity_hist',  0, number_of_frames)
 # datavis_hist( test_result_vel_path,  vis_path,  'output_vorticity_hist', 0, number_of_frames)
 

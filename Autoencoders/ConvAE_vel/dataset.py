@@ -4,7 +4,7 @@ from torch.utils.data import ConcatDataset
 import numpy as np
 import torch
 
-class DatasetConvAutoencoder_1(Dataset):
+class DatasetConvAutoencoder(Dataset):
     def __init__(self, clipped_res, dataset_velocity, dataset_velocity_file_path, dataset_vorticity, dataset_vorticity_file_path, dataset_density, dataset_density_file_path, platform):
         self.clipped_res = clipped_res
         self.dataset_velocity = dataset_velocity
@@ -27,43 +27,32 @@ class DatasetConvAutoencoder_1(Dataset):
             raise Exception(f"Attributes {self.dataset_velocity} and {self.dataset_vorticity} have different number of files or different number ranges.\
                              {self.len_velocity}, {self.len_vorticity}, {self.start_number_velocity}, {self.start_number_vorticity}, {self.end_number_velocity}, {self.end_number_vorticity}")
         
-        self.min_value_velocity_norm  = self.min_norm_value(self.dataset_velocity, self.dataset_velocity_file_path)
-        self.max_value_velocity_norm  = self.max_norm_value(self.dataset_velocity, self.dataset_velocity_file_path)
-        self.min_value_vorticity = self.min_value(self.dataset_vorticity, self.dataset_vorticity_file_path)
-        self.max_value_vorticity = self.max_value(self.dataset_vorticity, self.dataset_vorticity_file_path)
 
-        self.torch_input = self.read_all_to_device()
+        self.torch_input = self.read_all_to_mem()
 
     def __len__(self):
         return self.len  # subtract 1 to avoid index error
 
     def __getitem__(self, idx):
-        '''
-        Velocity
-        '''
-        # np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
-        # np_velocity_x = np_velocity[...,0]
-        # np_velocity_y = np_velocity[...,1]
-        # normalized_np_velocity_x = np_velocity_x / self.max_value_velocity_norm
-        # normalized_np_velocity_y = np_velocity_y / self.max_value_velocity_norm
-        # normalized_np_velocity   = np.stack([normalized_np_velocity_x, normalized_np_velocity_y], axis=0)
-        # torch_input = torch.tensor(normalized_np_velocity, dtype=torch.float32, device=self.platform)
-        '''
-        Vorticity & its histogram
-        '''
-        # np_vorticity = np.load(os.path.join(self.dataset_vorticity_file_path,f'{self.dataset_vorticity}_{idx+self.start_idx}.npy'))[:self.clipped_res-2, :self.clipped_res-2]
-        # normalized_np_vorticity  = 2 * ((np_vorticity  - self.min_value_vorticity) / (self.max_value_vorticity - self.min_value_vorticity)) - 1
-        # hist_np_vorticity, _     = np.histogram(normalized_np_vorticity, bins=128, range=(-1, 1))
-        # torch_target = torch.tensor(hist_np_vorticity , dtype=torch.float32, device=self.platform)
-        '''
-        Density
-        '''
-        # np_density   = np.load(os.path.join(self.dataset_density_file_path,  f'{self.dataset_density}_{idx+self.start_idx}.npy'  ))[:self.clipped_res  , :self.clipped_res  ]
-        # torch_aux    = torch.tensor(np_density, dtype=torch.float32, device=self.platform)
-
         return self.torch_input[idx]
 
+    def read_all_to_mem(self):
+        input = []
+        for idx in range(self.start_idx, self.start_idx + self.len):
+            np_velocity  = np.load(os.path.join(self.dataset_velocity_file_path, f'{self.dataset_velocity}_{idx+self.start_idx}.npy' ))[:self.clipped_res, :self.clipped_res ,:2]
+            np_velocity_x = np_velocity[...,0]
+            np_velocity_y = np_velocity[...,1]
+            np_velocity   = np.stack([np_velocity_x, np_velocity_y], axis=0)
+            input.append(np_velocity)
         
+        torch_input = torch.tensor(np.array(input), dtype=torch.float32, device='cpu')
+        max_magnitude = torch.max(torch.sqrt(torch_input[:, 0, :, :]**2 + torch_input[:, 1, :, :]**2))
+        print(f"read_all_to_mem(): max_magnitude is {max_magnitude}")
+        
+        torch_input /= max_magnitude
+        # torch_input = torch_input.to(self.platform)
+
+        return torch_input
 
     def read_all_to_device(self):
         input = []
@@ -77,7 +66,7 @@ class DatasetConvAutoencoder_1(Dataset):
 
             input.append(normalized_np_velocity)
 
-        torch_input = torch.tensor(input, dtype=torch.float32, device=self.platform)
+        torch_input = torch.tensor(np.array(input), dtype=torch.float32, device=self.platform)
 
         return torch_input
 

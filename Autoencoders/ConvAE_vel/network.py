@@ -1,10 +1,9 @@
 import torch.nn as nn
 
-dropout_probability = 0.2
 leakiness = 0.01
 
 input_res = 256
-feature_vector_size = 128
+feature_vector_size = 256
 
 L0 = 2
 L1 = 8
@@ -12,13 +11,21 @@ L2 = L1 * 2
 L3 = L2 * 2
 L4 = L3 * 2
 L5 = L4 * 2
+L6 = L5 * 2
+
+LM=L5
 
 feature_size = input_res // 2**5
 
-class ConvAutoencoder_1(nn.Module):
+class ConvAutoencoder(nn.Module):
     
-    def __init__(self):
-        super(ConvAutoencoder_1, self).__init__()
+    def __init__(self, type='train'):
+        super(ConvAutoencoder, self).__init__()
+
+        if type == 'train':
+            dropout_probability = 0.2
+        elif type == 'test':
+            dropout_probability = 0.0
 
         self.feature_maps = {}
 
@@ -38,6 +45,9 @@ class ConvAutoencoder_1(nn.Module):
 
             nn.Conv2d(L4, L5, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
+
+            # nn.Conv2d(L5, L6, kernel_size=3, stride=2, padding=1),
+            # nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
         )
 
         self.flatten = nn.Sequential(
@@ -45,19 +55,22 @@ class ConvAutoencoder_1(nn.Module):
         )
 
         self.bottleneck = nn.Sequential(
-            nn.Linear(L5 * feature_size * feature_size, feature_vector_size), 
+            nn.Linear(LM * feature_size * feature_size, feature_vector_size), 
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
         )
 
         self.unflatten = nn.Sequential(
-            nn.Linear(feature_vector_size, L5 * feature_size * feature_size),
+            nn.Linear(feature_vector_size, LM * feature_size * feature_size),
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
-            nn.Unflatten(1, (L5, feature_size, feature_size)),
+            nn.Unflatten(1, (LM, feature_size, feature_size)),
         )
 
         # Decoder
         self.decoder = nn.Sequential(
             
+            # nn.ConvTranspose2d(L6, L5, kernel_size=3, stride=2, padding=1, output_padding=1),
+            # nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
+
             nn.ConvTranspose2d(L5, L4, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
 
