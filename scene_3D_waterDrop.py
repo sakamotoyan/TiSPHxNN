@@ -137,10 +137,13 @@ world.neighb_search()
 
 sense_output = tsph.Output_manager(format_type = tsph.Output_manager.type.SEQ, data_source = sense_grid_part)
 sense_output.add_output_dataType("pos")
-sense_output.add_output_dataType("node_index")
 sense_output.add_output_dataType("sensed_density")
 sense_output.add_output_dataType("vel")
 sense_output.add_output_dataType("strainRate")
+sense_output.add_one_time_output_dataType("node_index")
+
+def prep():
+    sense_output.export_one_time_to_numpy(path='../output/')
 
 ''' SIMULATION LOOPS '''
 def loop_ism():
@@ -237,6 +240,7 @@ def vis_run(loop):
             break
 
 ''' RUN THE SIMULATION '''
+prep()
 vis_run(loop_ism)
 
 

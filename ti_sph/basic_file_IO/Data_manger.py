@@ -4,16 +4,64 @@ from typing import List
 from multiprocessing import Process
 import taichi as ti
 
+class SeqData:
+    def __init__(self, path, attr_name):
+        self.path = path
+        self.attr_name = attr_name
+        self.len, self.start_index, self.end_index = self.inspect()
+    
+    def inspect(self):
+        files = os.listdir(self.path)
+        relevant_files = [f for f in files if f.startswith(self.attr_name) and f.endswith(".npy")]
+        indices = [int(f.split('_')[-1].split('.')[0]) for f in relevant_files]
+        indices.sort()
+        start_number = min(indices) if indices else None
+        end_number = max(indices) if indices else None
+
+        # Check for missing files
+        missing_files = []
+        for i in range(max(indices) + 1):
+            if i not in indices:
+                missing_files.append(f"{self.attr_name}_{i}.npy")
+        print(f"SeqData.inspect(): In {self.path}, found {len(relevant_files)} files for attribute {self.attr_name}, ranging [{start_number}, {end_number}].")
+        if len(missing_files) > 0:
+            raise Exception(f"Missing files for attribute {self.attr_name}: {missing_files}")
+        
+        return len(relevant_files), start_number, end_number
+    
+    def reshape_to_3d(self, index_attr_path:str, index_attr_name:str, output_path:str, output_name:str, order=[0,2,1]):
+        index_template = np.load(os.path.join(index_attr_path, index_attr_name+'.npy'))
+        for i in range(self.start_index, self.end_index):
+            raw_data = np.load(os.path.join(self.path, self.attr_name+'_'+str(i)+'.npy'))
+            processed_data = []
+            x = index_template[:,order[0]].max() + 1
+            y = index_template[:,order[1]].max() + 1
+            z = index_template[:,order[2]].max() + 1
+            for j in range(len(raw_data.shape)):
+                sub_processed_data = np.empty((x, y, z), dtype=float)
+                if len(raw_data.shape) > 1:
+                    sub_processed_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]]] = raw_data[:,j]
+                    processed_data.append(sub_processed_data)
+                else:
+                    sub_processed_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]]] = raw_data
+                    processed_data = sub_processed_data
+            processed_data = np.array(processed_data)
+            if len(raw_data.shape) > 1:
+                processed_data = np.transpose(processed_data, (1,2,3,0))
+            np.save(os.path.join(output_path, output_name+'_'+str(i)+'.npy'), processed_data)
+
 class Grid_Data_manager:
     def __init__(self, input_folder_path: str, output_folder_path: str) -> None:
         self.input_folder_path = os.path.abspath(input_folder_path)
         self.output_folder_path = os.path.abspath(output_folder_path)
         self.start_index = None
         self.end_index = None
+        self.attr_name = None
         self.raw_data = []
         self.processed_data = []
     
     def read_data(self, attr:str, start_index:int, end_index: int):
+        self.attr_name = attr
         self.start_index = start_index
         self.end_index = end_index
         for i in range(start_index, end_index):

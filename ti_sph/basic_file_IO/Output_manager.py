@@ -24,6 +24,8 @@ class Output_manager:
 
         self.data_name_list:List[str] = []
         self.type_list:List[str] = []
+        self.one_time_data_name_list:List[str] = []
+        self.one_time_type_list:List[str] = []
 
         # TODO: Consider 3D case.
         if self.format_type is self.type.GRID:
@@ -38,6 +40,12 @@ class Output_manager:
             raise ValueError(f"{name} is not in {self.obj.__class__.__name__}.")
         self.data_name_list.append(name)
         self.type_list.append(type)
+    
+    def add_one_time_output_dataType(self, name:str, type:str = 'scalar'):
+        if not hasattr(self.obj, name):
+            raise ValueError(f"{name} is not in {self.obj.__class__.__name__}.")
+        self.one_time_data_name_list.append(name)
+        self.one_time_type_list.append(type)
             
     
     def export_to_numpy(self, index:int=0, path:str="."):
@@ -45,6 +53,16 @@ class Output_manager:
         for data_name in self.data_name_list:
 
             file_name = f"{path}/{data_name}_{index}"
+            np_data = getattr(self.obj, data_name).to_numpy()
+
+            if self.format_type is self.type.SEQ:
+                np.save(file_name, np_data)
+    
+    def export_one_time_to_numpy(self, path:str="."):
+        
+        for data_name in self.one_time_data_name_list:
+
+            file_name = f"{path}/{data_name}"
             np_data = getattr(self.obj, data_name).to_numpy()
 
             if self.format_type is self.type.SEQ:
