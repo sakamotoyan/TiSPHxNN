@@ -25,7 +25,7 @@ class Squared_pool_3D_data():
         
         self.mask_bound = ~self.mask_inner_space
         self.mask_fluid = self.mask_inner_space & (self.grid_y < self.fluid_empty_height) \
-            & (self.grid_x < 0)
+            # & (self.grid_x < 0)
 
         self.fluid_position_x = self.grid_x[self.mask_fluid]
         self.fluid_position_y = self.grid_y[self.mask_fluid]

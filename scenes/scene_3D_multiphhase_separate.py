@@ -219,9 +219,9 @@ def loop_ism():
 
     ''' statistical info '''
     print(' ')
-    # fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
-    # fluid_part.m_solver_ism.statistics_angular_momentum()
-    # fluid_part.m_solver_ism.debug_check_val_frac()
+    fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
+    fluid_part.m_solver_ism.statistics_angular_momentum()
+    fluid_part.m_solver_ism.debug_check_val_frac()
 
 def loop_JL21():
     ''' update color based on the volume fraction '''
