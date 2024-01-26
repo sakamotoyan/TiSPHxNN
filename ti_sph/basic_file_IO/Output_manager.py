@@ -48,7 +48,7 @@ class Output_manager:
         self.one_time_type_list.append(type)
             
     
-    def export_to_numpy(self, index:int=0, path:str="."):
+    def export_to_numpy(self, index:int=0, path:str=".", compressed=False):
         
         for data_name in self.data_name_list:
 
@@ -56,9 +56,12 @@ class Output_manager:
             np_data = getattr(self.obj, data_name).to_numpy()
 
             if self.format_type is self.type.SEQ:
-                np.save(file_name, np_data)
+                if compressed:
+                    np.savez_compressed(file_name, np_data)
+                else:
+                    np.save(file_name, np_data)
     
-    def export_one_time_to_numpy(self, path:str="."):
+    def export_one_time_to_numpy(self, path:str=".", compressed=False):
         
         for data_name in self.one_time_data_name_list:
 
@@ -66,4 +69,7 @@ class Output_manager:
             np_data = getattr(self.obj, data_name).to_numpy()
 
             if self.format_type is self.type.SEQ:
-                np.save(file_name, np_data)
+                if compressed:
+                    np.savez_compressed(file_name, np_data)
+                else:
+                    np.save(file_name, np_data)

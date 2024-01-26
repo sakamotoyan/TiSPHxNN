@@ -5,14 +5,18 @@ from multiprocessing import Process
 import taichi as ti
 
 class SeqData:
-    def __init__(self, path, attr_name):
+    def __init__(self, path, attr_name, compressed=False):
         self.path = path
         self.attr_name = attr_name
+        self.compressed = compressed
         self.len, self.start_index, self.end_index = self.inspect()
     
     def inspect(self):
         files = os.listdir(self.path)
-        relevant_files = [f for f in files if f.startswith(self.attr_name) and f.endswith(".npy")]
+        if self.compressed:
+            relevant_files = [f for f in files if f.startswith(self.attr_name) and f.endswith(".npz")]
+        else:
+            relevant_files = [f for f in files if f.startswith(self.attr_name) and f.endswith(".npy")]
         indices = [int(f.split('_')[-1].split('.')[0]) for f in relevant_files]
         indices.sort()
         start_number = min(indices) if indices else None
@@ -22,33 +26,50 @@ class SeqData:
         missing_files = []
         for i in range(max(indices) + 1):
             if i not in indices:
-                missing_files.append(f"{self.attr_name}_{i}.npy")
+                missing_files.append(f"{self.attr_name}_{i}.npy(z)")
         print(f"SeqData.inspect(): In {self.path}, found {len(relevant_files)} files for attribute {self.attr_name}, ranging [{start_number}, {end_number}].")
         if len(missing_files) > 0:
             raise Exception(f"Missing files for attribute {self.attr_name}: {missing_files}")
         
         return len(relevant_files), start_number, end_number
     
-    def reshape_to_3d(self, index_attr_path:str, index_attr_name:str, output_path:str, output_name:str, order=[0,2,1]):
-        index_template = np.load(os.path.join(index_attr_path, index_attr_name+'.npy'))
-        for i in range(self.start_index, self.end_index):
-            raw_data = np.load(os.path.join(self.path, self.attr_name+'_'+str(i)+'.npy'))
-            processed_data = []
-            x = index_template[:,order[0]].max() + 1
-            y = index_template[:,order[1]].max() + 1
-            z = index_template[:,order[2]].max() + 1
-            for j in range(len(raw_data.shape)):
-                sub_processed_data = np.empty((x, y, z), dtype=float)
-                if len(raw_data.shape) > 1:
-                    sub_processed_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]]] = raw_data[:,j]
-                    processed_data.append(sub_processed_data)
-                else:
-                    sub_processed_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]]] = raw_data
-                    processed_data = sub_processed_data
-            processed_data = np.array(processed_data)
-            if len(raw_data.shape) > 1:
-                processed_data = np.transpose(processed_data, (1,2,3,0))
-            np.save(os.path.join(output_path, output_name+'_'+str(i)+'.npy'), processed_data)
+    def reshape_to_3d(self, index_attr_name:str, output_path:str, output_name:str, order=[0,1,2], compressed=False, offset=0):
+        if self.compressed:
+            index_template_zip = np.load(os.path.join(self.path, index_attr_name+'.npz'))
+            index_template = index_template_zip[list(index_template_zip.keys())[0]]
+        else:
+            index_template = np.load(os.path.join(self.path, index_attr_name+'.npy'))
+        for i in range(self.start_index, self.end_index+1):
+            if self.compressed:
+                raw_data_zip = np.load(os.path.join(self.path, self.attr_name+'_'+str(i)+'.npz'))
+                raw_data = raw_data_zip[list(raw_data_zip.keys())[0]]
+            else:
+                raw_data = np.load(os.path.join(self.path, self.attr_name+'_'+str(i)+'.npy'))
+            reshaped_data = None
+            xNodeNum = index_template[:,order[0]].max() + 1
+            yNodeNum = index_template[:,order[1]].max() + 1
+            zNodeNum = index_template[:,order[2]].max() + 1
+            raw_data_shape_dim = len(raw_data.shape)
+            
+            if raw_data_shape_dim == 1:
+                reshaped_data = np.empty((xNodeNum, yNodeNum, zNodeNum), dtype=float)
+                reshaped_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]]] = raw_data
+            elif raw_data_shape_dim == 2:
+                reshaped_data = np.empty((xNodeNum, yNodeNum, zNodeNum, raw_data.shape[1]), dtype=float)
+                for j in range(raw_data.shape[1]):
+                    reshaped_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]], j] = raw_data[:,j]
+            elif raw_data_shape_dim == 3:
+                reshaped_data = np.empty((xNodeNum, yNodeNum, zNodeNum, raw_data.shape[1], raw_data.shape[2]), dtype=float)
+                for j in range(raw_data.shape[1]):
+                    for k in range(raw_data.shape[2]):
+                        reshaped_data[index_template[:,order[0]], index_template[:,order[1]], index_template[:,order[2]], j, k] = raw_data[:,j,k]
+            elif raw_data_shape_dim > 3:
+                raise Exception("raw_data.shape is not supported")
+            if compressed:
+                np.savez_compressed(os.path.join(output_path, output_name+'_'+str(i+offset-self.start_index)+'.npz'), reshaped_data)
+            else:
+                np.save(os.path.join(output_path, output_name+'_'+str(i+offset-self.start_index)+'.npy'), reshaped_data)
+            
 
 class Grid_Data_manager:
     def __init__(self, input_folder_path: str, output_folder_path: str) -> None:

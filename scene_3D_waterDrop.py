@@ -9,17 +9,11 @@ import numpy as np
 import csv
 np.set_printoptions(threshold=sys.maxsize)
 
-''' TAICHI SETTINGS '''
-# Use GPU, comment the below command to run this programme on CPU
-# ti.init(arch=ti.cuda, device_memory_GB=13) 
-# Use CPU, uncomment the below command to run this programme if you don't have GPU
-ti.init(arch=ti.cuda)
-# ti.init(arch=ti.cpu)
+output_path = '../output'
 
-''' SOLVER SETTINGS '''
-SOLVER_ISM = 0  # proposed method
-SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_ISM # choose the solver
+''' TAICHI SETTINGS '''
+# ti.init(arch=ti.cuda, device_memory_GB=15)
+ti.init(arch=ti.vulkan)
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -28,16 +22,17 @@ fps = 60
 output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
+scaling_factor = 2
 # size of the particle
 part_size = 0.05 
 # max time step size
-max_time_step = part_size/50
-sense_cell_size = part_size*2
+max_time_step = part_size/100
+sense_cell_size = part_size*2.5
 # kinematic viscosity of fluid
-kinematic_viscosity_fluid = 1e-3
+kinematic_viscosity_fluid = 1e-4
 
 ''' INIT SIMULATION WORLD '''
-# create a 2D world
+# create a 3D world
 world = tsph.World(dim=3) 
 # set the particle diameter
 world.setWorldPartSize(part_size) 
@@ -46,9 +41,9 @@ world.setWorldDt(max_time_step)
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-fluid_cube_data = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec3f(-0.5,-0.5,-0.5), rt=tsph.vec3f(0.5,1.5,0.5), span=world.getPartSize())
-pool_data = tsph.Squared_pool_3D_data(container_height=6, container_size=4, fluid_height=2, span=world.getPartSize(), layer = 3)
-sense_cube_data = tsph.Cube_data(type=tsph.Cube_data.FIXED_GRID_RES, span=sense_cell_size, grid_res=tsph.vec3i(128,128,128),grid_center=tsph.vec3f(0,0,0))
+fluid_cube_data = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec3f(-0.5,-0.5,-0.5)*scaling_factor, rt=tsph.vec3f(0.5,1.5,0.5)*scaling_factor, span=world.getPartSize())
+pool_data = tsph.Squared_pool_3D_data(container_height=6*scaling_factor, container_size=4*scaling_factor, fluid_height=2*scaling_factor, span=world.getPartSize(), layer = 3)
+sense_cube_data = tsph.Cube_data(type=tsph.Cube_data.FIXED_GRID_RES, span=sense_cell_size, grid_res=tsph.vec3i(64,64,64),grid_center=tsph.vec3f(0,-2,0))
 # particle number of fluid/boundary
 fluid_part_num = pool_data.fluid_part_num + fluid_cube_data.num
 bound_part_num = pool_data.bound_part_num
@@ -115,7 +110,7 @@ sense_grid_part.close_stack()
 neighb_list=[fluid_part, bound_part]
 fluid_part.add_module_neighb_search()
 bound_part.add_module_neighb_search()
-sense_grid_part.add_module_neighb_search(max_neighb_num=tsph.val_i(fluid_part.getObjPartNum()*64))
+sense_grid_part.add_module_neighb_search(max_neighb_num=tsph.val_i(fluid_part.getObjPartNum()*48))
 
 fluid_part.add_neighb_objs(neighb_list)
 bound_part.add_neighb_objs(neighb_list)
@@ -143,7 +138,7 @@ sense_output.add_output_dataType("strainRate")
 sense_output.add_one_time_output_dataType("node_index")
 
 def prep():
-    sense_output.export_one_time_to_numpy(path='../output/')
+    sense_output.export_one_time_to_numpy(path=output_path, compressed=True)
 
 ''' SIMULATION LOOPS '''
 def loop_ism():
@@ -196,7 +191,6 @@ def loop_ism():
 
 ''' Viusalization and run '''
 def vis_run(loop):
-    global flag_strat_drift
     inv_fps = 1/fps
     timer = 0
     sim_time = 0
@@ -219,7 +213,7 @@ def vis_run(loop):
                     sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)
                     sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
                     sense_grid_part.m_solver_sph.sph_avg_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
-                    sense_output.export_to_numpy(index=timer,path='../output/')
+                    sense_output.export_to_numpy(index=timer,path=output_path, compressed=True)
 
                 timer += 1
                 flag_write_img = True
@@ -239,9 +233,28 @@ def vis_run(loop):
         if timer > output_frame_num:
             break
 
+def run(loop):
+    inv_fps = 1/fps
+    timer = 0
+    sim_time = 0
+    loop_count = 0
+
+    while timer<output_frame_num:
+        loop()
+        loop_count += 1
+        sim_time += world.getWorldDt()
+        if(sim_time > timer*inv_fps):
+            sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)
+            sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
+            sense_grid_part.m_solver_sph.sph_avg_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
+            sense_output.export_to_numpy(index=timer,path=output_path, compressed=True)
+
+            timer += 1
+
+
 ''' RUN THE SIMULATION '''
 prep()
-vis_run(loop_ism)
+run(loop_ism)
 
 
 
