@@ -1,6 +1,6 @@
 import os
 
-from Autoencoders.ConvAE_vel import *
+from Autoencoders.ConvAE_velocity import *
 from Dataset_processing import *
 
 platform = 'cuda'
@@ -9,10 +9,10 @@ res = 256
 strategy_list = ['skip_bottleneck', 'whole']
 main_folder_path_list = ['../dataset_train', '../dataset_test']
 
-strategy = strategy_list[0]
+strategy = strategy_list[1]
 main_folder_path = main_folder_path_list[1]
 if_crop = False
-model_epoch = 5899
+model_epoch = 49
 number_of_frames = 166 #186 659
 
 
@@ -42,8 +42,8 @@ model.test(vel_model_file_path, test_result_vel_path, strategy, if_crop)
 
 scivis_R2toR1(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_vorticity', stride=1)
 scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)
-# scivis_R2toR2(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_velocity')
-# scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
+scivis_R2toR2(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_velocity')
+scivis_R2toR2(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_velocity')
 # datavis_hist( test_result_vel_path,  test_result_vel_path,  'input_vorticity_hist',  0, number_of_frames)
 # datavis_hist( test_result_vel_path,  vis_path,  'output_vorticity_hist', 0, number_of_frames)
 
