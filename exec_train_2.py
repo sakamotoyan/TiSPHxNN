@@ -10,7 +10,7 @@ main_folder_path = '../dataset_train'
 if_freeze_parameters = False
 if_crop = True
 model_file = model_file_list[0]
-submodule_type = 0
+submodule_type = 2
 print(f'new network type 0{submodule_type}')
 
 exclude_threshold = None

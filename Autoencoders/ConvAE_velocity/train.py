@@ -29,11 +29,12 @@ class TrainConvAutoencoder:
     def __init__(self, res, attr_name_1, dataset_file_path_1, 
                             attr_name_2, dataset_file_path_2, 
                             attr_name_3, dataset_file_path_3,
+                            submodule_type,
                             platform='cuda', multi_gpu=False, lr = 0.00005,
-                            type = 'train', submodule_type = 0):
+                            type = 'train'):
         
 
-        self.batch_size = 64
+        self.batch_size = 32
         self.lr = lr
         self.platform = platform
         self.network = ConvAutoencoder(type=type, submodule_type=submodule_type)
@@ -46,7 +47,7 @@ class TrainConvAutoencoder:
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []
 
-    def train(self, num_epochs, network_model_path, strategy, former_model_file_path=None, save_step=20, freeze_param=False, crop=False, exclude_threshold=None):
+    def train(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20, freeze_param=False, crop=False, exclude_threshold=None):
         current_epochs_num = 0
         
         if former_model_file_path is not None:
@@ -80,7 +81,7 @@ class TrainConvAutoencoder:
                     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
                 
                 inputs  = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs, strategy=strategy)) * 2 - 1
+                batch_outputs = (self.network(inputs)) * 2 - 1
 
                 input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
@@ -91,7 +92,6 @@ class TrainConvAutoencoder:
                 output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
                 output_vorticity = (output_dv_dx - output_du_dy)
                 output_vorticity = output_vorticity.unsqueeze(1)
-
                 loss = self.criterion(output_vorticity, input_vorticity)
                 loss.backward()
                 self.optimizer.step()
@@ -129,7 +129,7 @@ class TrainConvAutoencoder:
         self.dataset = DatasetConvAutoencoder(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-    def test(self, model_file_path, output_path, strategy, crop=False, exclude_threshold=None):
+    def test(self, model_file_path, output_path, crop=False, exclude_threshold=None):
             
         self.network.load_state_dict(torch.load(model_file_path))
         self.network.eval()
@@ -147,7 +147,7 @@ class TrainConvAutoencoder:
                     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
 
                 inputs = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs, strategy = strategy)) * 2 - 1
+                batch_outputs = (self.network(inputs)) * 2 - 1
                 input_dv_dx  = torch.diff(batch_inputs[:, 1, :, :],  dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy  = torch.diff(batch_inputs[:, 0, :, :],  dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))

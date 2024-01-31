@@ -4,8 +4,8 @@ import numpy as np
 
 
 class ConvAutoencoder(nn.Module):
-    def __init__(self, type='train', submodule_type=0, leakiness = 0.01,
-                 input_channel=2, input_res=256, first_output_channel=8, depth=6, feature_vector_size=512):
+    def __init__(self, submodule_type, type='train', leakiness = 0.01,
+                 input_channel=2, input_res=256, first_output_channel=8, depth=6, feature_vector_size=256):
         super(ConvAutoencoder, self).__init__()
 
 
@@ -29,15 +29,15 @@ class ConvAutoencoder(nn.Module):
         elif type == 'test':
             dropout_probability = 0.0
         
-        if submodule_type == 0:
-            self.encoder_class = Conv2dBLD_E
-            self.decoder_class = Conv2dBLD_D
+        if   submodule_type == 0:
+            self.encoder_class = Conv2dNAD_E
+            self.decoder_class = Conv2dNAD_D
         elif submodule_type == 1:
-            self.encoder_class = Conv2dMBLD_E
-            self.decoder_class = Conv2dMBLD_D
+            self.encoder_class = Conv2dNAMD_E
+            self.decoder_class = Conv2dNAMD_D
         elif submodule_type == 2:
-            self.encoder_class = DoubleConv2dMBLD_E
-            self.decoder_class = DoubleConv2dMBLD_D
+            self.encoder_class = DoubleConv2dNADM_E
+            self.decoder_class = DoubleConv2dNADM_D
 
         # Encoder
         self.encoder = nn.ModuleList(
@@ -51,10 +51,14 @@ class ConvAutoencoder(nn.Module):
             nn.Flatten(),
             nn.Linear(self.output_channel_list[-1] * bottom_res * bottom_res, feature_vector_size), 
             nn.BatchNorm1d(feature_vector_size),
-            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
+            nn.LeakyReLU(leakiness), 
+            nn.Dropout(dropout_probability),
             nn.Linear(feature_vector_size, self.output_channel_list[-1] * bottom_res * bottom_res),
+
             nn.BatchNorm1d(self.output_channel_list[-1] * bottom_res * bottom_res),
-            nn.LeakyReLU(leakiness), nn.Dropout(dropout_probability),
+            nn.LeakyReLU(leakiness), 
+            nn.Dropout(dropout_probability),
+
             nn.Unflatten(1, (int(self.output_channel_list[-1]), bottom_res, bottom_res)),
         )
 
@@ -62,26 +66,17 @@ class ConvAutoencoder(nn.Module):
         self.decoder = nn.ModuleList(
             [self.decoder_class(self.inverse_output_channel_list[i], self.inverse_output_channel_list[i+1], 
                                 kernel_size=3, stride=2, padding=1, output_padding=1, leakiness=leakiness, 
-                                dropout_probability=dropout_probability) 
+                                dropout_probability=dropout_probability, order=i) 
                                 for i in range(self.depth-1)]
         )
 
-    def forward(self, input, strategy='whole'):
-        if strategy == 'whole':
-            x = input
-            for i in range(self.depth-1):
-                x = self.encoder[i](x)
-            x = self.bottleneck(x)
-            for i in range(self.depth-1):
-                x = self.decoder[i](x)
-            
-        if strategy == 'skip_bottleneck':
-            x = input
-            for i in range(self.depth-1):
-                x = self.encoder[i](x)
-            for i in range(self.depth-1):
-                x = self.decoder[i](x)
-        
+    def forward(self, input):
+        x = input
+        for i in range(self.depth-1):
+            x = self.encoder[i](x)
+        x = self.bottleneck(x)
+        for i in range(self.depth-1):
+            x = self.decoder[i](x)
         return x   
 
 
