@@ -29,15 +29,15 @@ class TrainConvAutoencoder:
     def __init__(self, res, attr_name_1, dataset_file_path_1, 
                             attr_name_2, dataset_file_path_2, 
                             attr_name_3, dataset_file_path_3,
-                            submodule_type,
+                            network: nn.Module,
                             platform='cuda', multi_gpu=False, lr = 0.00005,
-                            type = 'train'):
+                            ):
         
 
         self.batch_size = 32
         self.lr = lr
         self.platform = platform
-        self.network = ConvAutoencoder(type=type, submodule_type=submodule_type)
+        self.network = network
         if multi_gpu:
             self.network = nn.DataParallel(self.network)
         self.network.to(platform)
@@ -77,8 +77,9 @@ class TrainConvAutoencoder:
                 batch_inputs = batch_inputs.to(self.platform)
                 loss = 0.0
                 self.optimizer.zero_grad()
-                if crop: 
-                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
+                if crop is not False: 
+                    crop_size = torch.randint(64, 256, (1,)).item()
+                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs, crop_size=(crop_size,crop_size), exclude_threshold=exclude_threshold)
                 
                 inputs  = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs)) * 2 - 1
@@ -117,7 +118,7 @@ class TrainConvAutoencoder:
         else:
             plt.plot(self.loss_list)
         plt.title('Loss')
-        plt.xlabel('epoch (batch_size=64)')
+        plt.xlabel('epoch (batch_size=32)')
         if name is not None:
             save_path = os.path.join(path, f'loss_{name}_{epoch}.png')
         else:
@@ -143,7 +144,7 @@ class TrainConvAutoencoder:
         with torch.no_grad():
             for batch_inputs in test_data_loader:
                 batch_inputs = batch_inputs.to(self.platform)
-                if crop: 
+                if crop is not False: 
                     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
 
                 inputs = (batch_inputs + 1) / 2
@@ -182,7 +183,11 @@ class TrainConvAutoencoder:
             self.save_loss_fig(0, output_path, 'vel', loss_vel)
             self.save_loss_fig(0, output_path, 'vort', loss_vort)
             self.save_loss_fig(0, output_path, 'hist', loss_hist)
-            
+    
+    # TODO: implement this
+    def test_conv(self):
+        pass
+
     def output_bottleneck(self, model_file_path, output_path):
         self.network.load_state_dict(torch.load(model_file_path))
         print(f"Loaded former model from {model_file_path}")

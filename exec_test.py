@@ -8,11 +8,13 @@ res = 256
 
 main_folder_path_list = ['../dataset_train', '../dataset_test']
 
-submodule_type = 0
+submodule_type = 2
 main_folder_path = main_folder_path_list[1]
 if_crop = False
-model_epoch = 49
+model_epoch = 2199
 number_of_frames = 166 #186 659
+
+network = ConvAutoencoder(submodule_type=submodule_type, type='test', feature_vector_size=256)
 
 
 model_folder_path = os.path.join('./model')
@@ -35,7 +37,7 @@ dataset_file_path_3 = os.path.join(main_folder_path, 'dataset')
 model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1, 
                                     attr_name_2, dataset_file_path_2, 
                                     attr_name_3, dataset_file_path_3, 
-                                    platform=platform, type='test', submodule_type=submodule_type)
+                                    platform=platform, network=network)
 
 model.test(vel_model_file_path, test_result_vel_path, if_crop)
 
