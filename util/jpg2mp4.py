@@ -2,7 +2,7 @@ import cv2
 import os
 
 # Output MP4 file path
-output_path = './output'
+output_path = '../output'
 input_path = output_path
 
 # Frame rate (frames per second) of the output video
@@ -42,7 +42,7 @@ process('sci_output_velocity')
 # process('sci_input_vorticity')
 process('sci_output_vorticity')
 # process('input_vorticity_hist')
-process('output_vorticity_hist')
+# process('output_vorticity_hist')
 # process('strainRate_compression')
 # process('strainRate_rotation')
 # process('strainRate_shear')

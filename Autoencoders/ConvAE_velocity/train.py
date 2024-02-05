@@ -47,7 +47,7 @@ class TrainConvAutoencoder:
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.loss_list = []
 
-    def train(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20, freeze_param=False, crop=False, exclude_threshold=None):
+    def train(self, num_epochs, network_model_path, former_model_file_path=None, save_step=20, crop_boundary=False, crop=False, exclude_threshold=None):
         current_epochs_num = 0
         
         if former_model_file_path is not None:
@@ -58,18 +58,7 @@ class TrainConvAutoencoder:
             self.network.apply(self.init_weights)
         
         self.network.train()
-
-        if freeze_param:
-            for param in self.network.encoder.parameters():
-                param.requires_grad = False
-            for param in self.network.decoder.parameters():
-                param.requires_grad = False
-            self.optimizer = optim.Adam([
-                {'params':self.network.bottleneck.parameters()},
-                {'params': self.network.unflatten.parameters()}], 
-                lr=self.lr)
-        else:
-            self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=self.lr)
 
         for epoch in range(num_epochs):
             running_loss = 0.0
@@ -79,6 +68,7 @@ class TrainConvAutoencoder:
                 self.optimizer.zero_grad()
                 if crop is not False: 
                     crop_size = torch.randint(64, 256, (1,)).item()
+                    # crop_size = 128
                     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, crop_size=(crop_size,crop_size), exclude_threshold=exclude_threshold)
                 
                 inputs  = (batch_inputs + 1) / 2
@@ -88,11 +78,17 @@ class TrainConvAutoencoder:
                 input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
                 input_vorticity = (input_dv_dx - input_du_dy)
                 input_vorticity = input_vorticity.unsqueeze(1)
+                
 
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
                 output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
                 output_vorticity = (output_dv_dx - output_du_dy)
                 output_vorticity = output_vorticity.unsqueeze(1)
+
+                if crop_boundary:
+                    input_vorticity  = input_vorticity [:, :, 3:-3, 3:-3]
+                    output_vorticity = output_vorticity[:, :, 3:-3, 3:-3]
+
                 loss = self.criterion(output_vorticity, input_vorticity)
                 loss.backward()
                 self.optimizer.step()
@@ -130,22 +126,25 @@ class TrainConvAutoencoder:
         self.dataset = DatasetConvAutoencoder(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-    def test(self, model_file_path, output_path, crop=False, exclude_threshold=None):
+    def test(self, model_file_path, output_path, crop=False, exclude_threshold=None, export_bottleneck_layer=None, shuffle=False):
             
         self.network.load_state_dict(torch.load(model_file_path))
         self.network.eval()
         print(f"Loaded former model from {model_file_path}")
-        test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=shuffle)
         counter = 0
         loss_vel = []
         loss_vort = []
         loss_hist = []
 
+        if export_bottleneck_layer is not None:
+            self.network.bottleneck.bottleneck[export_bottleneck_layer].register_forward_hook(self.network.bottleneck.get_activation('bottleneck'))
+
         with torch.no_grad():
             for batch_inputs in test_data_loader:
                 batch_inputs = batch_inputs.to(self.platform)
                 if crop is not False: 
-                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs, exclude_threshold=exclude_threshold)
+                    batch_inputs = self.func_random_crop_and_upsample(batch_inputs,crop_size=(64,64))
 
                 inputs = (batch_inputs + 1) / 2
                 batch_outputs = (self.network(inputs)) * 2 - 1
@@ -179,28 +178,106 @@ class TrainConvAutoencoder:
                     np.save(os.path.join(output_path,f'input_vorticity_hist_{counter}.npy'),  input_vorticity_hist[i,...])
                     np.save(os.path.join(output_path,f'output_vorticity_hist_{counter}.npy'), output_vorticity_hist[i,...])
 
+                    if export_bottleneck_layer is not None:
+                        batch_bottleneck = self.network.bottleneck.feature_maps['bottleneck'].cpu().numpy()
+                        np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
+
                     counter += 1
             self.save_loss_fig(0, output_path, 'vel', loss_vel)
             self.save_loss_fig(0, output_path, 'vort', loss_vort)
             self.save_loss_fig(0, output_path, 'hist', loss_hist)
     
     # TODO: implement this
-    def test_conv(self):
-        pass
-
-    def output_bottleneck(self, model_file_path, output_path):
+    def test_conv(self, model_file_path, output_path, res):
         self.network.load_state_dict(torch.load(model_file_path))
+        self.network.eval()
         print(f"Loaded former model from {model_file_path}")
         test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
         counter = 0
-        self.network.bottleneck[1].register_forward_hook(self.network.get_activation('bottleneck'))
+        loss_vel = []
+        loss_vort = []
+        loss_hist = []
+
+        with torch.no_grad():
+            for batch_inputs in test_data_loader:
+                batch_inputs = batch_inputs.to(self.platform)
+                # allocate memory for batch_outputs
+                batch_outputs = torch.zeros((batch_inputs.shape[0], batch_inputs.shape[1], batch_inputs.shape[2], batch_inputs.shape[3])).to(self.platform)
+                
+                for i in range(int(batch_inputs.shape[2]/res)):
+                    for j in range(int(batch_inputs.shape[3]/res)):
+                        cropped_inputs = batch_inputs[:, :, i*res:(i+1)*res, j*res:(j+1)*res]
+
+                        # max_velocity = torch.max(torch.sqrt(torch.pow(cropped_inputs[:, 0, :, :], 2) + torch.pow(cropped_inputs[:, 1, :, :], 2)))
+                        # cropped_inputs[:, 0, :, :] = cropped_inputs[:, 0, :, :] / max_velocity if max_velocity > 0 else 0
+                        # cropped_inputs[:, 1, :, :] = cropped_inputs[:, 1, :, :] / max_velocity if max_velocity > 0 else 0
+
+                        upsampled_inputs = F.interpolate(cropped_inputs, size=(256, 256), mode='bilinear', align_corners=False)
+                        cropped_batch_outputs = (self.network((upsampled_inputs+1)/2)) * 2 - 1
+                        cropped_batch_outputs = F.interpolate(cropped_batch_outputs, size=(res, res), mode='bilinear', align_corners=False)
+
+                        # cropped_batch_outputs *= max_velocity
+                        # cropped_inputs *= max_velocity
+
+                        batch_outputs[:, :, i*res:(i+1)*res, j*res:(j+1)*res] = cropped_batch_outputs
+                input_dv_dx  = torch.diff(batch_inputs[:, 1, :, :],  dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
+                input_du_dy  = torch.diff(batch_inputs[:, 0, :, :],  dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
+                output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
+                output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
+
+                input_vorticity  = (input_dv_dx - input_du_dy)
+                output_vorticity = (output_dv_dx - output_du_dy)
+                input_vorticity_hist = self.func_differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
+                output_vorticity_hist = self.func_differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
+
+                loss_vel.append(self.criterion(batch_outputs, batch_inputs).item())
+                loss_vort.append(self.criterion(output_vorticity, input_vorticity).item())
+                loss_hist.append(self.criterion(output_vorticity_hist, input_vorticity_hist).item())
+                # to numpy
+                batch_inputs  = batch_inputs.cpu().numpy()
+                batch_outputs = batch_outputs.cpu().numpy()
+                input_vorticity  = input_vorticity.cpu().numpy()
+                output_vorticity = output_vorticity.cpu().numpy()
+                input_vorticity_hist  = input_vorticity_hist.cpu().numpy()
+                output_vorticity_hist = output_vorticity_hist.cpu().numpy()
+                
+                for i in range(input_vorticity.shape[0]):
+                    np.save(os.path.join(output_path,f'input_velocity_{counter}.npy'),  batch_inputs[i,...])
+                    np.save(os.path.join(output_path,f'output_velocity_{counter}.npy'), batch_outputs[i,...])
+
+                    np.save(os.path.join(output_path,f'input_vorticity_{counter}.npy'),  input_vorticity[i,...])
+                    np.save(os.path.join(output_path,f'output_vorticity_{counter}.npy'), output_vorticity[i,...])
+
+                    np.save(os.path.join(output_path,f'input_vorticity_hist_{counter}.npy'),  input_vorticity_hist[i,...])
+                    np.save(os.path.join(output_path,f'output_vorticity_hist_{counter}.npy'), output_vorticity_hist[i,...])
+
+                    counter += 1
+            self.save_loss_fig(0, output_path, 'vel', loss_vel)
+            self.save_loss_fig(0, output_path, 'vort', loss_vort)
+            self.save_loss_fig(0, output_path, 'hist', loss_hist)
+
+    def output_bottleneck(self, model_file_path, output_path, layer):
+        self.network.load_state_dict(torch.load(model_file_path))
+        self.network.eval()
+        print(f"Loaded former model from {model_file_path}")
+        test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        counter = 0
+        
         with torch.no_grad():
             for batch_inputs in test_data_loader:
                 inputs = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs, strategy='whole')) * 2 - 1
-                batch_bottleneck = self.network.feature_maps['bottleneck'][0].cpu().numpy()
+                batch_outputs = (self.network(inputs)) * 2 - 1
+                batch_bottleneck = self.network.bottleneck.feature_maps['bottleneck'].cpu().numpy()
                 np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
                 counter += 1
+
+    def Conv2D(self, input_data, kernel_size, stride):
+        if len(input_data.shape) is not 2:
+            raise ValueError("Input data must be 2D")
+        padded_input = F.pad(input_data, (kernel_size, kernel_size, kernel_size, kernel_size), mode='constant', value=0)
+        conv_counter = torch.zeros(input_data.shape, dtype=torch.uint8)
+        output = torch.zeros(input_data.shape, dtype=torch.float32)
+        
 
     def func_random_crop_and_upsample(self, data, crop_size=(128, 128), upsample_size=(256, 256), exclude_threshold=None):
         batch_size, num_channel, height, width = data.shape

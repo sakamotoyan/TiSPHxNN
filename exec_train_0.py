@@ -7,10 +7,11 @@ model_path = os.path.join('./model')
 model_file_list = [None, os.path.join(model_path,'epochs_699.pth')]
 main_folder_path = '../dataset_train'
 
-if_freeze_parameters = False
+crop_boundary = True
 crop = True
 model_file = model_file_list[0]
 submodule_type = 0
+bottleneck_type = 1
 print(f'new network type 0{submodule_type}')
 
 exclude_threshold = None
@@ -31,7 +32,7 @@ dataset_file_path_1 = os.path.join(main_folder_path, 'dataset')
 dataset_file_path_2 = os.path.join(main_folder_path, 'dataset')
 dataset_file_path_3 = os.path.join(main_folder_path, 'dataset')
 
-network = ConvAutoencoder(submodule_type=submodule_type, type='train', feature_vector_size=256)
+network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='train', feature_vector_size=512)
 
 model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1, 
                                   attr_name_2, dataset_file_path_2, 
@@ -41,7 +42,7 @@ model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1,
 # model.train_velocityBased (num_epochs=8000, network_model_path=model_path,  former_model_file_path=None)
 # model.output_bottleneck(   model_file_path='./model/epochs_299.pth', output_path=output_path)
 model.train(num_epochs=40000, crop=crop,
-            network_model_path=model_path, former_model_file_path=model_file, save_step=50, freeze_param=if_freeze_parameters, exclude_threshold=exclude_threshold)
+            network_model_path=model_path, former_model_file_path=model_file, save_step=50, crop_boundary=crop_boundary, exclude_threshold=exclude_threshold)
 # model.train_histBased(     num_epochs=8000, network_model_path=model_path, former_model_file_path=None)
 
 # datavis_1darray(output_path, output_path, 'bottleneck', 0, 659)

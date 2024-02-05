@@ -6,7 +6,7 @@ ti.init(arch=ti.gpu)
 '''
 Training dataset generation
 '''
-main_path = './dataset_train'
+main_path = '../dataset_test2'
 rawdata_folder = 'rawdata'
 dataset_folder = 'dataset'
 datavis_folder = 'datavis'
@@ -15,21 +15,21 @@ clear_folder(os.path.join(main_path, dataset_folder))
 clear_folder(os.path.join(main_path, datavis_folder))
 
 operation_list = [
-    'flipud', 'fliplr', 'transpose', 'flipud_fliplr'
+    # 'flipud', 'fliplr', 'transpose', 'flipud_fliplr'
     ]
 length = len(operation_list)+1
 
-number_of_frames = concatDataset('./',
+number_of_frames = concatDataset('../',
                 [
-                    'raw_t1', 
-                    'raw_t2', 
+                    # 'raw_t1', 
+                    # 'raw_t2', 
                     # 'raw_t3', 
-                    'raw_t4', 
-                    'raw_t5', 
-                    'raw_t6',
-                    'raw_t7',
-                    'raw_t8',
-                    'raw_t9',
+                    # 'raw_t4', 
+                    # 'raw_t5', 
+                    # 'raw_t6',
+                    # 'raw_t7',
+                    # 'raw_t8',
+                    # 'raw_t9',
                     'raw_t10',
                     # 'raw_t11',
                     # 'raw_t12',
