@@ -212,7 +212,7 @@ class MSEGUIWithImages:
             label = tk.Label(row_frame, image=img_tk)
             label.image = img_tk  # Keep a reference
             label.pack(side=tk.LEFT)
-            
+
             # Bind the click event to the label
             label.bind('<Button-1>', on_image_click(frame, self.entry_frame_number, self.find_closest_frames))
 
@@ -228,7 +228,7 @@ similarity_matrix = compute_similarity_matrix(arrays)
 root = tk.Tk()
 gui = MSEGUIWithImages(root, data_path, similarity_matrix)
 root.mainloop()
-image_path = os.path.join(self.path, f'sci_output_vorticity_{frame}.png')
+# image_path = os.path.join(self.path, f'sci_output_vorticity_{frame}.png')
 
 # visualize_similarity_matrix(similarity_matrix)
 
