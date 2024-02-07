@@ -31,10 +31,10 @@ fps = 30
 sense_res = 518
 
 sense_cell_size = val_f(7.0/sense_res)
-part_size = sense_cell_size[None] / 4
+part_size = sense_cell_size[None] / 3
 
 max_time_step = part_size/100
-k_vis = 1e-5
+k_vis = 1e-4
 world = World(dim=2, lb=-9, rt=9)
 world.setWorldPartSize(part_size)
 world.setWorldDt(max_time_step)

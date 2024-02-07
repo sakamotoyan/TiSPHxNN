@@ -68,6 +68,10 @@ if [ ! -d /root/$folder/model ]; then
     mkdir -p /root/$folder/model
 fi
 
+if [ ! -d /root/$folder/output ]; then
+    mkdir -p /root/$folder/output
+fi
+
 # Step 3: Run the specified Python script with additional arguments and log output
 if [ -n "$exe" ]; then
     cd /root/$folder
