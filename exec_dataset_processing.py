@@ -23,7 +23,7 @@ number_of_frames = concatDataset('../',
                 [
                     # 'raw_t1', 
                     # 'raw_t2', 
-                    # 'raw_t3', 
+                    'raw_t3', 
                     # 'raw_t4', 
                     # 'raw_t5', 
                     # 'raw_t6',

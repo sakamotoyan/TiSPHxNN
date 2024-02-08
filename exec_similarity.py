@@ -187,7 +187,7 @@ class MSEGUIWithImages:
         label.pack(side=tk.LEFT)
 
         # Display new results and arrange images in rows
-        max_per_row = 5  # Maximum number of images per row
+        max_per_row = 10  # Maximum number of images per row
         for i, (frame, mse) in enumerate(zip(closest_frames, mse_values)):
             row_index = i // max_per_row
             col_index = i % max_per_row
