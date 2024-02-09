@@ -14,7 +14,7 @@ model_epoch = 6749
 
 main_folder_path = main_folder_path_list[1]
 if_crop = False
-number_of_frames = 478 #186 659
+number_of_frames = 477 #186 659
 
 network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size=512)
 
