@@ -8,20 +8,22 @@ from ..basic_solvers.Solver import Solver
 OUT_OF_RANGE = -1
 
 @ti.data_oriented
-class Neighb_cell(Solver):
+class NeighbGrid(Solver):
     def __init__(
             self,
             obj: Particle, # Particle class
     ):
         # get all parameters from obj
-        self.obj = obj
-        self.dim = ti.static(obj.getWorld().g_dim)
-        self.cell_size = obj.getWorld().support_radius
-        self.lb = obj.getWorld().g_space_lb
-        self.rt = obj.getWorld().g_space_rt
-        self.part_num = obj.getPartNum()
-        self.stack_top = obj.getStackTop()
-        self.pos = obj.pos
+        self.obj       =    obj
+        self.pos       =    obj.getPosArr()
+        self.dim       =    val_i(obj.getWorld().getDim())
+        self.cell_size =    val_f(obj.getWorld().getSupportRadius())
+        self.lb        =    vecx_f(self.dim[None])
+        self.lb[None]  =    obj.getWorld().getLb()
+        self.rt        =    vecx_f(self.dim[None])
+        self.rt[None]  =    obj.getWorld().getRt()
+        self.part_num  =    val_i(obj.getPartNum())
+        self.stack_top =    val_i(obj.getStackTop())
 
         self.attach_to_obj(obj)
         self.parameter_cehck()

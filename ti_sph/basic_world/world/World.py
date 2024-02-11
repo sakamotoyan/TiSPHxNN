@@ -78,21 +78,21 @@ class World:
 
     @ti.func
     def tiGetLb(self):
-        return self.g_space_lb
+        return self.g_space_lb[None]
     def getLb(self):
-        return self.g_space_lb
+        return self.g_space_lb[None]
 
     @ti.func
     def tiGetRt(self):
-        return self.g_space_rt
+        return self.g_space_rt[None]
     def getRt(self):
-        return self.g_space_rt
+        return self.g_space_rt[None]
     
     @ti.func
     def tiGetGravity(self):
         return self.g_gravity[None]
     def getGravity(self):  
-        return self.g_gravity
+        return self.g_gravity[None]
     
     @ti.func
     def tiGetDt(self)->ti.f32:
@@ -163,9 +163,9 @@ class World:
     
     @ti.func
     def tiGetSupportRadius(self):
-        return self.support_radius
+        return self.support_radius[None]
     def getSupportRadius(self):
-        return self.support_radius
+        return self.support_radius[None]
     
     @ti.func
     def tiGetSpace(self):
