@@ -33,11 +33,11 @@ class Neighb_search_template(Solver):
                 self.search_template[i][dim - j - 1] = self.neighb_dice[digit]
 
     @ti.func
-    def get_neighb_cell_num(self):
+    def getCellNum(self):
         return self.search_template.shape[0]
     
     @ti.func
-    def get_neighb_cell_vec(self, i):
+    def getSearchTemplate(self, i):
         return self.search_template[i]
 '''#################### ABOVE IS THE TEMPLATE FOR NEIGHBORHOOD SEASCHING ####################'''
 
@@ -60,6 +60,7 @@ class Neighb_pool(Solver):
             max_neighb_part_num: ti.template() = 0,  # int32
     ):
         Solver.__init__(self, obj)
+        self.obj = obj
         
         if max_neighb_part_num == 0:
             self.max_neighb_part_num = val_i(obj.getPartNum() * self.getObj().getWorld().g_avg_neighb_part_num[None])

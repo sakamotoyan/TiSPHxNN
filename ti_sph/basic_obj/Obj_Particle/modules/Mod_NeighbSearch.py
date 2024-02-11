@@ -18,11 +18,11 @@ class Mod_NeighbSearch:
         self.check_neighb_search()
         if search_range == DEFAULT_VALUE:
             search_range = self.m_world.support_radius
-        self.m_neighb_search.neighb_pool.add_neighb_obj(neighb_obj, search_range)
+        self.m_neighb_search.neighbPool.add_neighb_obj(neighb_obj, search_range)
 
     def add_neighb_objs(self, neighb_objs, search_range: ti.template()=DEFAULT_VALUE):
         self.check_neighb_search()
         if search_range == DEFAULT_VALUE:
             search_range = self.m_world.support_radius
         for neighb_obj in neighb_objs:
-            self.m_neighb_search.neighb_pool.add_neighb_obj(neighb_obj, search_range)
+            self.m_neighb_search.neighbPool.add_neighb_obj(neighb_obj, search_range)

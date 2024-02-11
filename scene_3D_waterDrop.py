@@ -13,7 +13,7 @@ output_path = '../output'
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, device_memory_GB=15)
-ti.init(arch=ti.vulkan)
+ti.init(arch=ti.cpu)
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -22,7 +22,7 @@ fps = 60
 output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
-scaling_factor = 2
+scaling_factor = 0.5
 # size of the particle
 part_size = 0.1 
 # max time step size
