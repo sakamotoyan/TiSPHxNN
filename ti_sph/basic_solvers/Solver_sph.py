@@ -11,7 +11,7 @@ class SPH_solver(Solver):
         Solver.__init__(self, obj)
 
         self.dim = obj.m_world.g_dim
-        self.compute_sig(self.sig_dim(self.getObj().getObjWorld().getWorldDim()))
+        self.compute_sig(self.sig_dim(self.getObj().getWorld().getDim()))
 
         self.dt=obj.m_world.g_dt
         self.inv_dt = obj.m_world.g_inv_dt
@@ -20,9 +20,9 @@ class SPH_solver(Solver):
 
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
-        for part_id in range(self.tiGetObj().tiGetObjStackTop()):
-            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetObjId()[None])
-            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetObjId()[None])
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId()[None])
+            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId()[None])
             for neighb_part_iter in range(neighbPart_num):
                 neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
@@ -45,9 +45,9 @@ class SPH_solver(Solver):
     
     @ti.kernel
     def compute_sig(self, sig_dim: ti.f32):
-        for part_id in range(self.tiGetObj().tiGetObjStackTop()):
-            self.tiGetObj().tiSetSphH(part_id, self.tiGetObj().tiGetPartSize(part_id) * 2)
-            self.tiGetObj().tiSetSphSig(part_id, sig_dim / ti.pow(self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetObjWorld().tiGetWorldDim()))
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            self.tiGetObj().tiSetSphH(part_id, self.tiGetObj().tiGetPartSize() * 2)
+            self.tiGetObj().tiSetSphSig(part_id, sig_dim / ti.pow(self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetWorld().tiGetDim()))
             self.tiGetObj().tiSetSphSigInvH(part_id, self.tiGetObj().tiGetSphSig(part_id) / self.tiGetObj().tiGetSphH(part_id))
 
     @ti.func

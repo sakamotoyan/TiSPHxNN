@@ -87,9 +87,9 @@ kinematic_viscosity_fluid = 1e-3
 # create a 2D world
 world = tsph.World(dim=2) 
 # set the particle diameter
-world.setWorldPartSize(part_size) 
+world.setPartSize(part_size) 
 # set the max time step size
-world.setWorldDt(max_time_step) 
+world.setDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
 world.set_multiphase(phase_num,[tsph.vec3f(0.0,0.2,0.8),tsph.vec3f(0.8,0.2,0.0),tsph.vec3f(0.8,0.2,0.0)],[300,500,1000]) 
 
@@ -109,15 +109,15 @@ bound_part_pos = pool_data.bound_part_pos
 
 '''INIT AN FLUID PARTICLE OBJECT'''
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
-fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=tsph.val_f(world.getWorldPartSize()), is_dynamic=True)
+fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=tsph.val_f(world.getPartSize()), is_dynamic=True)
 world.attachPartObj(fluid_part)
 fluid_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(fluid_part_num) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getObjPartSize()**world.getWorldDim()) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.getDim()) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
@@ -131,9 +131,9 @@ bound_part.instantiate_from_template(part_template, world)
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(bound_part_num)
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
-bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getObjPartSize()**world.getWorldDim())
-bound_part.fill_open_stack_with_val(bound_part.mass, 1000*bound_part.getObjPartSize()**world.getWorldDim())
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getPartSize()**world.getDim())
+bound_part.fill_open_stack_with_val(bound_part.mass, 1000*bound_part.getPartSize()**world.getDim())
 bound_part.fill_open_stack_with_val(bound_part.rest_density, 1000)
 bound_part.close_stack()
 
@@ -250,14 +250,14 @@ def loop_ism():
     # fluid_part.m_solver_ism.debug_check_val_frac()
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.getObjStackTop()):
+    for part_id in range(fluid_part.getStackTop()):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
             fluid_part.phase.val_frac[part_id, phase_id]
         fluid_part.rgb[part_id]
 
-    for bound_part_id in range(bound_part.getObjStackTop()):
+    for bound_part_id in range(bound_part.getStackTop()):
         bound_part.pos[bound_part_id]
 
 ''' Viusalization and run '''
@@ -267,12 +267,12 @@ def run(loop):
     sim_time = float(0.0)
     loop_count = int(0)
 
-    gui2d_part = tsph.Gui2d(objs=[fluid_part, bound_part], radius=world.getWorldPartSize()*8, lb=tsph.vec2f([-4,-4]),rt=tsph.vec2f([4,4]), dpi=dpi)
+    gui2d_part = tsph.Gui2d(objs=[fluid_part, bound_part], radius=world.getPartSize()*8, lb=tsph.vec2f([-4,-4]),rt=tsph.vec2f([4,4]), dpi=dpi)
 
     while timer < output_frame_num:
         loop()
         loop_count += 1
-        sim_time += world.getWorldDt()
+        sim_time += world.getdDt()
 
         if(sim_time > timer*inv_fps):
             clear_selected(fluid_part)

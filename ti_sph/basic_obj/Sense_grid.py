@@ -31,7 +31,7 @@ class Sense_grid(Particle):
                  grid_center: ti.template() = DEFAULT, # vector<dim, float> FIXED_RES
                  ):
         # Reading parameters
-        self.setObjWorld(world) 
+        self.setWorld(world) 
         
         self.m_neighb_pool_size = neighb_pool_size
         self.m_cell_size = cell_size
@@ -72,10 +72,10 @@ class Sense_grid(Particle):
         self.generator = Cube_generator(self, self.m_grid_lb, self.m_grid_rt)
         self.node_num = val_i(self.generator.pushed_num_preview(span=self.get_cell_size()[None]))
         
-        super().__init__(part_num=self.get_node_num()[None], part_size=self.getObjPartSize(), is_dynamic=False)
-        self.setObjWorld(world)
+        super().__init__(part_num=self.get_node_num()[None], part_size=self.getPartSize(), is_dynamic=False)
+        self.setWorld(world)
 
-        self.add_array("pos", vecxf(world.getWorldDim()).field())
+        self.add_array("pos", vecxf(world.getDim()).field())
         self.add_array("size", ti.field(ti.f32))
         self.add_array("clampped", ti.field(ti.f32))
         self.add_array("clampped_rgb", vec3f.field())
@@ -111,7 +111,7 @@ class Sense_grid(Particle):
         self.neighb_search.search_neighbors()
 
     def get_cell_size(self):
-        return self.getObjPartSize()
+        return self.getPartSize()
     
     def get_node_num(self):
         return self.node_num

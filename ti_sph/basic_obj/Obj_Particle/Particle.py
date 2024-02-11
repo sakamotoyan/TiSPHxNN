@@ -56,7 +56,7 @@ class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod
     @ti.kernel
     def log_tobe_deleted_particles(self):
         counter = ti.static(self.m_delete_list[self.m_delete_list.shape[0]])
-        for part_id in range(self.tiGetObjStackTop()):
+        for part_id in range(self.tiGetStackTop()):
             if self.has_negative(self.pos[part_id]-self.m_world.space_lb[None]) or self.has_positive(self.pos[part_id]-self.m_world.space_rt[None]):
                 self.m_delete_list[ti.atomic_add(self.m_delete_list[counter],1)] = part_id
     # TODO

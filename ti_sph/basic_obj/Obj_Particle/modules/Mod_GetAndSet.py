@@ -8,62 +8,62 @@ class Mod_GetAndSet:
 
     ''' particle class attrs get&set '''
     @ti.func
-    def tiGetObjStackTop(self:ti.template()):
+    def tiGetStackTop(self:ti.template()):
         return self.m_stack_top[None]
     @ti.func
-    def tiGetObjPartNum(self)->ti.i32:
+    def tiGetPartNum(self)->ti.i32:
         return self.m_part_num[None]
     @ti.func
-    def tiGetObjPartSize(self)->ti.f32:
+    def tiGetPartSize(self)->ti.f32:
         return self.m_part_size[None]
     @ti.func
-    def tiCheckObjStackOpen(self):
+    def tiCheckStackOpen(self):
         return self.m_if_stack_open
     @ti.func
-    def tiSetObjStackOpen(self, if_open):
+    def tiSetStackOpen(self, if_open):
         self.m_if_stack_open = if_open
     @ti.func
-    def tiGetObjStackOpenNum(self)->ti.i32:
+    def tiGetStackOpenNum(self)->ti.i32:
         return self.m_stack_open_num[None]
     @ti.func
-    def tiSetObjStackOpenNum(self, num: ti.i32):
+    def tiSetStackOpenNum(self, num: ti.i32):
         self.m_stack_open_num[None] = num
     @ti.func
-    def tiGetObjWorld(self)->World:
+    def tiGetWorld(self)->World:
         return self.m_world
     @ti.func
-    def tiSetObjWorld(self, world):
+    def tiSetWorld(self, world):
         self.m_world = world
     @ti.func
-    def tiGetObjId(self):
+    def tiGetId(self):
         return self.m_id
     @ti.func
-    def tiSetObjId(self, id):
+    def tiSetId(self, id):
         self.m_id = id
 
-    def getObjStackTop(self)->int:
+    def getStackTop(self)->int:
         return self.m_stack_top[None]
-    def AddObjStackTop(self, num: int):
+    def AddStackTop(self, num: int):
         self.m_stack_top[None] += num
-    def getObjPartNum(self)->int:
+    def getPartNum(self)->int:
         return self.m_part_num[None]
-    def getObjPartSize(self)->float:
+    def getPartSize(self)->float:
         return self.m_part_size[None]
-    def checkObjStackOpen(self):
+    def checkStackOpen(self):
         return self.m_if_stack_open
-    def setObjStackOpen(self, if_open: bool):
+    def setStackOpen(self, if_open: bool):
         self.m_if_stack_open = if_open
-    def getObjStackOpenNum(self)->int:
+    def getStackOpenNum(self)->int:
         return self.m_stack_open_num[None]
-    def setObjStackOpenNum(self, num: int):
+    def setStackOpenNum(self, num: int):
         self.m_stack_open_num[None] = num
-    def getObjWorld(self)->World:
+    def getWorld(self)->World:
         return self.m_world
-    def setObjWorld(self, world):
+    def setWorld(self, world):
         self.m_world = world
-    def getObjId(self):
+    def getId(self):
         return self.m_id
-    def setObjId(self, id):
+    def setId(self, id):
         self.m_id = id
 
     ''' particle basic physical attrs get&set '''
@@ -94,8 +94,8 @@ class Mod_GetAndSet:
         return self.rgb[i]
     def getRgbArr(self):
         return self.rgb
-    def getPartSize(self, i):
-        return self.size[i]
+    # def getPartSize(self, i):
+    #     return self.size[i]
     
     # taichi version
     @ti.func
@@ -159,9 +159,9 @@ class Mod_GetAndSet:
     @ti.func
     def tiGetRgbArr(self):
         return self.rgb
-    @ti.func
-    def tiGetPartSize(self, i):
-        return self.size[i]
+    # @ti.func
+    # def tiGetPartSize(self, i):
+    #     return self.size[i]
     
     
     ''' particle sph attrs get&set '''

@@ -25,8 +25,8 @@ kinematic_viscosity_fluid_inter = val_f(0.0)
 kinematic_viscosity_fluid_inner = val_f(1e-3)
 
 world = World(dim=2)
-world.setWorldPartSize(part_size)
-world.setWorldDt(max_time_step)
+world.setPartSize(part_size)
+world.setDt(max_time_step)
 world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,1,0),vec3f(0,0.2,0.8)],[500,500,1000])
 
 '''BASIC SETTINGS FOR FLUID'''
@@ -137,7 +137,7 @@ def loop():
     fluid_part.m_solver_JL21.update_val_frac_lamb()    
 
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.setWorldDt(dt)
+    world.setDt(dt)
 
     
 

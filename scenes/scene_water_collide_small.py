@@ -22,8 +22,8 @@ denominator = 1e-1
 part_size = 0.02*denominator
 max_time_step = part_size/100
 world = World(dim=2)
-world.setWorldPartSize(part_size)
-world.setWorldDt(max_time_step)
+world.setPartSize(part_size)
+world.setDt(max_time_step)
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = val_f(1000)

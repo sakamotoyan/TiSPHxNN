@@ -15,12 +15,12 @@ class Neighb_cell(Solver):
     ):
         # get all parameters from obj
         self.obj = obj
-        self.dim = ti.static(obj.getObjWorld().g_dim)
-        self.cell_size = obj.getObjWorld().support_radius
-        self.lb = obj.getObjWorld().g_space_lb
-        self.rt = obj.getObjWorld().g_space_rt
-        self.part_num = obj.getObjPartNum()
-        self.stack_top = obj.getObjStackTop()
+        self.dim = ti.static(obj.getWorld().g_dim)
+        self.cell_size = obj.getWorld().support_radius
+        self.lb = obj.getWorld().g_space_lb
+        self.rt = obj.getWorld().g_space_rt
+        self.part_num = obj.getPartNum()
+        self.stack_top = obj.getStackTop()
         self.pos = obj.pos
 
         self.attach_to_obj(obj)
@@ -35,9 +35,9 @@ class Neighb_cell(Solver):
         self.part_num_in_cell = ti.field(ti.i32, (self.cell_num[None]))
         self.cell_begin_pointer = ti.field(ti.i32, (self.cell_num[None]))
 
-        self.cell_id_of_part = ti.field(ti.i32, (self.getObj().getObjPartNum()))
-        self.part_pointer_shift = ti.field(ti.i32, (self.getObj().getObjPartNum())) # 用于计算part在cell中的偏移
-        self.part_id_container = ti.field(ti.i32, (self.getObj().getObjPartNum()))
+        self.cell_id_of_part = ti.field(ti.i32, (self.getObj().getPartNum()))
+        self.part_pointer_shift = ti.field(ti.i32, (self.getObj().getPartNum())) # 用于计算part在cell中的偏移
+        self.part_id_container = ti.field(ti.i32, (self.getObj().getPartNum()))
 
     
     def attach_to_obj(self, obj):
@@ -127,7 +127,7 @@ class Neighb_cell(Solver):
         for cell_id in range(self.cell_num[None]):
             self.part_num_in_cell[cell_id] = 0 # 清空 网格粒子数量计数器
         
-        for part_id in range(self.obj.tiGetObjStackTop()):
+        for part_id in range(self.obj.tiGetStackTop()):
             cell_id = self.encode_into_cell(self.pos[part_id]) # 计算粒子所在网格(编码后)
             if 0 < cell_id < self.cell_num[None]: # 如果粒子在网格范围内则 
                 self.cell_id_of_part[part_id] = cell_id # 记录粒子所在网格
@@ -140,7 +140,7 @@ class Neighb_cell(Solver):
             if self.part_num_in_cell[cell_id] > 0: # 如果网格内有粒子则 设置赋予初始指针
                 self.cell_begin_pointer[cell_id] = ti.atomic_add(timer, self.part_num_in_cell[cell_id])
         
-        for part_id in range(self.obj.tiGetObjStackTop()):
+        for part_id in range(self.obj.tiGetStackTop()):
             cell_id = self.cell_id_of_part[part_id]
             if self.part_pointer_shift[part_id] != OUT_OF_RANGE:
                 part_pointer = self.cell_begin_pointer[cell_id] + self.part_pointer_shift[part_id]

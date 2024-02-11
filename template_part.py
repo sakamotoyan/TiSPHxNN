@@ -3,25 +3,25 @@ from ti_sph.basic_op import *
 from ti_sph import *
 import numpy as np
 
-def part_template(part_obj, world, verbose=False):
+def part_template(part_obj:Particle, world, verbose=False):
 
     ''' Enssential arrays'''
     ''' encouraged to add for any particle system'''
-    part_obj.add_array("pos", vecxf(part_obj.getObjWorld().g_dim[None]).field())
-    part_obj.add_array("vel", vecxf(part_obj.getObjWorld().g_dim[None]).field())
-    part_obj.add_array("vel_adv", vecxf(part_obj.getObjWorld().g_dim[None]).field())
+    part_obj.add_array("pos", vecxf(part_obj.getWorld().g_dim[None]).field())
+    part_obj.add_array("vel", vecxf(part_obj.getWorld().g_dim[None]).field())
+    part_obj.add_array("vel_adv", vecxf(part_obj.getWorld().g_dim[None]).field())
     part_obj.add_array("mass", ti.field(ti.f32))
     part_obj.add_array("size", ti.field(ti.f32))
     part_obj.add_array("volume", ti.field(ti.f32))
     part_obj.add_array("rest_density", ti.field(ti.f32))
     part_obj.add_array("pressure", ti.field(ti.f32))
     part_obj.add_array("k_vis", ti.field(ti.f32))
-    part_obj.add_array("acc", vecxf(part_obj.getObjWorld().g_dim[None]).field())
+    part_obj.add_array("acc", vecxf(part_obj.getWorld().g_dim[None]).field())
     part_obj.add_array("rgb", vecxf(3).field())
-    part_obj.add_array("strainRate", vecxm(part_obj.getObjWorld().getWorldDim(),part_obj.getObjWorld().getWorldDim()).field())
+    part_obj.add_array("strainRate", vecxm(part_obj.getWorld().getDim(),part_obj.getWorld().getDim()).field())
     part_obj.add_array("selected", ti.field(ti.i32))
     
-    part_obj.add_attr("statistics_linear_momentum", vecx_f(part_obj.getObjWorld().g_dim[None]))
+    part_obj.add_attr("statistics_linear_momentum", vecx_f(part_obj.getWorld().g_dim[None]))
     part_obj.add_attr("statistics_angular_momentum", vecx_f(3))
     part_obj.add_attr("statistics_kinetic_energy", val_f(0))
 
@@ -32,9 +32,9 @@ def part_template(part_obj, world, verbose=False):
 
     # fluid_phase = ti.types.struct(
     # val_frac=ti.f32,
-    # phase_vel=vecxf(part_obj.getObjWorld().g_dim[None]),
-    # phase_acc=vecxf(part_obj.getObjWorld().g_dim[None]),
-    # phase_force=vecxf(part_obj.getObjWorld().g_dim[None]),
+    # phase_vel=vecxf(part_obj.getWorld().g_dim[None]),
+    # phase_acc=vecxf(part_obj.getWorld().g_dim[None]),
+    # phase_force=vecxf(part_obj.getWorld().g_dim[None]),
     # )
 
     sph = ti.types.struct(
@@ -44,20 +44,20 @@ def part_template(part_obj, world, verbose=False):
         density=ti.f32,
         compression_ratio=ti.f32,
         pressure=ti.f32,
-        pressure_force=vecxf(part_obj.getObjWorld().g_dim[None]),
-        viscosity_force=vecxf(part_obj.getObjWorld().g_dim[None]),
-        gravity_force=vecxf(part_obj.getObjWorld().g_dim[None]),
+        pressure_force=vecxf(part_obj.getWorld().g_dim[None]),
+        viscosity_force=vecxf(part_obj.getWorld().g_dim[None]),
+        gravity_force=vecxf(part_obj.getWorld().g_dim[None]),
     )
 
     sph_df = ti.types.struct(
-        alpha_1=vecxf(part_obj.getObjWorld().g_dim[None]),
+        alpha_1=vecxf(part_obj.getWorld().g_dim[None]),
         alpha_2=ti.f32,
         alpha=ti.f32,
         kappa_incomp=ti.f32,
         kappa_div=ti.f32,
         delta_density=ti.f32,
         delta_compression_ratio=ti.f32,
-        vel_adv=vecxf(part_obj.getObjWorld().g_dim[None]),
+        vel_adv=vecxf(part_obj.getWorld().g_dim[None]),
     )
     sph_wc = ti.types.struct(
         B=ti.f32,
@@ -67,14 +67,14 @@ def part_template(part_obj, world, verbose=False):
         val_frac=ti.f32,
         val_frac_in=ti.f32,
         val_frac_out=ti.f32,
-        vel=vecxf(part_obj.getObjWorld().g_dim[None]),
-        drift_vel=vecxf(part_obj.getObjWorld().g_dim[None]),
-        acc=vecxf(part_obj.getObjWorld().g_dim[None]),
+        vel=vecxf(part_obj.getWorld().g_dim[None]),
+        drift_vel=vecxf(part_obj.getWorld().g_dim[None]),
+        acc=vecxf(part_obj.getWorld().g_dim[None]),
     )
     mixture = ti.types.struct(
         lamb = ti.f32,
         flag_negative_val_frac = ti.i32,
-        acc_pressure=vecxf(part_obj.getObjWorld().g_dim[None]),
+        acc_pressure=vecxf(part_obj.getWorld().g_dim[None]),
     )
 
     part_obj.add_struct("sph", sph)

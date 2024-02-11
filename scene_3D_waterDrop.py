@@ -24,7 +24,7 @@ output_frame_num = 2000
 ''' SETTINGS SIMULATION '''
 scaling_factor = 2
 # size of the particle
-part_size = 0.05 
+part_size = 0.1 
 # max time step size
 max_time_step = part_size/100
 sense_cell_size = part_size*2.5
@@ -52,6 +52,32 @@ print("fluid_part_num", fluid_part_num)
 fluid_part_pos = pool_data.fluid_part_pos
 bound_part_pos = pool_data.bound_part_pos
 # initial velocity info of fluid
+
+'''
+[Yanrui] New information statistics
+'''
+print("------------------Information Statistics------------------")
+print(f"[BASIC INFO]particle size:" , part_size)
+print(f"[BASIC INFO]cell size: {sense_cell_size}")
+print(f"[BASIC INFO]ratio of cell size to particle size: {sense_cell_size/part_size}")
+print("")
+print(f"[WORLD INFO]left bottom corner of the world: {world.g_space_lb}")
+print(f"[WORLD INFO]right top corner of the world: {world.g_space_rt}")
+print("")
+print(f"[GRID INFO] grid resolution: {sense_cube_data.grid_res}")
+print(f"[GRID INFO] grid size = cell size * grid resolution = {sense_cell_size} * {sense_cube_data.grid_res} = ", sense_cell_size*sense_cube_data.grid_res)
+print(f"[GRID INFO] grid center: {(sense_cube_data.rt + sense_cube_data.lb) / 2} ")
+print(f"[GRID INFO] left bottom corner of the grid: {sense_cube_data.lb}")
+print(f"[GRID INFO] right top corner of the grid: {sense_cube_data.rt}")
+print("")
+print(f"[FLUID INFO] fluid particle number: {fluid_part_num}")
+print(f"[FLUID INFO] fluid cube size: {fluid_cube_data.rt - fluid_cube_data.lb}")
+print(f"[FLUID INFO] fluid cube left bottom corner: {fluid_cube_data.lb}")
+print(f"[FLUID INFO] fluid cube right top corner: {fluid_cube_data.rt}")
+print("")
+print(f"[POOL INFO] fluid pool left bottom corner: {tsph.vec3f(-pool_data.container_size/2, -pool_data.container_height/2, -pool_data.container_size/2)}")
+print(f"[POOL INFO] fluid pool right top corner: {tsph.vec3f(pool_data.container_size/2, pool_data.container_height/2, pool_data.container_size/2)}")
+print(f"[POOL INFO] fluid height position in the pool: {pool_data.fluid_height-pool_data.container_height/2}")
 
 '''INIT AN FLUID PARTICLE OBJECT'''
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
@@ -254,7 +280,7 @@ def run(loop):
 
 ''' RUN THE SIMULATION '''
 prep()
-run(loop_ism)
+vis_run(loop_ism)
 
 
 

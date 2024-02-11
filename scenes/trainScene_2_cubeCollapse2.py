@@ -24,10 +24,10 @@ part_size = sense_cell_size[None] / 12
 max_time_step = part_size/100
 k_vis = 5e-5
 world = World(dim=2)
-world.setWorldPartSize(part_size)
-world.setWorldDt(max_time_step)
+world.setPartSize(part_size)
+world.setDt(max_time_step)
 
-print('default dt', world.getWorldDt())
+print('default dt', world.getdDt())
 
 '''BASIC SETTINGS FOR FLUID'''
 fluid_rest_density = 1000
@@ -46,9 +46,9 @@ fluid_part.instantiate_from_template(part_template, world)
 '''PUSH PARTICLES TO THE OBJECT'''
 fluid_part.open_stack(fluid_part_num)
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos)
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize())
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getObjPartSize()**world.getWorldDim())
-fluid_part.fill_open_stack_with_val(fluid_part.mass, fluid_rest_density*fluid_part.getObjPartSize()**world.getWorldDim())
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize())
+fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.getDim())
+fluid_part.fill_open_stack_with_val(fluid_part.mass, fluid_rest_density*fluid_part.getPartSize()**world.getDim())
 fluid_part.fill_open_stack_with_val(fluid_part.rest_density, fluid_rest_density)
 fluid_part.fill_open_stack_with_val(fluid_part.rgb, vec3f([0.0, 0.0, 1.0]))
 fluid_part.fill_open_stack_with_val(fluid_part.k_vis, k_vis)
@@ -62,9 +62,9 @@ world.attachPartObj(bound_part)
 bound_part.instantiate_from_template(part_template, world)
 bound_part.open_stack(bound_part_num)
 bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
-bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getObjPartSize()**world.getWorldDim())
-bound_part.fill_open_stack_with_val(bound_part.mass, bound_rest_density*bound_part.getObjPartSize()**world.getWorldDim())
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getPartSize()**world.getDim())
+bound_part.fill_open_stack_with_val(bound_part.mass, bound_rest_density*bound_part.getPartSize()**world.getDim())
 bound_part.fill_open_stack_with_val(bound_part.rest_density, bound_rest_density)
 fluid_part.fill_open_stack_with_val(bound_part.rgb, vec3f([0.0, 0.0, 0.0]))
 bound_part.fill_open_stack_with_val(bound_part.k_vis, k_vis)
@@ -77,8 +77,8 @@ sense_grid_part.instantiate_from_template(grid_template, world)
 sense_grid_part.open_stack(sense_cube_data.num)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.pos, sense_cube_data.pos)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.node_index, sense_cube_data.index)
-sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.getObjPartSize())
-sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, sense_grid_part.getObjPartSize()**world.getWorldDim())
+sense_grid_part.fill_open_stack_with_val(sense_grid_part.size, sense_grid_part.getPartSize())
+sense_grid_part.fill_open_stack_with_val(sense_grid_part.volume, sense_grid_part.getPartSize()**world.getDim())
 sense_grid_part.close_stack()
 
 
@@ -88,7 +88,7 @@ neighb_list=[fluid_part, bound_part]
 
 fluid_part.add_module_neighb_search()
 bound_part.add_module_neighb_search()
-sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part.getObjPartNum()*32))
+sense_grid_part.add_module_neighb_search(max_neighb_num=val_i(fluid_part.getPartNum()*32))
 
 fluid_part.add_neighb_objs(neighb_list)
 bound_part.add_neighb_objs(neighb_list)
@@ -153,15 +153,15 @@ def run(loop):
     sim_time = float(0.0)
     loop_count = int(0)
 
-    gui2d_part = Gui2d(objs=[fluid_part, bound_part], radius=world.getWorldPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
-    gui2d_grid = Gui2d(objs=[sense_grid_part], radius=sense_grid_part.getObjPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
+    gui2d_part = Gui2d(objs=[fluid_part, bound_part], radius=world.getPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
+    gui2d_grid = Gui2d(objs=[sense_grid_part], radius=sense_grid_part.getPartSize(), lb=vec2f([-8,-8]),rt=vec2f([8,8]))
 
     while timer < output_frame_num:
         is_log_loop = sim_time > timer*inv_fps
 
         loop(is_log_loop)
         loop_count += 1
-        sim_time += world.getWorldDt()
+        sim_time += world.getdDt()
 
         if(is_log_loop):
             

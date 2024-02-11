@@ -26,8 +26,8 @@ kinematic_viscosity_fluid_inter = 0.0
 kinematic_viscosity_fluid_inner = 0.0
 
 world = World(dim=2)
-world.setWorldPartSize(part_size)
-world.setWorldDt(max_time_step)
+world.setPartSize(part_size)
+world.setDt(max_time_step)
 world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],[500,500,1000])
 
 '''BASIC SETTINGS FOR FLUID'''
@@ -200,7 +200,7 @@ def loop_JL21():
     fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
 
     dt, max_vec = world.get_cfl_dt_obj(fluid_part, 0.5, max_time_step)
-    world.setWorldDt(dt)    
+    world.setDt(dt)    
 
 
 def vis_run(loop):
