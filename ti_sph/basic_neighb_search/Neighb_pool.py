@@ -63,9 +63,10 @@ class Neighb_pool(Solver):
         
         if max_neighb_part_num == 0:
             self.max_neighb_part_num = val_i(obj.getPartNum() * self.getObj().getWorld().g_avg_neighb_part_num[None])
+            # self.max_neighb_part_num = None
         else:
             self.max_neighb_part_num = val_i(max_neighb_part_num[None])
-
+        print("max_neighb_part_num: ", self.max_neighb_part_num)
         self.max_neighb_obj_num = val_i(self.getObj().getWorld().g_obj_num[None])
 
         self.neighb_obj_list = []  # Particle class
@@ -185,7 +186,7 @@ class Neighb_pool(Solver):
                     dist = (self.tiGetObj().tiGetPos(part_id) - neighbObj.tiGetPos(neighb_part_id)).norm()
                     ''' register the neighbouring particle '''
                     if dist < search_range:
-                        pointer = self.insert_a_part(part_id, neighbObj.tiGetId()[None], neighb_part_id)
+                        pointer = self.insert_a_part(part_id, neighbObj.tiGetId(), neighb_part_id)
                         
                         ''' [DIY AREA] '''
                         ''' You can add attributes you want to be pre-computed here '''
@@ -194,7 +195,7 @@ class Neighb_pool(Solver):
                         self.tiSet_cachedW(pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
                         self.tiSet_cachedGradW(pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pointer))
 
-            self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetId()[None], self.tiGet_partNeighbSize(part_id) - size_before)
+            self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetId(), self.tiGet_partNeighbSize(part_id) - size_before)
 
     ''' insert a neighbouring particle into the linked list'''
     @ti.func

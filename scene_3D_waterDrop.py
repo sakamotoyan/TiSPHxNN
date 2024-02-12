@@ -13,7 +13,7 @@ output_path = '../output'
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, device_memory_GB=15)
-ti.init(arch=ti.vulkan)
+ti.init(arch=ti.cuda, offline_cache=True)
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -22,9 +22,9 @@ fps = 60
 output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
-scaling_factor = 2
+scaling_factor = 0.2
 # size of the particle
-part_size = 0.1 
+part_size = 0.01 
 # max time step size
 max_time_step = part_size/100
 sense_cell_size = part_size*2.5
@@ -33,7 +33,7 @@ kinematic_viscosity_fluid = 1e-4
 
 ''' INIT SIMULATION WORLD '''
 # create a 3D world
-world = tsph.World(dim=3) 
+world = tsph.World(dim=3, lb=-2, rt=2) 
 # set the particle diameter
 world.setPartSize(part_size) 
 # set the max time step size

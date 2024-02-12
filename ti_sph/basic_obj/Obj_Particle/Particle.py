@@ -19,7 +19,7 @@ class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod
     ):
 
         self.m_world = None
-        self.m_id = None    
+        self.m_id = val_i(-1)    
         
         Obj.__init__(self, is_dynamic)
         Mod_Solvers.__init__(self)

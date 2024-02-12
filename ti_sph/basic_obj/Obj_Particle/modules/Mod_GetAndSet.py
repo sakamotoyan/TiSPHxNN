@@ -36,10 +36,10 @@ class Mod_GetAndSet:
         self.m_world = world
     @ti.func
     def tiGetId(self):
-        return self.m_id
+        return self.m_id[None]
     @ti.func
-    def tiSetId(self, id):
-        self.m_id = id
+    def tiSetId(self, id:int):
+        self.m_id[None] = id
 
     def getStackTop(self)->int:
         return self.m_stack_top[None]
@@ -62,9 +62,9 @@ class Mod_GetAndSet:
     def setWorld(self, world):
         self.m_world = world
     def getId(self):
-        return self.m_id
-    def setId(self, id):
-        self.m_id = id
+        return self.m_id[None]
+    def setId(self, id:int):
+        self.m_id[None] = id
 
     ''' particle basic physical attrs get&set '''
 

@@ -8,7 +8,7 @@ from ..basic_solvers.Solver import Solver
 OUT_OF_RANGE = -1
 
 @ti.data_oriented
-class NeighbGrid(Solver):
+class Neighb_cell(Solver):
     def __init__(
             self,
             obj: Particle, # Particle class
@@ -33,6 +33,8 @@ class NeighbGrid(Solver):
         self.cell_num_vec = vecx_i(self.dim[None])
         self.cell_coder = vecx_i(self.dim[None])
         self.calculate_cell_param()
+
+        print("cell_num: ", self.cell_num[None])
         
         self.part_num_in_cell = ti.field(ti.i32, (self.cell_num[None]))
         self.cell_begin_pointer = ti.field(ti.i32, (self.cell_num[None]))

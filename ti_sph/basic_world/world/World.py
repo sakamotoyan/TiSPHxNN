@@ -219,7 +219,7 @@ class World:
     
     def attachPartObj(self, partObj):
         self.part_obj_list.append(partObj)
-        partObj.setId(val_i(self.part_obj_list.index(partObj)))
+        partObj.setId(self.part_obj_list.index(partObj))
         partObj.setWorld(self)
     
     def init_modules(self):

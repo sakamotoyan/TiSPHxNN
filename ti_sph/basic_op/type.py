@@ -59,7 +59,7 @@ def vec4_f(a=0):
     vec4f.fill(a)
     return vec4f
 
-def val_f(val=0):
+def val_f(val=0.0):
     obj = ti.field(ti.f32, ())
     obj[None] = val
     return obj

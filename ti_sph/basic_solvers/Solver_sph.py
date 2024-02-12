@@ -21,8 +21,8 @@ class SPH_solver(Solver):
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId()[None])
-            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId()[None])
+            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId())
+            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
             for neighb_part_iter in range(neighbPart_num):
                 neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
