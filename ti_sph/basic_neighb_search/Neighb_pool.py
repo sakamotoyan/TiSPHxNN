@@ -91,20 +91,35 @@ class Neighb_pool(Solver):
         self.poolContainer_neighbPartId = ti.field(ti.i32)
         self.poolContainer_neighbObjId = ti.field(ti.i32)
         self.poolContainer_next = ti.field(ti.i32)
+
+
         ti.root.dense(ti.i, self.max_neighb_part_num[None]).place(
             self.poolContainer_neighbPartId,
             self.poolContainer_neighbObjId,
             self.poolContainer_next)
+        
+        # ti.root.pointer(ti.i, self.max_neighb_part_num[None]//4096+1).bitmasked(ti.i, 4096).place(
+        #     self.poolContainer_neighbPartId,
+        #     self.poolContainer_neighbObjId,
+        #     self.poolContainer_next)
 
         self.poolCachedAttr_dist = ti.field(ti.f32)
         self.poolCachedAttr_xijNorm = ti.Vector.field(self.getObj().getWorld().getDim(), ti.f32)
         self.poolCachedAttr_W = ti.field(ti.f32)
         self.poolCachedAttr_gradW = ti.Vector.field(self.getObj().getWorld().getDim(), ti.f32)
+
+
         ti.root.dense(ti.i, self.max_neighb_part_num[None]).place(
             self.poolCachedAttr_dist,
             self.poolCachedAttr_xijNorm,
             self.poolCachedAttr_W,
             self.poolCachedAttr_gradW)
+        
+        # ti.root.pointer(ti.i, self.max_neighb_part_num[None]//4096+1).bitmasked(ti.i, 4096).place(
+        #     self.poolCachedAttr_dist,
+        #     self.poolCachedAttr_xijNorm,
+        #     self.poolCachedAttr_W,
+        #     self.poolCachedAttr_gradW)
 
         self.neighb_pool_used_space = val_i(0)
         self.neighb_pool_size = ti.static(self.max_neighb_part_num)

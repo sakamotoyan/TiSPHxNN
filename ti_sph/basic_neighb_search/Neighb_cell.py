@@ -29,15 +29,21 @@ class Neighb_cell(Solver):
         self.parameter_cehck()
 
         # 计算网格数量(cell_num_vec, cell_num) 并准备好网格编码器(cell_coder)
-        self.cell_num = val_i()
+        self.cell_num = val_u(0)
         self.cell_num_vec = vecx_i(self.dim[None])
         self.cell_coder = vecx_i(self.dim[None])
         self.calculate_cell_param()
 
         print("cell_num: ", self.cell_num[None])
         
-        self.part_num_in_cell = ti.field(ti.i32, (self.cell_num[None]))
-        self.cell_begin_pointer = ti.field(ti.i32, (self.cell_num[None]))
+        self.part_num_in_cell = ti.field(ti.u8, (self.cell_num[None]))
+        self.cell_begin_pointer = ti.field(ti.u32, (self.cell_num[None]))
+
+        # self.part_num_in_cell = ti.field(ti.i32)
+        # ti.root.pointer(ti.i, self.cell_num[None]//4096+1).bitmasked(ti.i, 4096).place(self.part_num_in_cell)
+        # self.cell_begin_pointer = ti.field(ti.i32)
+        # ti.root.dynamic(ti.i, 4096, 2**20).place(self.cell_begin_pointer)
+        # ti.root.pointer(ti.i, self.cell_num[None]//4096+1).bitmasked(ti.i, 4096).place(self.cell_begin_pointer)
 
         self.cell_id_of_part = ti.field(ti.i32, (self.getObj().getPartNum()))
         self.part_pointer_shift = ti.field(ti.i32, (self.getObj().getPartNum())) # 用于计算part在cell中的偏移
@@ -149,10 +155,6 @@ class Neighb_cell(Solver):
             if self.part_pointer_shift[part_id] != OUT_OF_RANGE:
                 part_pointer = self.cell_begin_pointer[cell_id] + self.part_pointer_shift[part_id]
                 self.part_id_container[part_pointer] = part_id
-    
-
-
-
 
     # DEBUG FUNCTION
     @ti.kernel

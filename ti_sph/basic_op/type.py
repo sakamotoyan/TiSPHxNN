@@ -69,6 +69,11 @@ def val_i(val=0):
     obj[None] = int(val)
     return obj
 
+def val_u(val=0):
+    obj = ti.field(ti.u32, ())
+    obj[None] = int(val)
+    return obj
+
 def val_ii(val=0):
     obj = ti.field(ti.i64, ())
     obj[None] = int(val)

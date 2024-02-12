@@ -24,7 +24,7 @@ output_frame_num = 2000
 ''' SETTINGS SIMULATION '''
 scaling_factor = 0.2
 # size of the particle
-part_size = 0.01 
+part_size = 0.010 
 # max time step size
 max_time_step = part_size/100
 sense_cell_size = part_size*2.5
