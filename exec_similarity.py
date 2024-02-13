@@ -87,13 +87,6 @@ def find_n_closest_frames(frame_number, n, exclude_local_frames, similarity_matr
     closest_frames = np.argsort(mse_values)[:n]
     return closest_frames, mse_values[closest_frames]
 
-def visualize_similarity_matrix(matrix):
-    plt.figure(figsize=(10, 8))
-    plt.imshow(matrix, cmap='hot', interpolation='nearest')
-    plt.title('Similarity Matrix based on MSE')
-    plt.colorbar()
-    plt.show()
-
 # Tooltip class for displaying frame information on hover
 class Tooltip:
     def __init__(self, widget, text):
@@ -116,12 +109,10 @@ class Tooltip:
         if self.tipwindow:
             self.tipwindow.destroy()
         self.tipwindow = None
-
-# Function to create a tooltip for a widget
-def create_tooltip(widget, text):
-    tooltip = Tooltip(widget, text)
-    widget.bind('<Enter>', lambda event: tooltip.show_tip())
-    widget.bind('<Leave>', lambda event: tooltip.hide_tip())
+    
+    def create(self):
+        self.widget.bind('<Enter>', lambda event: self.show_tip())
+        self.widget.bind('<Leave>', lambda event: self.hide_tip())
 
 # Function to handle image click event
 def on_image_click(frame_number, entry_frame_number, find_closest_frames_func):
@@ -170,30 +161,30 @@ class MSEGUIWithImages:
         # Measurement method dropdown
         self.label_measurement_method = tk.Label(master, text="Measurement Method:")
         self.label_measurement_method.pack()
-
-        self.measurement_method = tk.StringVar(master)
-        self.measurement_method.set("MSE")  # default value
-        self.measurement_dropdown = tk.OptionMenu(master, self.measurement_method, "MSE", "Cosine_distance")
+        self.measurement_method_tag = tk.StringVar(master)
+        self.measurement_method_tag.set("MSE")  # default value
+        self.measurement_dropdown = tk.OptionMenu(master, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.act_on_change_measurement)
         self.measurement_dropdown.pack()
+
+        # similarity matrix visualization button
+        self.visualize_button = tk.Button(master, text="Visualize Similarity Matrix", command=self.act_on_visualize)
+        self.visualize_button.pack()
 
         # Image source dropdown
         self.label_image_source = tk.Label(master, text="Image Source:")
         self.label_image_source.pack()
 
-        self.image_source = tk.StringVar(master)
-        self.image_source.set("sci_output_vorticity")  # default value
-        self.image_source_dropdown = tk.OptionMenu(master, self.image_source, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity")
+        self.image_source_tag = tk.StringVar(master)
+        self.image_source_tag.set("sci_output_vorticity")  # default value
+        self.image_source_dropdown = tk.OptionMenu(master, self.image_source_tag, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity",
+                                                   command=self.act_on_change_source)
         self.image_source_dropdown.pack()
 
         # Find button
         self.label_measurement_method = tk.Label(master, text=" ")
         self.label_measurement_method.pack()
-        self.find_button = tk.Button(master, text="Find Closest Frames", command=self.refresh)
+        self.find_button = tk.Button(master, text="Find Closest Frames", command=self.act_on_find)
         self.find_button.pack()
-
-        # Results text area
-        # self.results_text = scrolledtext.ScrolledText(master, height=10)
-        # self.results_text.pack()
 
         # Create a canvas and a scrollbar
         self.canvas = tk.Canvas(master)
@@ -215,23 +206,31 @@ class MSEGUIWithImages:
         # Initialize an empty list for dynamically created row frames
         self.row_frames = []
 
-    def compute(self):
+        self.load_data()
+        self.compute_similarity()
+        self.compute_closest_frames()
+        self.show_imgs()
+
+    def load_data(self, _=None):
         self.frame_number         = int(self.entry_frame_number.get())
         self.n_closest            = int(self.entry_n_closest.get())
         self.exclude_local_frames = int(self.entry_exclude_local.get())
-        self.measurement          = self.measurement_method.get().lower().replace(" ", "_")  # Convert to lowercase and replace spaces with underscores
-
+        self.image_source         = self.image_source_tag.get()
+        self.measurement_method   = self.measurement_method_tag.get().lower().replace(" ", "_")
+    
+    def compute_similarity(self, _=None):
         # Load frames and compute similarity matrix based on the selected method
         self.num_files            = inspect(self.path, self.attr_name)
         self.arrays               = load_arrays(self.path, self.attr_name, self.num_files)
-        self.similarity_matrix    = compute_similarity_matrix(self.arrays, self.measurement)
-        visualize_similarity_matrix(self.similarity_matrix)
-
+        self.similarity_matrix    = compute_similarity_matrix(self.arrays, self.measurement_method)
+    
+    def compute_closest_frames(self, _=None):
         self.closest_frames, self.mse_values \
                                   = find_n_closest_frames(self.frame_number, self.n_closest, self.exclude_local_frames, self.similarity_matrix)
+
         
-    def show(self):
-        source = self.image_source.get()
+    def show_imgs(self, _=None):
+        source = self.image_source
 
         # Clear previous images and rows from the scrollable frame
         for widget in self.scrollable_frame.winfo_children():
@@ -256,7 +255,7 @@ class MSEGUIWithImages:
         selected_label.pack(side=tk.LEFT)
 
         selected_frame_info = f"Selected Frame {self.frame_number}"
-        create_tooltip(selected_label, selected_frame_info)
+        Tooltip(selected_label, selected_frame_info).create()
 
         # Initialize variables for creating new rows
         row_frame = None
@@ -284,25 +283,44 @@ class MSEGUIWithImages:
             label.pack(side=tk.LEFT)
 
             # Bind the click event to the label to refresh on click
-            label.bind('<Button-1>', on_image_click(frame, self.entry_frame_number, self.refresh))
+            label.bind('<Button-1>', on_image_click(frame, self.entry_frame_number, self.act_on_click_image))
 
             # Create a tooltip for the image to show frame info
             frame_info = f"Frame {frame}, MSE: {mse:.4f}"
-            create_tooltip(label, frame_info)
+            Tooltip(label, frame_info).create()
 
-        # Clear and update the results text area
-        self.results_text.delete('1.0', tk.END)
-        for i, (frame, mse) in enumerate(zip(self.closest_frames, self.mse_values)):
-            self.results_text.insert(tk.END, f"{i+1}. Frame {frame} with MSE: {mse:.4f}\n")
+    def show_similarity_matrix(self, _=None):
+        plt.figure(figsize=(10, 8))
+        plt.imshow(self.similarity_matrix, cmap='hot', interpolation='nearest')
+        plt.title('Similarity Matrix based on MSE')
+        plt.colorbar()
+        plt.show()
 
+    def act_on_change_source(self, _=None):
+        self.load_data()
+        self.show_imgs()
 
-    def refresh(self):
-        self.compute()
-        self.show()
+    def act_on_find(self, _=None):
+        self.load_data()
+        self.compute_closest_frames()
+        self.show_imgs()
+    
+    def act_on_change_measurement(self, _=None):
+        self.load_data()
+        self.compute_similarity()
+        self.compute_closest_frames()
+        self.show_imgs()
 
-# num_files = inspect(data_path, attr_name)
-# arrays = load_arrays(data_path, attr_name, num_files)
-# similarity_matrix = compute_similarity_matrix(arrays, 'cosine')
+    def act_on_visualize(self, _=None):
+        self.show_similarity_matrix()
+
+    def act_on_click_image(self, _=None):
+        # self.entry_frame_number.delete(0, tk.END)
+        # self.entry_frame_number.insert(0, str(frame_number))
+        
+        self.load_data()
+        self.compute_closest_frames()
+        self.show_imgs()
 
 
 data_path = '../output'
@@ -312,9 +330,5 @@ attr_name = 'bottleneck'
 root = tk.Tk()
 gui = MSEGUIWithImages(root, data_path, attr_name)
 root.mainloop()
-
-# image_path = os.path.join(self.path, f'sci_output_vorticity_{frame}.png')
-
-# visualize_similarity_matrix(similarity_matrix)
 
 
