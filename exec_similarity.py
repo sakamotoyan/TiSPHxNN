@@ -114,16 +114,6 @@ class Tooltip:
         self.widget.bind('<Enter>', lambda event: self.show_tip())
         self.widget.bind('<Leave>', lambda event: self.hide_tip())
 
-# Function to handle image click event
-def on_image_click(frame_number, entry_frame_number, find_closest_frames_func):
-    """
-    Update the frame number input field and refresh the closest frames display.
-    """
-    def handler(event):
-        entry_frame_number.delete(0, tk.END)  # Clear the current entry
-        entry_frame_number.insert(0, str(frame_number))  # Update with the clicked frame number
-        find_closest_frames_func()  # Trigger the refresh of the display
-    return handler
 
 # GUI Application with Image Display
 class MSEGUIWithImages:
@@ -283,10 +273,10 @@ class MSEGUIWithImages:
             label.pack(side=tk.LEFT)
 
             # Bind the click event to the label to refresh on click
-            label.bind('<Button-1>', on_image_click(frame, self.entry_frame_number, self.act_on_click_image))
+            label.bind('<Button-1>', self.click_image_handler(frame))
 
             # Create a tooltip for the image to show frame info
-            frame_info = f"Frame {frame}, MSE: {mse:.4f}"
+            frame_info = f"Frame {frame}, Distance: {mse:.4f}"
             Tooltip(label, frame_info).create()
 
     def show_similarity_matrix(self, _=None):
@@ -313,14 +303,15 @@ class MSEGUIWithImages:
 
     def act_on_visualize(self, _=None):
         self.show_similarity_matrix()
-
-    def act_on_click_image(self, _=None):
-        # self.entry_frame_number.delete(0, tk.END)
-        # self.entry_frame_number.insert(0, str(frame_number))
-        
-        self.load_data()
-        self.compute_closest_frames()
-        self.show_imgs()
+    
+    def click_image_handler(self, frame_number):
+        def handler(event):
+            self.entry_frame_number.delete(0, tk.END)
+            self.entry_frame_number.insert(0, str(frame_number))
+            self.load_data()
+            self.compute_closest_frames()
+            self.show_imgs()
+        return handler
 
 
 data_path = '../output'
