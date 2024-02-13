@@ -6,8 +6,8 @@ output_path = '../output'
 input_path = output_path
 
 # Frame rate (frames per second) of the output video
-start_index = 0
-end_index = 186
+start_index = 1
+end_index = 476
 frame_rate = 24
 stride = 1
 
@@ -37,9 +37,9 @@ def process(file_name):
     # Release the video writer
     out.release()
 
-# process('sci_input_velocity')
+process('sci_input_velocity')
 process('sci_output_velocity')
-# process('sci_input_vorticity')
+process('sci_input_vorticity')
 process('sci_output_vorticity')
 # process('input_vorticity_hist')
 # process('output_vorticity_hist')
@@ -47,3 +47,5 @@ process('sci_output_vorticity')
 # process('strainRate_rotation')
 # process('strainRate_shear')
 # process('vel_hsv')
+
+process('frame_bottleneck')

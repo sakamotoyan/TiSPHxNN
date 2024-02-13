@@ -46,7 +46,7 @@ export CUDA_VISIBLE_DEVICES=$gpu
 if [[ $have_dataset -eq 1 ]]; then
     # Step 1: Check for dataset.zip in /root and unzip if not present
     if [ ! -f /root/dataset_train.zip ]; then
-        cp /workspace/dataset_train.zip /root
+        cp /workspace/dataset/dataset_train.zip /root
         unzip -qq /root/dataset_train.zip -d /root
     fi
 
