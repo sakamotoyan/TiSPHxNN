@@ -9,14 +9,14 @@ res = 256
 main_folder_path_list = ['../dataset_train', '../dataset_test2']
 
 submodule_type = 1
-bottleneck_type = 1
-model_epoch = 6749
+bottleneck_type = 0
+model_epoch = 3649
 
 main_folder_path = main_folder_path_list[1]
 if_crop = False
 number_of_frames = 477 #186 659
 
-network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size=512)
+network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size=32)
 
 
 model_folder_path = os.path.join('./model')
@@ -41,8 +41,8 @@ model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1,
                                     attr_name_3, dataset_file_path_3, 
                                     platform=platform, network=network)
 
-# model.test_conv(vel_model_file_path, test_result_vel_path, res=32)
-model.test(vel_model_file_path, test_result_vel_path, crop=if_crop, shuffle=False, export_bottleneck_layer=5)
+model.test_conv(vel_model_file_path, test_result_vel_path, res=64)
+# model.test(vel_model_file_path, test_result_vel_path, crop=if_crop, shuffle=False, export_bottleneck_layer=1)
 
 scivis_R2toR1(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_vorticity', stride=1)
 scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)

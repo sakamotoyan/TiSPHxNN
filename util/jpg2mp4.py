@@ -41,6 +41,8 @@ process('sci_input_velocity')
 process('sci_output_velocity')
 process('sci_input_vorticity')
 process('sci_output_vorticity')
+process('frame_bottleneck')
+
 # process('input_vorticity_hist')
 # process('output_vorticity_hist')
 # process('strainRate_compression')
@@ -48,4 +50,3 @@ process('sci_output_vorticity')
 # process('strainRate_shear')
 # process('vel_hsv')
 
-process('frame_bottleneck')

@@ -55,5 +55,5 @@ for i in range(np_normalized_arrays.shape[0]):
     plt.ylabel('Normalized Value')
     plt.title(f'Frame {i + 1}')
     plt.ylim([-1, 1])
-    plt.savefig(os.path.join(output_path, f'frame_bottleneck_{i + 1}.png'), dpi=300)  # Save the figure as PNG
+    plt.savefig(os.path.join(output_path, f'frame_bottleneck_{i + 1}.png'), dpi=200)  # Save the figure as PNG
     plt.close()  # Close the figure to free memory

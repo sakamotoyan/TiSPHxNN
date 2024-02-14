@@ -182,10 +182,17 @@ class Bottleneck_singleLayer(nn.Module):
 
             nn.Unflatten(1, (int(input_shape[0]), int(input_shape[1]), int(input_shape[2]))),
         )
+
+        self.feature_maps = {}
     
     def forward(self, x):
         x = self.bottleneck(x)
         return x
+    
+    def get_activation(self, name):
+        def hook(model, input, output):
+            self.feature_maps[name] = output.detach()
+        return hook
 
 '''
     TYPE 1: Bottleneck sandwich layers
