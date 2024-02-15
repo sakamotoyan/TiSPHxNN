@@ -14,7 +14,7 @@ output.csv
 *.ply
 *.gz
 output_organised
-output
+output/*
 output_video
 dist
 build

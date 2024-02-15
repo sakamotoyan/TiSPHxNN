@@ -41,8 +41,8 @@ model = TrainConvAutoencoder(res, attr_name_1, dataset_file_path_1,
                                     attr_name_3, dataset_file_path_3, 
                                     platform=platform, network=network)
 
-model.test_conv(vel_model_file_path, test_result_vel_path, res=64)
-# model.test(vel_model_file_path, test_result_vel_path, crop=if_crop, shuffle=False, export_bottleneck_layer=1)
+# model.test_conv(vel_model_file_path, test_result_vel_path, res=64)
+model.test(vel_model_file_path, test_result_vel_path, crop=if_crop, shuffle=False, export_bottleneck_layer=1)
 
 scivis_R2toR1(test_result_vel_path,  vis_path,  0, number_of_frames, 'output_vorticity', stride=1)
 scivis_R2toR1(test_result_vel_path,  test_result_vel_path,  0, number_of_frames, 'input_vorticity',  stride=1)

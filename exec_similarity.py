@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import tkinter as tk
+import tkinter as ttk
 from tkinter import scrolledtext
 from tkinter import Toplevel, Label
 from PIL import Image, ImageTk
@@ -102,7 +102,7 @@ class Tooltip:
         self.tipwindow = Toplevel(self.widget)
         self.tipwindow.wm_overrideredirect(True)
         self.tipwindow.wm_geometry(f"+{x}+{y}")
-        label = Label(self.tipwindow, text=self.text, justify=tk.LEFT, background="#ffffe0", relief=tk.SOLID, borderwidth=1, font=("tahoma", "8", "normal"))
+        label = Label(self.tipwindow, text=self.text, justify=ttk.LEFT, background="#ffffe0", relief=ttk.SOLID, borderwidth=1, font=("tahoma", "8", "normal"))
         label.pack(ipadx=1)
 
     def hide_tip(self):
@@ -125,61 +125,61 @@ class MSEGUIWithImages:
         self.attr_name = attr_name
 
         # Frame number input
-        self.label_frame_number = tk.Label(master, text="Frame Number:")
+        self.label_frame_number = ttk.Label(master, text="Frame Number:")
         self.label_frame_number.pack()
         
-        self.entry_frame_number = tk.Entry(master)
+        self.entry_frame_number = ttk.Entry(master)
         self.entry_frame_number.pack()
         self.entry_frame_number.insert(0, "50")
 
         # Number of closest frames input
-        self.label_n_closest = tk.Label(master, text="Number of closest frames:")
+        self.label_n_closest = ttk.Label(master, text="Number of closest frames:")
         self.label_n_closest.pack()
         
-        self.entry_n_closest = tk.Entry(master)
+        self.entry_n_closest = ttk.Entry(master)
         self.entry_n_closest.pack()
         self.entry_n_closest.insert(0, "30")
 
         # Exclude local frames input
-        self.label_exclude_local = tk.Label(master, text="Exclude local frames range:")
+        self.label_exclude_local = ttk.Label(master, text="Exclude local frames range:")
         self.label_exclude_local.pack()
         
-        self.entry_exclude_local = tk.Entry(master)
+        self.entry_exclude_local = ttk.Entry(master)
         self.entry_exclude_local.pack()
         self.entry_exclude_local.insert(0, "5")
 
         # Measurement method dropdown
-        self.label_measurement_method = tk.Label(master, text="Measurement Method:")
+        self.label_measurement_method = ttk.Label(master, text="Measurement Method:")
         self.label_measurement_method.pack()
-        self.measurement_method_tag = tk.StringVar(master)
+        self.measurement_method_tag = ttk.StringVar(master)
         self.measurement_method_tag.set("MSE")  # default value
-        self.measurement_dropdown = tk.OptionMenu(master, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.act_on_change_measurement)
+        self.measurement_dropdown = ttk.OptionMenu(master, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.act_on_change_measurement)
         self.measurement_dropdown.pack()
 
         # similarity matrix visualization button
-        self.visualize_button = tk.Button(master, text="Visualize Similarity Matrix", command=self.act_on_visualize)
+        self.visualize_button = ttk.Button(master, text="Visualize Similarity Matrix", command=self.act_on_visualize)
         self.visualize_button.pack()
 
         # Image source dropdown
-        self.label_image_source = tk.Label(master, text="Image Source:")
+        self.label_image_source = ttk.Label(master, text="Image Source:")
         self.label_image_source.pack()
 
-        self.image_source_tag = tk.StringVar(master)
+        self.image_source_tag = ttk.StringVar(master)
         self.image_source_tag.set("sci_output_vorticity")  # default value
-        self.image_source_dropdown = tk.OptionMenu(master, self.image_source_tag, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity",
+        self.image_source_dropdown = ttk.OptionMenu(master, self.image_source_tag, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity",
                                                    command=self.act_on_change_source)
         self.image_source_dropdown.pack()
 
         # Find button
-        self.label_measurement_method = tk.Label(master, text=" ")
+        self.label_measurement_method = ttk.Label(master, text=" ")
         self.label_measurement_method.pack()
-        self.find_button = tk.Button(master, text="Find Closest Frames", command=self.act_on_find)
+        self.find_button = ttk.Button(master, text="Find Closest Frames", command=self.act_on_find)
         self.find_button.pack()
 
         # Create a canvas and a scrollbar
-        self.canvas = tk.Canvas(master)
-        self.scrollbar = tk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas)
+        self.canvas = ttk.Canvas(master)
+        self.scrollbar = ttk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.canvas)
         # Configure the canvas to be scrollable
         self.scrollable_frame.bind(
             "<Configure>",
@@ -230,7 +230,7 @@ class MSEGUIWithImages:
         self.row_frames = []
 
         # Create the first row for the selected frame
-        selected_row_frame = tk.Frame(self.scrollable_frame)
+        selected_row_frame = ttk.Frame(self.scrollable_frame)
         selected_row_frame.pack()
         self.row_frames.append(selected_row_frame)
 
@@ -240,9 +240,9 @@ class MSEGUIWithImages:
         selected_img = selected_img.resize((100, 100))  # Resize for display
         selected_img_tk = ImageTk.PhotoImage(selected_img)
 
-        selected_label = tk.Label(selected_row_frame, image=selected_img_tk)
+        selected_label = ttk.Label(selected_row_frame, image=selected_img_tk)
         selected_label.image = selected_img_tk  # Keep a reference
-        selected_label.pack(side=tk.LEFT)
+        selected_label.pack(side=ttk.LEFT)
 
         selected_frame_info = f"Selected Frame {self.frame_number}"
         Tooltip(selected_label, selected_frame_info).create()
@@ -257,7 +257,7 @@ class MSEGUIWithImages:
 
             # Create a new row frame if needed
             if col_index == 0:
-                row_frame = tk.Frame(self.scrollable_frame)
+                row_frame = ttk.Frame(self.scrollable_frame)
                 row_frame.pack()
                 self.row_frames.append(row_frame)
 
@@ -268,9 +268,9 @@ class MSEGUIWithImages:
             img_tk = ImageTk.PhotoImage(img)
 
             # Create a label for the image in the current row frame and display it
-            label = tk.Label(row_frame, image=img_tk)
+            label = ttk.Label(row_frame, image=img_tk)
             label.image = img_tk  # Keep a reference to avoid garbage collection
-            label.pack(side=tk.LEFT)
+            label.pack(side=ttk.LEFT)
 
             # Bind the click event to the label to refresh on click
             label.bind('<Button-1>', self.click_image_handler(frame))
@@ -306,7 +306,7 @@ class MSEGUIWithImages:
     
     def click_image_handler(self, frame_number):
         def handler(event):
-            self.entry_frame_number.delete(0, tk.END)
+            self.entry_frame_number.delete(0, ttk.END)
             self.entry_frame_number.insert(0, str(frame_number))
             self.load_data()
             self.compute_closest_frames()
@@ -318,7 +318,7 @@ data_path = '../output'
 attr_name = 'bottleneck'
 
 # Main loop
-root = tk.Tk()
+root = ttk.Tk()
 gui = MSEGUIWithImages(root, data_path, attr_name)
 root.mainloop()
 
