@@ -117,68 +117,68 @@ class Tooltip:
 
 # GUI Application with Image Display
 class MSEGUIWithImages:
-    def __init__(self, master, path, attr_name):
-        self.master = master
-        master.title("Closest Frames Finder with Image Rows")
+    def __init__(self, path, attr_name):
+        self.master = ttk.Tk()
+        self.master.title("Closest Frames Finder with Image Rows")
 
         self.path = path
         self.attr_name = attr_name
 
         # Frame number input
-        self.label_frame_number = ttk.Label(master, text="Frame Number:")
+        self.label_frame_number = ttk.Label(self.master, text="Frame Number:")
         self.label_frame_number.pack()
         
-        self.entry_frame_number = ttk.Entry(master)
+        self.entry_frame_number = ttk.Entry(self.master)
         self.entry_frame_number.pack()
         self.entry_frame_number.insert(0, "50")
 
         # Number of closest frames input
-        self.label_n_closest = ttk.Label(master, text="Number of closest frames:")
+        self.label_n_closest = ttk.Label(self.master, text="Number of closest frames:")
         self.label_n_closest.pack()
         
-        self.entry_n_closest = ttk.Entry(master)
+        self.entry_n_closest = ttk.Entry(self.master)
         self.entry_n_closest.pack()
         self.entry_n_closest.insert(0, "30")
 
         # Exclude local frames input
-        self.label_exclude_local = ttk.Label(master, text="Exclude local frames range:")
+        self.label_exclude_local = ttk.Label(self.master, text="Exclude local frames range:")
         self.label_exclude_local.pack()
         
-        self.entry_exclude_local = ttk.Entry(master)
+        self.entry_exclude_local = ttk.Entry(self.master)
         self.entry_exclude_local.pack()
         self.entry_exclude_local.insert(0, "5")
 
         # Measurement method dropdown
-        self.label_measurement_method = ttk.Label(master, text="Measurement Method:")
+        self.label_measurement_method = ttk.Label(self.master, text="Measurement Method:")
         self.label_measurement_method.pack()
-        self.measurement_method_tag = ttk.StringVar(master)
+        self.measurement_method_tag = ttk.StringVar(self.master)
         self.measurement_method_tag.set("MSE")  # default value
-        self.measurement_dropdown = ttk.OptionMenu(master, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.act_on_change_measurement)
+        self.measurement_dropdown = ttk.OptionMenu(self.master, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.act_on_change_measurement)
         self.measurement_dropdown.pack()
 
         # similarity matrix visualization button
-        self.visualize_button = ttk.Button(master, text="Visualize Similarity Matrix", command=self.act_on_visualize)
+        self.visualize_button = ttk.Button(self.master, text="Visualize Similarity Matrix", command=self.act_on_visualize)
         self.visualize_button.pack()
 
         # Image source dropdown
-        self.label_image_source = ttk.Label(master, text="Image Source:")
+        self.label_image_source = ttk.Label(self.master, text="Image Source:")
         self.label_image_source.pack()
 
-        self.image_source_tag = ttk.StringVar(master)
+        self.image_source_tag = ttk.StringVar(self.master)
         self.image_source_tag.set("sci_output_vorticity")  # default value
-        self.image_source_dropdown = ttk.OptionMenu(master, self.image_source_tag, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity",
+        self.image_source_dropdown = ttk.OptionMenu(self.master, self.image_source_tag, "sci_output_vorticity", "sci_input_vorticity", "sci_input_velocity", "sci_output_velocity",
                                                    command=self.act_on_change_source)
         self.image_source_dropdown.pack()
 
         # Find button
-        self.label_measurement_method = ttk.Label(master, text=" ")
+        self.label_measurement_method = ttk.Label(self.master, text=" ")
         self.label_measurement_method.pack()
-        self.find_button = ttk.Button(master, text="Find Closest Frames", command=self.act_on_find)
+        self.find_button = ttk.Button(self.master, text="Find Closest Frames", command=self.act_on_find)
         self.find_button.pack()
 
         # Create a canvas and a scrollbar
-        self.canvas = ttk.Canvas(master)
-        self.scrollbar = ttk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
+        self.canvas = ttk.Canvas(self.master)
+        self.scrollbar = ttk.Scrollbar(self.master, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = ttk.Frame(self.canvas)
         # Configure the canvas to be scrollable
         self.scrollable_frame.bind(
@@ -200,6 +200,9 @@ class MSEGUIWithImages:
         self.compute_similarity()
         self.compute_closest_frames()
         self.show_imgs()
+
+    def run(self):
+        self.master.mainloop()
 
     def load_data(self, _=None):
         self.frame_number         = int(self.entry_frame_number.get())
@@ -318,8 +321,7 @@ data_path = '../output'
 attr_name = 'bottleneck'
 
 # Main loop
-root = ttk.Tk()
-gui = MSEGUIWithImages(root, data_path, attr_name)
-root.mainloop()
+gui = MSEGUIWithImages(data_path, attr_name)
+gui.run()
 
 
