@@ -153,22 +153,28 @@ class Frame_SimilaritySearchCompute:
     def __init__(self, root, Frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad):
         self.root = root
         self.Frame_SimilaritySearchLoad = Frame_SimilaritySearchLoad
+        self.similarity_matrix_list = None
         self.similarity_matrix = None
+        self.method_menu = ["MSE", "Cosine_distance"]
 
         bold_font =                     font.Font(family="Helvetica", weight="bold")
         self.frame =                    ttk.LabelFrame(self.root, text="Step 2: Compute Similarity Matrix", font=bold_font)
 
+        self.button_compute_all =       ttk.Button(self.frame, text="Compute All", command=self.compute_all_similarity_matrix)
+        self.label_compute_status =     ttk.Label(self.frame, text="Compute Status:", width=lable_width, anchor='w')
         self.label_measurement_method = ttk.Label(self.frame, text="Measurement Method:", anchor='w', width=lable_width)
         self.measurement_method_tag =   ttk.StringVar(self.frame)
         self.measurement_method_tag.set("None") 
-        self.measurement_dropdown =     ttk.OptionMenu(self.frame, self.measurement_method_tag, "MSE", "Cosine_distance", command=self.compute_similarity_matrix_and_draw)
+        self.measurement_dropdown =     ttk.OptionMenu(self.frame, self.measurement_method_tag, *self.method_menu, command=self.draw_similarity_matrix)
         
-        self.fig = Figure(figsize=(5, 4), dpi=100)
-        self.plot = self.fig.add_subplot(1, 1, 1)
-        self.canvas = FigureCanvasTkAgg(self.fig, self.frame)
+        self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.plot = self.figure.add_subplot(1, 1, 1)
+        self.canvas = FigureCanvasTkAgg(self.figure, self.frame)
 
-        self.label_measurement_method.grid(row=1, column=0, sticky="w")
-        self.measurement_dropdown.grid(    row=1, column=1, sticky="we")
+        self.button_compute_all.grid(           row=0, column=0, sticky="w")
+        self.label_compute_status.grid(         row=0, column=1, sticky="w")
+        self.label_measurement_method.grid(     row=1, column=0, sticky="w")
+        self.measurement_dropdown.grid(         row=1, column=1, sticky="we")
         self.canvas.get_tk_widget().grid(       row=2, column=0, columnspan=2, sticky="nsew")
         self.canvas.get_tk_widget().grid(       row=2, column=0, columnspan=2, sticky="nsew")
         self.canvas.get_tk_widget().grid_forget()
@@ -188,39 +194,46 @@ class Frame_SimilaritySearchCompute:
         cosine_distance = 1 - cosine_similarity
         return cosine_distance
     
-    def compute_similarity_matrix_and_draw(self, _=None):
-        self.similarity_matrix = self.compute_similarity_matrix()
-        self.draw_similarity_matrix()
+    def compute_all_similarity_matrix(self, _=None):
+        self.similarity_matrix_list = []
+        for method in self.method_menu:
+            self.similarity_matrix_list.append(self.compute_similarity_matrix(method))
+        self.label_compute_status.config(text="Compute Status: Successfull")
     
-    def compute_similarity_matrix(self):
-        method = self.measurement_method_tag.get()
-        if method == "None" or self.Frame_SimilaritySearchLoad.arr_bottleneck is None:
-            return
+    def compute_similarity_matrix(self, method):
         n_frames = self.Frame_SimilaritySearchLoad.num_files
         similarity_matrix = np.zeros((n_frames, n_frames))
         for i in range(n_frames):
             for j in range(n_frames):
                 frame1 = self.Frame_SimilaritySearchLoad.arr_bottleneck[i]
                 frame2 = self.Frame_SimilaritySearchLoad.arr_bottleneck[j]
-                if method == "MSE":
+                if method == self.method_menu[0]:
                     similarity_matrix[i, j] = self.mse(frame1, frame2)
-                elif method == "Cosine_distance":
+                elif method == self.method_menu[1]:
                     similarity_matrix[i, j] = self.cosine_distance(frame1.flatten(), frame2.flatten())
-        self.similarity_matrix = similarity_matrix
         return similarity_matrix
     
-    def draw_similarity_matrix(self):
+    def draw_similarity_matrix(self, _=None):
+        self.similarity_matrix = self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
         if self.similarity_matrix is None or self.Frame_SimilaritySearchLoad.arr_bottleneck is None:
             return
+        
         self.plot.clear()
-        self.plot.imshow(self.similarity_matrix, cmap='viridis')
+        im = self.plot.imshow(self.similarity_matrix, cmap='viridis')
+        if not hasattr(self, 'cbar'):  # Check if the colorbar attribute exists
+            self.cbar = self.figure.colorbar(im, ax=self.plot)
+        self.cbar.update_normal(im)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(row=2, column=0, columnspan=2, sticky="nsew")
 
 
-class Frame_SimilaritySearchFind:
-    def __init__(self, root):
+class Frame_SimilaritySearchNClosest:
+    def __init__(self, root, Frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad, Frame_SimilaritySearchCompute:Frame_SimilaritySearchCompute):
         self.root = root
+        self.Frame_SimilaritySearchLoad = Frame_SimilaritySearchLoad
+        self.Frame_SimilaritySearchCompute = Frame_SimilaritySearchCompute
+        self.display_menu = ["Input Velocity", "Input Vorticity", "Output Velocity", "Output Vorticity"]
+
         bold_font = font.Font(family="Helvetica", weight="bold")
         self.frame = ttk.LabelFrame(self.root, text="Step 3: Find Similar Frames", font=bold_font)
 
@@ -230,6 +243,10 @@ class Frame_SimilaritySearchFind:
         self.entry_frame_number =       ttk.Entry(self.frame)
         self.entry_n_closest =          ttk.Entry(self.frame)
         self.entry_exclude_local =      ttk.Entry(self.frame)
+        self.botton_find_n_closest =    ttk.Button(self.frame, text="Find", command=self.find_n_closest_frames)
+        self.display_tag =              ttk.StringVar(self.frame)
+        self.display_tag.set(self.display_menu[0])
+        self.display_dropdown =         ttk.OptionMenu(self.frame, self.display_tag, *self.display_menu)
 
         self.label_frame_number.grid(      row=2, column=0, sticky="w")
         self.label_n_closest.grid(         row=3, column=0, sticky="w")
@@ -237,7 +254,33 @@ class Frame_SimilaritySearchFind:
         self.entry_frame_number.grid(      row=2, column=1, sticky="w")
         self.entry_n_closest.grid(         row=3, column=1, sticky="w")
         self.entry_exclude_local.grid(     row=4, column=1, sticky="w")
+        self.botton_find_n_closest.grid(   row=5, column=0, sticky="w")
+        self.display_dropdown.grid(        row=5, column=1, sticky="we")
 
         self.entry_frame_number.insert(0, "50")
         self.entry_n_closest.insert(0, "30")
         self.entry_exclude_local.insert(0, "5")
+
+    def find(self):
+        self.display = self.display_tag.get()
+        closest_frames, distances = self.find_n_closest_frames()
+        self.display_closest_frames(closest_frames, distances)
+
+    def find_n_closest_frames(self):
+        frame_number = int(self.entry_frame_number.get())
+        n = int(self.entry_n_closest.get())
+        exclude_local_frames = int(self.entry_exclude_local.get())
+
+        distance_values = np.copy(self.Frame_SimilaritySearchCompute.similarity_matrix[frame_number])
+        
+        # Set the MSE for the local range to infinity to exclude them
+        start = max(0, frame_number - exclude_local_frames)
+        end = min(len(distance_values), frame_number + exclude_local_frames + 1)
+        distance_values[start:end] = np.inf
+        
+        # Find the indexes of the n smallest MSE values excluding the local range
+        closest_frames = np.argsort(distance_values)[:n]
+        return closest_frames, distance_values[closest_frames]
+    
+    def display_closest_frames(self, closest_frames, distances):
+        pass
