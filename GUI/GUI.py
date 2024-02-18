@@ -16,12 +16,12 @@ class GUI:
         self.frame_load = Frame_SimilaritySearchLoad(self.root)
         self.frame_load.frame.grid(row=0, column=0, sticky="nsew")
 
-        self.frame_compute = Frame_SimilaritySearchCompute(self.root)
+        self.frame_compute = Frame_SimilaritySearchCompute(self.root, self.frame_load)
         self.frame_compute.frame.grid(row=1, column=0, sticky="nsew")
 
         # self.root.grid_rowconfigure(0, weight=1)
         # self.root.grid_rowconfigure(1, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
+        # self.root.grid_columnconfigure(0, weight=1)
 
         self.root.mainloop()
 
