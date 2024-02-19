@@ -249,10 +249,12 @@ class Frame_SimilaritySearchCompute:
         # Plot the distance line
         if selected_frame is not None and closest_frames is not None:
             distances = self.similarity_matrix[selected_frame, :]
-            self.plot_2.plot(distances, '-o', markersize=3)
+            self.plot_2.plot(distances, '-o', markersize=1, zorder=1)
+            self.plot_2.scatter(selected_frame, distances[selected_frame], color='red', s=10, edgecolor='black', zorder=2)
             self.plot_2.set_xlabel('Frame')
             self.plot_2.set_ylabel('Distance')
             self.plot_2.set_title('Distances from Selected Frame')
+            
 
         # Join the x-axes of the two subplots
         self.plot.get_shared_x_axes().join(self.plot, self.plot_2)
@@ -297,15 +299,15 @@ class Frame_SimilaritySearchNClosest:
         self.label_frame_number.grid(       row=2, column=0, sticky="w")
         self.label_n_closest.grid(          row=3, column=0, sticky="w")
         self.label_exclude_local.grid(      row=4, column=0, sticky="w")
-        self.entry_frame_number.grid(       row=2, column=2, sticky="w")
-        self.entry_n_closest.grid(          row=3, column=2, sticky="w")
-        self.entry_exclude_local.grid(      row=4, column=2, sticky="w")
+        self.entry_frame_number.grid(       row=2, column=1, sticky="w")
+        self.entry_n_closest.grid(          row=3, column=1, sticky="w")
+        self.entry_exclude_local.grid(      row=4, column=1, sticky="w")
         self.botton_find_n_closest.grid(    row=5, column=0, sticky="w")
-        self.botton_find_n_closes_next.grid(row=5, column=1, sticky="w")
-        self.display_dropdown.grid(         row=5, column=2, sticky="we")
-        self.canvas_selected.grid(          row=6, column=0, columnspan=3, sticky="nsew")
-        self.frame_closest_imgs.grid(       row=7, column=0, columnspan=3, sticky="nsew")
-        self.frame.grid_rowconfigure(7, weight=1)
+        self.display_dropdown.grid(         row=5, column=1, sticky="we")
+        self.botton_find_n_closes_next.grid(row=6, column=0, sticky="w")
+        self.canvas_selected.grid(          row=7, column=0, columnspan=2, sticky="nsew")
+        self.frame_closest_imgs.grid(       row=8, column=0, columnspan=2, sticky="nsew")
+        self.frame.grid_rowconfigure(8, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
         self.entry_frame_number.insert(0, "50")
