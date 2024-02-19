@@ -167,9 +167,9 @@ class Frame_SimilaritySearchCompute:
         self.measurement_method_tag.set("None") 
         self.measurement_dropdown =     ttk.OptionMenu(self.frame, self.measurement_method_tag, *self.method_menu, command=self.draw_similarity_matrix)
         
-        self.figure = Figure(figsize=(4, 4), dpi=120)
+        self.figure = Figure(figsize=(4, 4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.figure, self.frame)
-        self.figure_2 = Figure(figsize=(4, 1.5), dpi=120)
+        self.figure_2 = Figure(figsize=(4, 1.5), dpi=100)
         self.canvas_2 = FigureCanvasTkAgg(self.figure_2, self.frame)
 
         self.button_compute_all.grid(           row=0, column=0, sticky="w")
@@ -279,19 +279,21 @@ class Frame_SimilaritySearchNClosest:
         bold_font = font.Font(family="Helvetica", weight="bold")
         self.frame = ttk.LabelFrame(self.root, text="Step 3: Find Similar Frames", font=bold_font)
 
+        self.frame_botton =                 ttk.Frame(self.frame)
+        self.frame_closest_imgs =           ttk.LabelFrame(self.frame, text="Closest Frames")
         self.label_frame_number =           ttk.Label(self.frame, text="Selected Frame:",            anchor='w', width=lable_width)
         self.label_n_closest =              ttk.Label(self.frame, text="Number of closest frames:",  anchor='w', width=lable_width)
         self.label_exclude_local =          ttk.Label(self.frame, text="Exclude local frames range:",anchor='w', width=lable_width)
         self.entry_frame_number =           ttk.Entry(self.frame)
         self.entry_n_closest =              ttk.Entry(self.frame)
         self.entry_exclude_local =          ttk.Entry(self.frame)
-        self.botton_find_n_closest =        ttk.Button(self.frame, text="Find", command=self.find)
-        self.botton_find_n_closes_next =    ttk.Button(self.frame, text="Find Next", command=self.find_next)
-        self.display_tag =                  ttk.StringVar(self.frame)
+        self.botton_find_n_closest =        ttk.Button(self.frame_botton, text="Find", command=self.find)
+        self.botton_find_n_closes_next =    ttk.Button(self.frame_botton, text="Find Next", command=self.find_next)
+        self.botton_find_n_closes_prev =    ttk.Button(self.frame_botton, text="Find Previous", command=self.find_prev)
+        self.display_tag =                  ttk.StringVar(self.frame_botton)
+        self.display_dropdown =             ttk.OptionMenu(self.frame_botton, self.display_tag, *self.attrType_menu)
         self.display_tag.set(self.attrType_menu[0])
-        self.display_dropdown =             ttk.OptionMenu(self.frame, self.display_tag, *self.attrType_menu)
         self.canvas_selected =              ttk.Canvas(self.frame, height=self.selected_img_size, width=self.selected_img_size*4)
-        self.frame_closest_imgs =           ttk.LabelFrame(self.frame, text="Closest Frames")
         self.canvas_closest_imgs =          ttk.Canvas(self.frame_closest_imgs)
         self.scrollbar =                    ttk.Scrollbar(self.frame_closest_imgs, orient="vertical", command=self.canvas_closest_imgs.yview)
         self.scrollable_frame =             ttk.Frame(self.canvas_closest_imgs)
@@ -302,12 +304,14 @@ class Frame_SimilaritySearchNClosest:
         self.entry_frame_number.grid(       row=2, column=1, sticky="w")
         self.entry_n_closest.grid(          row=3, column=1, sticky="w")
         self.entry_exclude_local.grid(      row=4, column=1, sticky="w")
-        self.botton_find_n_closest.grid(    row=5, column=0, sticky="w")
-        self.display_dropdown.grid(         row=5, column=1, sticky="we")
-        self.botton_find_n_closes_next.grid(row=6, column=0, sticky="w")
-        self.canvas_selected.grid(          row=7, column=0, columnspan=2, sticky="nsew")
-        self.frame_closest_imgs.grid(       row=8, column=0, columnspan=2, sticky="nsew")
-        self.frame.grid_rowconfigure(8, weight=1)
+        self.frame_botton.grid(             row=5, column=0, columnspan=2, sticky="w")
+        self.canvas_selected.grid(          row=6, column=0, columnspan=2, sticky="nsew")
+        self.frame_closest_imgs.grid(       row=7, column=0, columnspan=2, sticky="nsew")
+        self.botton_find_n_closes_prev.grid(row=0, column=0, sticky="w")
+        self.botton_find_n_closest.grid(    row=0, column=1, sticky="w")
+        self.botton_find_n_closes_next.grid(row=0, column=2, sticky="w")
+        self.display_dropdown.grid(         row=0, column=3, sticky="we")
+        self.frame.grid_rowconfigure(7, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
         self.entry_frame_number.insert(0, "50")
@@ -338,6 +342,12 @@ class Frame_SimilaritySearchNClosest:
         next_number = int(self.entry_frame_number.get()) + 1
         self.entry_frame_number.delete(0, ttk.END)
         self.entry_frame_number.insert(0, str(next_number))
+        self.find()
+
+    def find_prev(self):
+        prev_number = int(self.entry_frame_number.get()) - 1
+        self.entry_frame_number.delete(0, ttk.END)
+        self.entry_frame_number.insert(0, str(prev_number))
         self.find()
 
     def find_n_closest_frames(self):
