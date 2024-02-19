@@ -20,11 +20,12 @@ class GUI:
         self.frame_compute.frame.grid(row=1, column=0, sticky="nsew")
 
         self.frame_n_closest = Frame_SimilaritySearchNClosest(self.root, self.frame_load, self.frame_compute)
-        self.frame_n_closest.frame.grid(row=0, column=1, sticky="nsew")
+        self.frame_n_closest.frame.grid(row=0, column=1, sticky="nsew", rowspan=2)
 
-        # self.root.grid_rowconfigure(0, weight=1)
-        # self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(1, weight=1)
         # self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
 
         self.root.mainloop()
 

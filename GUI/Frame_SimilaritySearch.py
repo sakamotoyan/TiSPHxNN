@@ -8,6 +8,9 @@ from PIL import Image, ImageTk
 from tkinter import font
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.gridspec import GridSpec
+import math
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -23,6 +26,7 @@ class Frame_SimilaritySearchLoad:
 
         self.num_files = None
         self.arr_bottleneck = None
+        self.attrType_menu = ["Input Velocity", "Input Vorticity", "Output Velocity", "Output Vorticity"]
 
         self.root = root
         bold_font = font.Font(family="Helvetica", weight="bold")
@@ -30,10 +34,7 @@ class Frame_SimilaritySearchLoad:
 
         self.label_mainDir =                ttk.Label(self.frame, text="Main Directory:",        anchor='w', width=lable_width)
         self.label_bottleneck_name =        ttk.Label(self.frame, text="Bottleneck Name:",       anchor='w', width=lable_width)
-        self.label_input_velocity_name =    ttk.Label(self.frame, text="Input Velocity Name:",   anchor='w', width=lable_width)
-        self.label_input_vorticity_name =   ttk.Label(self.frame, text="Input Vorticity Name:",  anchor='w', width=lable_width)
-        self.label_output_velocity_name =   ttk.Label(self.frame, text="Output Velocity Name:",  anchor='w', width=lable_width)
-        self.label_output_vorticity_name =  ttk.Label(self.frame, text="Output Vorticity Name:", anchor='w', width=lable_width)
+        self.lable_attr_names =            [ttk.Label(self.frame, text=f"{attr} Name:", anchor='w', width=lable_width) for attr in self.attrType_menu]
         self.load_status =                  ttk.Label(self.frame, text="Load Status", width=status_width)
         self.lable_status_bottleneck =      ttk.Label(self.frame, text=" ", width=status_width, anchor='w', wraplength=warp_length)
         self.lable_status_input_velocity =  ttk.Label(self.frame, text=" ", width=status_width, anchor='w', wraplength=warp_length)
@@ -52,10 +53,8 @@ class Frame_SimilaritySearchLoad:
         self.load_status.grid                   (row=0, column=2, sticky="w")
         self.label_mainDir.grid                 (row=1, column=0, sticky="w")
         self.label_bottleneck_name.grid         (row=2, column=0, sticky="w")
-        self.label_input_velocity_name.grid     (row=3, column=0, sticky="w")
-        self.label_input_vorticity_name.grid    (row=4, column=0, sticky="w")
-        self.label_output_velocity_name.grid    (row=5, column=0, sticky="w")
-        self.label_output_vorticity_name.grid   (row=6, column=0, sticky="w")
+        for i in range(3, 7):
+            self.lable_attr_names[i-3].grid     (row=i, column=0, sticky="w")
         self.entry_mainDir.grid                 (row=1, column=1, sticky="w")
         self.entry_bottleneck_name.grid         (row=2, column=1, sticky="w")
         self.entry_input_velocity_name.grid     (row=3, column=1, sticky="w")
@@ -90,6 +89,7 @@ class Frame_SimilaritySearchLoad:
         self.attr_input_vorticity = self.entry_input_vorticity_name.get()
         self.attr_output_velocity = self.entry_output_velocity_name.get()
         self.attr_output_vorticity = self.entry_output_vorticity_name.get()
+        self.attr_list = [self.attr_input_velocity, self.attr_input_vorticity, self.attr_output_velocity, self.attr_output_vorticity]
 
         self.lable_status_bottleneck.config         (text=self.inspect(self.main_path, self.attr_bottleneck))
         self.lable_status_input_velocity.config     (text=self.inspect(self.main_path, self.attr_input_velocity))
@@ -150,9 +150,9 @@ class Frame_SimilaritySearchLoad:
         return frames
 
 class Frame_SimilaritySearchCompute:
-    def __init__(self, root, Frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad):
+    def __init__(self, root, frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad):
         self.root = root
-        self.Frame_SimilaritySearchLoad = Frame_SimilaritySearchLoad
+        self.frame_SimilaritySearchLoad = frame_SimilaritySearchLoad
         self.similarity_matrix_list = None
         self.similarity_matrix = None
         self.method_menu = ["MSE", "Cosine_distance"]
@@ -167,17 +167,21 @@ class Frame_SimilaritySearchCompute:
         self.measurement_method_tag.set("None") 
         self.measurement_dropdown =     ttk.OptionMenu(self.frame, self.measurement_method_tag, *self.method_menu, command=self.draw_similarity_matrix)
         
-        self.figure = Figure(figsize=(5, 4), dpi=100)
-        self.plot = self.figure.add_subplot(1, 1, 1)
+        self.figure = Figure(figsize=(4, 4), dpi=120)
         self.canvas = FigureCanvasTkAgg(self.figure, self.frame)
+        self.figure_2 = Figure(figsize=(4, 1.5), dpi=120)
+        self.canvas_2 = FigureCanvasTkAgg(self.figure_2, self.frame)
 
         self.button_compute_all.grid(           row=0, column=0, sticky="w")
         self.label_compute_status.grid(         row=0, column=1, sticky="w")
         self.label_measurement_method.grid(     row=1, column=0, sticky="w")
         self.measurement_dropdown.grid(         row=1, column=1, sticky="we")
         self.canvas.get_tk_widget().grid(       row=2, column=0, columnspan=2, sticky="nsew")
-        self.canvas.get_tk_widget().grid(       row=2, column=0, columnspan=2, sticky="nsew")
-        self.canvas.get_tk_widget().grid_forget()
+        self.canvas_2.get_tk_widget().grid(     row=3, column=0, columnspan=2, sticky="nsew")
+
+        self.frame.grid_rowconfigure(2, weight=1)
+        self.frame.grid_rowconfigure(3, weight=1)
+        
         
     def mse(self, frame1, frame2):
         return np.mean((frame1 - frame2) ** 2)
@@ -201,77 +205,145 @@ class Frame_SimilaritySearchCompute:
         self.label_compute_status.config(text="Compute Status: Successfull")
     
     def compute_similarity_matrix(self, method):
-        n_frames = self.Frame_SimilaritySearchLoad.num_files
+        n_frames = self.frame_SimilaritySearchLoad.num_files
         similarity_matrix = np.zeros((n_frames, n_frames))
         for i in range(n_frames):
             for j in range(n_frames):
-                frame1 = self.Frame_SimilaritySearchLoad.arr_bottleneck[i]
-                frame2 = self.Frame_SimilaritySearchLoad.arr_bottleneck[j]
+                frame1 = self.frame_SimilaritySearchLoad.arr_bottleneck[i]
+                frame2 = self.frame_SimilaritySearchLoad.arr_bottleneck[j]
                 if method == self.method_menu[0]:
                     similarity_matrix[i, j] = self.mse(frame1, frame2)
                 elif method == self.method_menu[1]:
                     similarity_matrix[i, j] = self.cosine_distance(frame1.flatten(), frame2.flatten())
         return similarity_matrix
     
-    def draw_similarity_matrix(self, _=None):
+    def draw_similarity_matrix(self, selected_frame=None, closest_frames=None, _=None):
         self.similarity_matrix = self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
-        if self.similarity_matrix is None or self.Frame_SimilaritySearchLoad.arr_bottleneck is None:
+        if self.similarity_matrix is None or self.frame_SimilaritySearchLoad.arr_bottleneck is None:
             return
-        
-        self.plot.clear()
+        self.figure.clear()
+        self.figure_2.clear()
+
+        gridsize = (5, 1)
+        # Create two subplots
+        self.plot = self.figure.add_subplot(1,1,1)  # 1 rows, 1 column, 1st subplot
+        self.plot_2 = self.figure_2.add_subplot(1,1,1)  # 2 rows, 1 column, 2nd subplot
+
+        # Plot the similarity matrix
         im = self.plot.imshow(self.similarity_matrix, cmap='viridis')
-        if not hasattr(self, 'cbar'):  # Check if the colorbar attribute exists
-            self.cbar = self.figure.colorbar(im, ax=self.plot)
-        self.cbar.update_normal(im)
+        self.plot.set_xlabel('Frames')
+        self.plot.set_ylabel('Frames')
+        self.plot.set_title('Similarity Matrix')
+
+        # self.cbar = self.figure.colorbar(im, ax=self.plot)
+
+        if selected_frame is not None:
+            self.plot.scatter(selected_frame, selected_frame, color='red', s=10, edgecolor='black')
+
+        # Mark the positions of the closest frames
+        if closest_frames is not None:
+            for frame in closest_frames:
+                self.plot.scatter(frame, selected_frame, color='white', s=10, edgecolor='black')
+                self.plot.scatter(selected_frame, frame, color='white', s=10, edgecolor='black')
+
+        # Plot the distance line
+        if selected_frame is not None and closest_frames is not None:
+            distances = self.similarity_matrix[selected_frame, :]
+            self.plot_2.plot(distances, '-o', markersize=3)
+            self.plot_2.set_xlabel('Frame')
+            self.plot_2.set_ylabel('Distance')
+            self.plot_2.set_title('Distances from Selected Frame')
+
+        # Join the x-axes of the two subplots
+        self.plot.get_shared_x_axes().join(self.plot, self.plot_2)
+
+        # Draw the canvas
         self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=2, column=0, columnspan=2, sticky="nsew")
+        self.canvas_2.draw()
 
 
 class Frame_SimilaritySearchNClosest:
-    def __init__(self, root, Frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad, Frame_SimilaritySearchCompute:Frame_SimilaritySearchCompute):
+    def __init__(self, root, frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad, frame_SimilaritySearchCompute:Frame_SimilaritySearchCompute):
         self.root = root
-        self.Frame_SimilaritySearchLoad = Frame_SimilaritySearchLoad
-        self.Frame_SimilaritySearchCompute = Frame_SimilaritySearchCompute
-        self.display_menu = ["Input Velocity", "Input Vorticity", "Output Velocity", "Output Vorticity"]
+        self.frame_SimilaritySearchLoad = frame_SimilaritySearchLoad
+        self.frame_SimilaritySearchCompute = frame_SimilaritySearchCompute
+        self.attrType_menu = ["Input Velocity", "Input Vorticity", "Output Velocity", "Output Vorticity"]
+        self.selected_imgs = []
+        self.row_frames = []
+        self.selected_img_size = 256
+        self.close_img_size = math.floor(256/5*4)
+        self.max_per_row = 5
 
         bold_font = font.Font(family="Helvetica", weight="bold")
         self.frame = ttk.LabelFrame(self.root, text="Step 3: Find Similar Frames", font=bold_font)
 
-        self.label_frame_number =       ttk.Label(self.frame, text="Selected Frame:",            anchor='w', width=lable_width)
-        self.label_n_closest =          ttk.Label(self.frame, text="Number of closest frames:",  anchor='w', width=lable_width)
-        self.label_exclude_local =      ttk.Label(self.frame, text="Exclude local frames range:",anchor='w', width=lable_width)
-        self.entry_frame_number =       ttk.Entry(self.frame)
-        self.entry_n_closest =          ttk.Entry(self.frame)
-        self.entry_exclude_local =      ttk.Entry(self.frame)
-        self.botton_find_n_closest =    ttk.Button(self.frame, text="Find", command=self.find_n_closest_frames)
-        self.display_tag =              ttk.StringVar(self.frame)
-        self.display_tag.set(self.display_menu[0])
-        self.display_dropdown =         ttk.OptionMenu(self.frame, self.display_tag, *self.display_menu)
+        self.label_frame_number =           ttk.Label(self.frame, text="Selected Frame:",            anchor='w', width=lable_width)
+        self.label_n_closest =              ttk.Label(self.frame, text="Number of closest frames:",  anchor='w', width=lable_width)
+        self.label_exclude_local =          ttk.Label(self.frame, text="Exclude local frames range:",anchor='w', width=lable_width)
+        self.entry_frame_number =           ttk.Entry(self.frame)
+        self.entry_n_closest =              ttk.Entry(self.frame)
+        self.entry_exclude_local =          ttk.Entry(self.frame)
+        self.botton_find_n_closest =        ttk.Button(self.frame, text="Find", command=self.find)
+        self.botton_find_n_closes_next =    ttk.Button(self.frame, text="Find Next", command=self.find_next)
+        self.display_tag =                  ttk.StringVar(self.frame)
+        self.display_tag.set(self.attrType_menu[0])
+        self.display_dropdown =             ttk.OptionMenu(self.frame, self.display_tag, *self.attrType_menu)
+        self.canvas_selected =              ttk.Canvas(self.frame, height=self.selected_img_size, width=self.selected_img_size*4)
+        self.frame_closest_imgs =           ttk.LabelFrame(self.frame, text="Closest Frames")
+        self.canvas_closest_imgs =          ttk.Canvas(self.frame_closest_imgs)
+        self.scrollbar =                    ttk.Scrollbar(self.frame_closest_imgs, orient="vertical", command=self.canvas_closest_imgs.yview)
+        self.scrollable_frame =             ttk.Frame(self.canvas_closest_imgs)
 
-        self.label_frame_number.grid(      row=2, column=0, sticky="w")
-        self.label_n_closest.grid(         row=3, column=0, sticky="w")
-        self.label_exclude_local.grid(     row=4, column=0, sticky="w")
-        self.entry_frame_number.grid(      row=2, column=1, sticky="w")
-        self.entry_n_closest.grid(         row=3, column=1, sticky="w")
-        self.entry_exclude_local.grid(     row=4, column=1, sticky="w")
-        self.botton_find_n_closest.grid(   row=5, column=0, sticky="w")
-        self.display_dropdown.grid(        row=5, column=1, sticky="we")
+        self.label_frame_number.grid(       row=2, column=0, sticky="w")
+        self.label_n_closest.grid(          row=3, column=0, sticky="w")
+        self.label_exclude_local.grid(      row=4, column=0, sticky="w")
+        self.entry_frame_number.grid(       row=2, column=2, sticky="w")
+        self.entry_n_closest.grid(          row=3, column=2, sticky="w")
+        self.entry_exclude_local.grid(      row=4, column=2, sticky="w")
+        self.botton_find_n_closest.grid(    row=5, column=0, sticky="w")
+        self.botton_find_n_closes_next.grid(row=5, column=1, sticky="w")
+        self.display_dropdown.grid(         row=5, column=2, sticky="we")
+        self.canvas_selected.grid(          row=6, column=0, columnspan=3, sticky="nsew")
+        self.frame_closest_imgs.grid(       row=7, column=0, columnspan=3, sticky="nsew")
+        self.frame.grid_rowconfigure(7, weight=1)
+        self.frame.grid_columnconfigure(0, weight=1)
 
         self.entry_frame_number.insert(0, "50")
         self.entry_n_closest.insert(0, "30")
         self.entry_exclude_local.insert(0, "5")
 
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas_closest_imgs.configure(
+                scrollregion=self.canvas_closest_imgs.bbox("all")
+            )
+        )
+        self.canvas_closest_imgs.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas_closest_imgs.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas_closest_imgs.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        self.canvas_closest_imgs.bind_all("<MouseWheel>", self.on_mousewheel)  # For Windows
+        self.canvas_closest_imgs.bind_all("<Button-4>", self.on_mousewheel)  # For Linux
+        self.canvas_closest_imgs.bind_all("<Button-5>", self.on_mousewheel)  # For Linux
+
     def find(self):
-        self.display = self.display_tag.get()
         closest_frames, distances = self.find_n_closest_frames()
         self.display_closest_frames(closest_frames, distances)
+        self.frame_SimilaritySearchCompute.draw_similarity_matrix(int(self.entry_frame_number.get()), closest_frames)
+    
+    def find_next(self):
+        next_number = int(self.entry_frame_number.get()) + 1
+        self.entry_frame_number.delete(0, ttk.END)
+        self.entry_frame_number.insert(0, str(next_number))
+        self.find()
 
     def find_n_closest_frames(self):
         frame_number = int(self.entry_frame_number.get())
         n = int(self.entry_n_closest.get())
         exclude_local_frames = int(self.entry_exclude_local.get())
 
-        distance_values = np.copy(self.Frame_SimilaritySearchCompute.similarity_matrix[frame_number])
+        distance_values = np.copy(self.frame_SimilaritySearchCompute.similarity_matrix[frame_number])
         
         # Set the MSE for the local range to infinity to exclude them
         start = max(0, frame_number - exclude_local_frames)
@@ -282,5 +354,78 @@ class Frame_SimilaritySearchNClosest:
         closest_frames = np.argsort(distance_values)[:n]
         return closest_frames, distance_values[closest_frames]
     
-    def display_closest_frames(self, closest_frames, distances):
-        pass
+    def display_closest_frames(self, closest_frames, distance_values):
+        # Display the selected frame
+        selected_frame_number = int(self.entry_frame_number.get())
+        selected_img_path_list = [os.path.join(self.frame_SimilaritySearchLoad.main_path, f"{attr_name}_{selected_frame_number}.png") for attr_name in self.frame_SimilaritySearchLoad.attr_list]
+        img_list = [Image.open(path).resize((self.selected_img_size, self.selected_img_size), Image.ANTIALIAS) for path in selected_img_path_list]
+        self.selected_imgs.clear()
+        for img in img_list:
+            img_tk = ImageTk.PhotoImage(img)
+            self.selected_imgs.append(img_tk)
+        self.canvas_selected.delete(ttk.ALL)
+        for i in range(len(img_list)):
+            self.canvas_selected.create_image(i*self.selected_img_size, 0, anchor='nw', image=self.selected_imgs[i])
+
+        # Display the closest frames
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        for i, (frame, distance) in enumerate(zip(closest_frames, distance_values)):
+            col_index = i % self.max_per_row
+            if col_index == 0:
+                row_frame = ttk.Frame(self.scrollable_frame)
+                row_frame.pack()
+                self.row_frames.append(row_frame)
+            image_path = os.path.join(self.frame_SimilaritySearchLoad.main_path, f"{self.frame_SimilaritySearchLoad.attr_list[self.attrType_menu.index(self.display_tag.get())]}_{frame}.png")
+            img = Image.open(image_path)
+            img = img.resize((self.close_img_size, self.close_img_size))  # Resize for display
+            img_tk = ImageTk.PhotoImage(img)
+            label = ttk.Label(row_frame, image=img_tk)
+            label.image = img_tk
+            label.pack(side=ttk.LEFT)
+            label.bind('<Button-1>', self.click_close_image_handler(frame))
+            # frame_info = f"Frame {frame}, Distance: {distance:.4f}"
+            frame_info = f"Frame {frame}, Distance: {distance:.4f}"
+            self.Tooltip(label, frame_info).create()
+        
+    def click_close_image_handler(self, frame_number):
+        def handler(event):
+            self.entry_frame_number.delete(0, ttk.END)
+            self.entry_frame_number.insert(0, str(frame_number))
+            closest_frames, distances = self.find_n_closest_frames()
+            self.display_closest_frames(closest_frames, distances)
+            self.frame_SimilaritySearchCompute.draw_similarity_matrix(int(self.entry_frame_number.get()), closest_frames)
+        return handler
+    
+    def on_mousewheel(self, event):
+        """Handle mouse wheel scroll for different platforms."""
+        if event.num == 4 or event.delta > 0:  # Scroll up
+            self.canvas_closest_imgs.yview_scroll(-1, "units")
+        elif event.num == 5 or event.delta < 0:  # Scroll down
+            self.canvas_closest_imgs.yview_scroll(1, "units")
+    
+    class Tooltip:
+        def __init__(self, widget, text):
+            self.widget = widget
+            self.text = text
+            self.tipwindow = None
+
+        def show_tip(self):
+            "Display text in tooltip window"
+            x, y, _, _ = self.widget.bbox("insert")
+            x += self.widget.winfo_rootx() + 25
+            y += self.widget.winfo_rooty() + 20
+            self.tipwindow = Toplevel(self.widget)
+            self.tipwindow.wm_overrideredirect(True)
+            self.tipwindow.wm_geometry(f"+{x}+{y}")
+            label = Label(self.tipwindow, text=self.text, justify=ttk.LEFT, background="#ffffe0", relief=ttk.SOLID, borderwidth=1, font=("tahoma", "8", "normal"))
+            label.pack(ipadx=1)
+
+        def hide_tip(self):
+            if self.tipwindow:
+                self.tipwindow.destroy()
+            self.tipwindow = None
+        
+        def create(self):
+            self.widget.bind('<Enter>', lambda event: self.show_tip())
+            self.widget.bind('<Leave>', lambda event: self.hide_tip())
