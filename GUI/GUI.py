@@ -21,10 +21,10 @@ class GUI:
         self.frame_compute.frame.grid(row=1, column=0, sticky="nsew")
 
         self.frame_n_closest = Frame_SimilaritySearchNClosest(self.root, self.frame_load, self.frame_compute)
-        self.frame_n_closest.frame.grid(row=0, column=1, sticky="nsew", rowspan=2)
+        self.frame_n_closest.frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
         self.frame_bottleneck_customize = Frame_SimilaritySearchBottleneckCustomize(self.root, self.frame_load, self.frame_compute, self.frame_n_closest)
-        self.frame_bottleneck_customize.frame.grid(row=0, column=2, sticky="nsew")
+        self.frame_bottleneck_customize.frame.grid(row=0, column=2, rowspan=2, sticky="nsew")
 
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_rowconfigure(1, weight=1)

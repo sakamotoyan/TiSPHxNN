@@ -11,10 +11,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import math
+import torch
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lable_width = 25
 status_width = 12
 warp_length = status_width*10
@@ -103,7 +105,7 @@ class Frame_SimilaritySearchLoad:
 
         if self.passed:
             self.num_files = self.inspect_num(self.main_path, self.attr_bottleneck)
-            self.arr_bottleneck = self.load_arrays(self.main_path, self.attr_bottleneck, self.num_files)
+            self.arr_bottleneck = torch.tensor(np.array(self.load_arrays(self.main_path, self.attr_bottleneck, self.num_files)), device=device)
             self.lable_load.config(text="Load Status: Successfull")
         else:
             self.lable_load.config(text="Load Status: Failed")
@@ -184,7 +186,7 @@ class Frame_SimilaritySearchCompute:
         
         
     def mse(self, frame1, frame2):
-        return np.mean((frame1 - frame2) ** 2)
+        return torch.mean((frame1 - frame2) ** 2)
 
     def cosine_distance(self, frame1, frame2):
         # Normalize the frames to unit vectors
@@ -206,15 +208,16 @@ class Frame_SimilaritySearchCompute:
     
     def compute_similarity_matrix(self, method):
         n_frames = self.frame_SimilaritySearchLoad.num_files
-        similarity_matrix = np.zeros((n_frames, n_frames))
-        for i in range(n_frames):
-            for j in range(n_frames):
-                frame1 = self.frame_SimilaritySearchLoad.arr_bottleneck[i]
-                frame2 = self.frame_SimilaritySearchLoad.arr_bottleneck[j]
-                if method == self.method_menu[0]:
-                    similarity_matrix[i, j] = self.mse(frame1, frame2)
-                elif method == self.method_menu[1]:
-                    similarity_matrix[i, j] = self.cosine_distance(frame1.flatten(), frame2.flatten())
+        with torch.no_grad():
+            similarity_matrix = torch.zeros((n_frames, n_frames), device=device)
+            frames = self.frame_SimilaritySearchLoad.arr_bottleneck
+            if method == self.method_menu[0]:
+                diffs = frames - frames.transpose(0, 1)
+                similarity_matrix = torch.mean(diffs ** 2, dim=2)
+            elif method == self.method_menu[1]:
+                frames_squeezed = frames.squeeze(1)
+                frames_norm = torch.nn.functional.normalize(frames_squeezed, p=2, dim=1)
+                similarity_matrix = 1 - torch.mm(frames_norm, frames_norm.t())
         return similarity_matrix
     
     def draw_similarity_matrix(self, selected_frame=None, closest_frames=None, _=None):
@@ -230,7 +233,7 @@ class Frame_SimilaritySearchCompute:
         self.plot_2 = self.figure_2.add_subplot(1,1,1)  # 2 rows, 1 column, 2nd subplot
 
         # Plot the similarity matrix
-        im = self.plot.imshow(self.similarity_matrix, cmap='viridis')
+        im = self.plot.imshow(self.similarity_matrix.cpu(), cmap='viridis')
         self.plot.set_xlabel('Frames')
         self.plot.set_ylabel('Frames')
         self.plot.set_title('Similarity Matrix')
@@ -248,7 +251,7 @@ class Frame_SimilaritySearchCompute:
 
         # Plot the distance line
         if selected_frame is not None and closest_frames is not None:
-            distances = self.similarity_matrix[selected_frame, :]
+            distances = self.similarity_matrix[selected_frame, :].cpu()
             self.plot_2.plot(distances, '-o', markersize=1, zorder=1)
             self.plot_2.scatter(selected_frame, distances[selected_frame], color='red', s=10, edgecolor='black', zorder=2)
             self.plot_2.set_xlabel('Frame')
@@ -356,16 +359,15 @@ class Frame_SimilaritySearchNClosest:
         n = int(self.entry_n_closest.get())
         exclude_local_frames = int(self.entry_exclude_local.get())
 
-        distance_values = np.copy(self.frame_SimilaritySearchCompute.similarity_matrix[frame_number])
-        
-        # Set the MSE for the local range to infinity to exclude them
-        start = max(0, frame_number - exclude_local_frames)
-        end = min(len(distance_values), frame_number + exclude_local_frames + 1)
-        distance_values[start:end] = np.inf
-        
-        # Find the indexes of the n smallest MSE values excluding the local range
-        closest_frames = np.argsort(distance_values)[:n]
-        return closest_frames, distance_values[closest_frames]
+        with torch.no_grad():
+            similarity_matrix = self.frame_SimilaritySearchCompute.similarity_matrix
+            distance_values = similarity_matrix[frame_number].clone().detach()
+            start = max(0, frame_number - exclude_local_frames)
+            end = min(len(distance_values), frame_number + exclude_local_frames + 1)
+            distance_values[start:end] = float('inf')
+            closest_distances, closest_frames = torch.topk(-distance_values, k=n, largest=False)
+            closest_distances = -closest_distances
+        return closest_frames.cpu(), closest_distances.cpu()
     
     def display_closest_frames(self, closest_frames, distance_values):
         # Display the selected frame
@@ -458,21 +460,31 @@ class Frame_SimilaritySearchBottleneckCustomize:
         self.feature_vector_size = 0
         self.feature_vectors_per_row = 5
 
+
         self.frame_buttons =            ttk.Frame(self.frame)
         self.frame_feature_vectors =    ttk.LabelFrame(self.frame, text="Feature Vectors")
+        self.frame_visualization =      ttk.Frame(self.frame)
         self.button_refresh =           ttk.Button(self.frame_buttons, text="Refresh", command=self.refresh)
-        self.button_compute =           ttk.Button(self.frame_buttons, text="Compute", command=self.compute)
+        self.button_compute =           ttk.Button(self.frame_buttons, text="Compute", command=self.compute_and_draw)
+        self.figure_1 =                 Figure(figsize=(4, 4), dpi=100)
+        self.figure_2 =                 Figure(figsize=(4, 1.5), dpi=100)
+        self.canvas_1 =                 FigureCanvasTkAgg(self.figure_1, self.frame_visualization)
+        self.canvas_2 =                 FigureCanvasTkAgg(self.figure_2, self.frame_visualization)
 
-        self.frame_buttons.grid(         row=0, column=0, sticky="w")
-        self.frame_feature_vectors.grid( row=1, column=0, sticky="nsew")
-        self.button_refresh.grid(        row=0, column=0, sticky="w")
+        self.frame_buttons.grid(            row=0, column=0, sticky="w")
+        self.button_refresh.grid(           row=0, column=0, sticky="w")
+        self.button_compute.grid(           row=0, column=1, sticky="w")
+        self.frame_feature_vectors.grid(    row=1, column=0, sticky="nsew")
+        self.frame_visualization.grid(      row=2, column=0, sticky="nsew")
+        self.canvas_1.get_tk_widget().grid( row=0, column=0, sticky="nsew")
+        self.canvas_2.get_tk_widget().grid( row=1, column=0, sticky="nsew")
         
     def refresh(self, _=None):
         row_frame_list = []
         for widget in self.frame_feature_vectors.winfo_children():
             widget.destroy()
-        self.feature_vector_size = self.frame_SimilaritySearchLoad.arr_bottleneck[0].flatten().shape[0]
-        self.activate_mask = np.zeros(self.feature_vector_size, dtype=bool)
+        self.feature_vector_size = self.frame_SimilaritySearchLoad.arr_bottleneck[0].shape[1]
+        self.activate_mask = torch.zeros(self.feature_vector_size, dtype=bool, device=device)
 
         for i in range(self.feature_vector_size):
             col_index = i % self.feature_vectors_per_row
@@ -489,4 +501,67 @@ class Frame_SimilaritySearchBottleneckCustomize:
             print(f"Feature {i} is {'activated' if self.activate_mask[i] else 'deactivated'}")
         return handler
     
-    def 
+    def compute_and_draw(self):
+        self.similarity_matrix_list = []
+        for method in self.frame_SimilaritySearchCompute.method_menu:
+            self.similarity_matrix_list.append(self.compute_similarity_matrix_with_customized_feature_vectors(method))
+        self.draw_similarity_matrix(int(self.frame_SimilaritySearchNClosest.entry_frame_number.get()))
+    
+    def compute_similarity_matrix_with_customized_feature_vectors(self, method):
+        n_frames = self.frame_SimilaritySearchLoad.num_files
+        with torch.no_grad():
+            similarity_matrix = torch.zeros((n_frames, n_frames), device=device)
+            frames = self.frame_SimilaritySearchLoad.arr_bottleneck.clone().detach()*self.activate_mask
+            if method == self.frame_SimilaritySearchCompute.method_menu[0]:
+                diffs = frames - frames.transpose(0, 1)
+                similarity_matrix = torch.mean(diffs ** 2, dim=2)
+            elif method == self.frame_SimilaritySearchCompute.method_menu[1]:
+                frames_squeezed = frames.squeeze(1)
+                frames_norm = torch.nn.functional.normalize(frames_squeezed, p=2, dim=1)
+                similarity_matrix = 1 - torch.mm(frames_norm, frames_norm.t())
+        return similarity_matrix
+    
+    def draw_similarity_matrix(self, selected_frame=None, closest_frames=None, _=None):
+        self.similarity_matrix = self.similarity_matrix_list[self.frame_SimilaritySearchCompute.method_menu.index(self.frame_SimilaritySearchCompute.measurement_method_tag.get())]
+        if self.similarity_matrix is None or self.frame_SimilaritySearchLoad.arr_bottleneck is None:
+            return
+        self.figure_1.clear()
+        self.figure_2.clear()
+
+        # Create two subplots
+        self.plot_1 = self.figure_1.add_subplot(1,1,1)  # 1 rows, 1 column, 1st subplot
+        self.plot_2 = self.figure_2.add_subplot(1,1,1)  # 2 rows, 1 column, 2nd subplot
+
+        # Plot the similarity matrix
+        im = self.plot_1.imshow(self.similarity_matrix.cpu(), cmap='viridis')
+        self.plot_1.set_xlabel('Frames')
+        self.plot_1.set_ylabel('Frames')
+        self.plot_1.set_title('Similarity Matrix')
+
+        # self.cbar = self.figure.colorbar(im, ax=self.plot_1)
+
+        if selected_frame is not None:
+            self.plot_1.scatter(selected_frame, selected_frame, color='red', s=10, edgecolor='black')
+
+        # Mark the positions of the closest frames
+        if closest_frames is not None:
+            for frame in closest_frames:
+                self.plot_1.scatter(frame, selected_frame, color='white', s=10, edgecolor='black')
+                self.plot_1.scatter(selected_frame, frame, color='white', s=10, edgecolor='black')
+
+        # Plot the distance line
+        if selected_frame is not None:
+            distances = self.similarity_matrix[selected_frame, :].cpu()
+            self.plot_2.plot(distances, '-o', markersize=1, zorder=1)
+            self.plot_2.scatter(selected_frame, distances[selected_frame], color='red', s=10, edgecolor='black', zorder=2)
+            self.plot_2.set_xlabel('Frame')
+            self.plot_2.set_ylabel('Distance')
+            self.plot_2.set_title('Distances from Selected Frame')
+            
+
+        # Join the x-axes of the two subplots
+        self.plot_1.get_shared_x_axes().join(self.plot_1, self.plot_2)
+
+        # Draw the canvas
+        self.canvas_1.draw()
+        self.canvas_2.draw()
