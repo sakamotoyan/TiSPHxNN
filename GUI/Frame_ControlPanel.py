@@ -24,11 +24,15 @@ warp_length = status_width*10
 class Frame_ControlPanel:
     def __init__(self, root):
         self.root = root
-        self.frame = ttk.LabelFrame(self.root, text="Control Panel", font=font.Font(family="Helvetica", weight="bold"))
-        self.subFrame_load = ttk.LabelFrame(self.frame, text="Data Loading")
-        self.subFrame_similarity = ttk.LabelFrame(self.frame, text="Compute Similarity Matrix")
-        self.subFrame_find_n_closest = ttk.LabelFrame(self.frame, text="Find N Closest Frames")
-        self.subFrame_customize_bottleneck = ttk.LabelFrame(self.frame, text="Customize Bottleneck")
+        self.frame_control = ttk.LabelFrame(self.root, text="Control Panel", font=font.Font(family="Helvetica", weight="bold"))
+        self.subframe_load = ttk.LabelFrame(self.frame_control, text="Data Loading")
+        self.subframe_similarity = ttk.LabelFrame(self.frame_control, text="Compute Similarity Matrix")
+        self.subframe_find_n_closest = ttk.LabelFrame(self.frame_control, text="Find N Closest Frames")
+        self.subframe_customize_bottleneck = ttk.LabelFrame(self.frame_control, text="Customize Bottleneck")
+
+        self.frame_datavis = ttk.LabelFrame(self.root, text="Data Visualization", font=font.Font(family="Helvetica", weight="bold"))
+        self.subframe_similarity_matrix = ttk.LabelFrame(self.frame_datavis, text="Similarity Matrix")
+        self.subframe_distance_plot = ttk.LabelFrame(self.frame_datavis, text="Distance Plot")
 
         self.selected_img_size = 256
         self.close_img_size = math.floor(256/5*4)
@@ -45,18 +49,22 @@ class Frame_ControlPanel:
         self.attrType_menu = ["Input Velocity", "Input Vorticity", "Output Velocity", "Output Vorticity"]
         self.method_menu = ["MSE", "Cosine_distance"]
 
-        self.widgets_init_load(self.subFrame_load)
-        self.widgets_init_similarity(self.subFrame_similarity)
-        self.widgets_init_find_n_closest(self.subFrame_find_n_closest)
-        self.widgets_init_customize_bottleneck(self.subFrame_customize_bottleneck)
-
-        self.subFrame_load.grid(row=0, column=0, sticky="nsew")
-        ttk.Label(self.frame, text=" ", width=lable_width, anchor='w').grid(row=1, column=0, sticky="w")
-        self.subFrame_similarity.grid(row=2, column=0, sticky="nsew")
-        ttk.Label(self.frame, text=" ", width=lable_width, anchor='w').grid(row=3, column=0, sticky="w")
-        self.subFrame_find_n_closest.grid(row=4, column=0, sticky="nsew")
-        ttk.Label(self.frame, text=" ", width=lable_width, anchor='w').grid(row=5, column=0, sticky="w")
-        self.subFrame_customize_bottleneck.grid(row=6, column=0, sticky="nsew")
+        self.widgets_init_load(self.subframe_load)
+        self.widgets_init_similarity(self.subframe_similarity)
+        self.widgets_init_find_n_closest(self.subframe_find_n_closest)
+        self.widgets_init_customize_bottleneck(self.subframe_customize_bottleneck)
+        self.subframe_load.grid(row=0, column=0, sticky="nsew")
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=1, column=0, sticky="w")
+        self.subframe_similarity.grid(row=2, column=0, sticky="nsew")
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=3, column=0, sticky="w")
+        self.subframe_find_n_closest.grid(row=4, column=0, sticky="nsew")
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=5, column=0, sticky="w")
+        self.subframe_customize_bottleneck.grid(row=6, column=0, sticky="nsew")
+        
+        self.widgets_init_similarity_matrix(self.subframe_similarity_matrix)
+        self.widgets_init_distance_plot(self.subframe_distance_plot)
+        self.subframe_similarity_matrix.grid(row=0, column=0, sticky="nsew")
+        self.subframe_distance_plot.grid(row=1, column=0, sticky="nsew")
 
     def widgets_init_load(self, frame):
         self.flag_load = False
@@ -150,6 +158,10 @@ class Frame_ControlPanel:
         self.button_find_n_closes_next.grid(    row=0, column=2, sticky="w")
         self.display_dropdown.grid(             row=0, column=3, sticky="we")
 
+        self.entry_frame_number.insert(0, "50")
+        self.entry_n_closest.insert(0, "30")
+        self.entry_exclude_local.insert(0, "5")
+
     def widgets_init_customize_bottleneck(self, frame):
         self.subsubframe_bottleneck_button =    ttk.Frame(frame)
         self.subsubframe_bottleneck_checkbox =  ttk.Frame(frame)
@@ -174,6 +186,18 @@ class Frame_ControlPanel:
         self.canvas_bottleneck_checkbox.bind_all("<Button-4>", self.on_mousewheel)  # For Linux
         self.canvas_bottleneck_checkbox.bind_all("<Button-5>", self.on_mousewheel)  # For Linux
     
+    def widgets_init_similarity_matrix(self, frame):
+        self.fig_similarity_matrix = Figure(figsize=(5, 5), dpi=100)
+        self.ax_similarity_matrix = self.fig_similarity_matrix.add_subplot(111)
+        self.canvas_similarity_matrix = FigureCanvasTkAgg(self.fig_similarity_matrix, master=frame)
+        self.canvas_similarity_matrix.get_tk_widget().pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
+    
+    def widgets_init_distance_plot(self, frame):
+        self.fig_distance_plot = Figure(figsize=(5, 2), dpi=100)
+        self.ax_distance_plot = self.fig_distance_plot.add_subplot(111)
+        self.canvas_distance_plot = FigureCanvasTkAgg(self.fig_distance_plot, master=frame)
+        self.canvas_distance_plot.get_tk_widget().pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
+
     def on_mousewheel(self, event):
         """Handle mouse wheel scroll for different platforms."""
         if event.num == 4 or event.delta > 0:  # Scroll up
@@ -186,6 +210,7 @@ class Frame_ControlPanel:
         for widget in self.framecanvas_bottleneck_checkbox.winfo_children():
             widget.destroy()
         self.feature_vector_size = self.arr_bottleneck[0].shape[1]
+        self.bottleneck_checkbox_vars = [ttk.BooleanVar(value=False) for _ in range(self.feature_vector_size)]
         self.activate_mask = torch.zeros(self.feature_vector_size, dtype=bool, device=device)
 
         for i in range(self.feature_vector_size):
@@ -194,7 +219,7 @@ class Frame_ControlPanel:
                 row_frame = ttk.Frame(self.framecanvas_bottleneck_checkbox)
                 row_frame.grid(row=i // self.feature_vectors_per_row, column=0, sticky="w")
                 self.row_frame_list.append(row_frame)
-            check_button = ttk.Checkbutton(row_frame, text=f"Feature {i}", width=10, command=self.ticked(i))
+            check_button = ttk.Checkbutton(row_frame, text=f"Feature {i}", variable=self.bottleneck_checkbox_vars[i],width=10, command=self.ticked(i))
             check_button.grid(row=0, column=col_index, sticky="w")
 
     def ticked(self, i, _=None):
@@ -287,18 +312,70 @@ class Frame_ControlPanel:
             frames.append(frame)
         return frames
 
+    def draw(self, _=None):
+        self.draw_similarity_matrix()
+        self.draw_distance_plot()
 
     def draw_similarity_matrix(self, selected_frame=None, closest_frames=None, _=None):
-        pass
+        self.ax_similarity_matrix.clear()
+        if self.similarity_matrix_list:
+            self.similarity_matrix = self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
+            similarity_matrix =      self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
+            self.ax_similarity_matrix.imshow(similarity_matrix.cpu().numpy(), cmap='viridis', interpolation='nearest')
+
+            if selected_frame is not None:
+                self.ax_similarity_matrix.scatter(selected_frame, selected_frame, s=10, color='red', edgecolor='black', zorder=4)
+                if closest_frames is not None:
+                    for closest_frame in closest_frames:
+                        self.ax_similarity_matrix.scatter(selected_frame, closest_frame, s=10, color='white', edgecolor='black', zorder=3)
+                        self.ax_similarity_matrix.scatter(closest_frame, selected_frame, s=10, color='white', edgecolor='black', zorder=3)
+
+            self.canvas_similarity_matrix.draw()
+
+    def draw_distance_plot(self, selected_frame=None, closest_frames=None, _=None):
+        self.ax_distance_plot.clear()
+        if self.similarity_matrix_list:
+            self.similarity_matrix = self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
+            similarity_matrix =      self.similarity_matrix_list[self.method_menu.index(self.measurement_method_tag.get())]
+            distances = similarity_matrix[selected_frame, :].cpu()
+            self.ax_distance_plot.plot(distances, '-o', markersize=1, zorder=1)
+            if closest_frames is not None:
+                self.ax_distance_plot.scatter(selected_frame, distances[selected_frame], s=10, color='red', edgecolor='black', zorder=4)
+                self.ax_distance_plot.scatter(closest_frames, distances[closest_frames], s=10, color='white', edgecolor='black', zorder=3)
+            self.canvas_distance_plot.draw()
 
     def find(self, _=None):
-        pass
+        closest_frames, distances = self.find_n_closest_frames()
+        self.draw_similarity_matrix(int(self.entry_frame_number.get()), closest_frames)
+        self.draw_distance_plot(int(self.entry_frame_number.get()), closest_frames)
 
     def find_next(self, _=None):
-        pass
+        next_number = int(self.entry_frame_number.get()) + 1
+        self.entry_frame_number.delete(0, ttk.END)
+        self.entry_frame_number.insert(0, str(next_number))
+        self.find()
 
     def find_prev(self, _=None):
-        pass
+        prev_number = int(self.entry_frame_number.get()) - 1
+        self.entry_frame_number.delete(0, ttk.END)
+        self.entry_frame_number.insert(0, str(prev_number))
+        self.find()
+
+    def find_n_closest_frames(self):
+        frame_number = int(self.entry_frame_number.get())
+        n = int(self.entry_n_closest.get())
+        exclude_local_frames = int(self.entry_exclude_local.get())
+
+        with torch.no_grad():
+            similarity_matrix = self.similarity_matrix
+            distance_values = similarity_matrix[frame_number].clone().detach()
+            start = max(0, frame_number - exclude_local_frames)
+            end = min(len(distance_values), frame_number + exclude_local_frames + 1)
+            distance_values[start:end] = float('inf')
+            closest_distances, closest_frames = torch.topk(distance_values, k=n, largest=False)
+            closest_distances = -closest_distances
+            
+        return closest_frames.cpu(), closest_distances.cpu()
 
     def compute_and_draw(self, _=None):
         pass

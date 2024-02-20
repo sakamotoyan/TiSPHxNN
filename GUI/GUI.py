@@ -16,7 +16,8 @@ class GUI:
         self.root.title("GUI")
 
         self.frame_control_panel = Frame_ControlPanel(self.root)
-        self.frame_control_panel.frame.grid(row=0, column=0, sticky="nsew")
+        self.frame_control_panel.frame_control.grid(row=0, column=0, sticky="nsew")
+        self.frame_control_panel.frame_datavis.grid(row=0, column=1, sticky="nsew")
 
         # self.frame_load = Frame_SimilaritySearchLoad(self.root)
         # self.frame_load.frame.grid(row=0, column=0, sticky="nsew")
