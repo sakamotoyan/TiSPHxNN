@@ -264,6 +264,7 @@ class Frame_SimilaritySearchCompute:
         self.canvas_2.draw()
 
 
+
 class Frame_SimilaritySearchNClosest:
     def __init__(self, root, frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad, frame_SimilaritySearchCompute:Frame_SimilaritySearchCompute):
         self.root = root
@@ -274,7 +275,7 @@ class Frame_SimilaritySearchNClosest:
         self.row_frames = []
         self.selected_img_size = 256
         self.close_img_size = math.floor(256/5*4)
-        self.max_per_row = 5
+        self.img_per_row = 5
 
         bold_font = font.Font(family="Helvetica", weight="bold")
         self.frame = ttk.LabelFrame(self.root, text="Step 3: Find Similar Frames", font=bold_font)
@@ -383,7 +384,7 @@ class Frame_SimilaritySearchNClosest:
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         for i, (frame, distance) in enumerate(zip(closest_frames, distance_values)):
-            col_index = i % self.max_per_row
+            col_index = i % self.img_per_row
             if col_index == 0:
                 row_frame = ttk.Frame(self.scrollable_frame)
                 row_frame.pack()
@@ -441,3 +442,51 @@ class Frame_SimilaritySearchNClosest:
         def create(self):
             self.widget.bind('<Enter>', lambda event: self.show_tip())
             self.widget.bind('<Leave>', lambda event: self.hide_tip())
+
+class Frame_SimilaritySearchBottleneckCustomize:
+    def __init__(self, root, 
+                 frame_SimilaritySearchLoad:Frame_SimilaritySearchLoad, 
+                 frame_SimilaritySearchCompute:Frame_SimilaritySearchCompute,
+                 frame_SimilaritySearchNClosest:Frame_SimilaritySearchNClosest):
+        self.root = root
+        self.frame_SimilaritySearchLoad = frame_SimilaritySearchLoad
+        self.frame_SimilaritySearchCompute = frame_SimilaritySearchCompute
+        self.frame_SimilaritySearchNClosest = frame_SimilaritySearchNClosest
+        
+        bold_font = font.Font(family="Helvetica", weight="bold")
+        self.frame = ttk.LabelFrame(self.root, text="Step 4: Customize Bottleneck", font=bold_font)
+        self.feature_vector_size = 0
+        self.feature_vectors_per_row = 5
+
+        self.frame_buttons =            ttk.Frame(self.frame)
+        self.frame_feature_vectors =    ttk.LabelFrame(self.frame, text="Feature Vectors")
+        self.button_refresh =           ttk.Button(self.frame_buttons, text="Refresh", command=self.refresh)
+        self.button_compute =           ttk.Button(self.frame_buttons, text="Compute", command=self.compute)
+
+        self.frame_buttons.grid(         row=0, column=0, sticky="w")
+        self.frame_feature_vectors.grid( row=1, column=0, sticky="nsew")
+        self.button_refresh.grid(        row=0, column=0, sticky="w")
+        
+    def refresh(self, _=None):
+        row_frame_list = []
+        for widget in self.frame_feature_vectors.winfo_children():
+            widget.destroy()
+        self.feature_vector_size = self.frame_SimilaritySearchLoad.arr_bottleneck[0].flatten().shape[0]
+        self.activate_mask = np.zeros(self.feature_vector_size, dtype=bool)
+
+        for i in range(self.feature_vector_size):
+            col_index = i % self.feature_vectors_per_row
+            if col_index == 0:
+                row_frame = ttk.Frame(self.frame_feature_vectors)
+                row_frame.grid(row=i // self.feature_vectors_per_row, column=0, sticky="w")
+                row_frame_list.append(row_frame)
+            check_button = ttk.Checkbutton(row_frame, text=f"Feature {i}", width=8, command=self.ticked(i))
+            check_button.grid(row=0, column=col_index, sticky="w")
+
+    def ticked(self, i, _=None):
+        def handler():
+            self.activate_mask[i] = not self.activate_mask[i]
+            print(f"Feature {i} is {'activated' if self.activate_mask[i] else 'deactivated'}")
+        return handler
+    
+    def 
