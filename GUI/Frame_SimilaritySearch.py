@@ -13,8 +13,8 @@ from matplotlib.gridspec import GridSpec
 import math
 import torch
 
-from ctypes import windll
-windll.shcore.SetProcessDpiAwareness(1)
+# from ctypes import windll
+# windll.shcore.SetProcessDpiAwareness(1)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lable_width = 25

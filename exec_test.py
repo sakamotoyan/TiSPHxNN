@@ -3,7 +3,7 @@ import os
 from Autoencoders.ConvAE_velocity import *
 from Dataset_processing import *
 
-platform = 'cuda'
+platform = 'cpu'
 res = 256
 
 main_folder_path_list = ['../dataset_train', '../dataset_test2']
@@ -13,12 +13,12 @@ bottleneck_type = 0
 
 main_folder_path = main_folder_path_list[1]
 if_crop = False
-number_of_frames = 477 #186 659
+number_of_frames = 72 #186 659
 
 network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size= 512)
 model_epoch =                                                                                                               512
 main_path =                                                                                          os.path.join('../output512')
-
+clear_folder(main_path)
 test_result_vel_path  = main_path
 vis_path              = main_path
 

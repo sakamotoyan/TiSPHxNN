@@ -128,7 +128,7 @@ class TrainConvAutoencoder:
 
     def test(self, model_file_path, output_path, crop=False, exclude_threshold=None, export_bottleneck_layer=None, shuffle=False):
             
-        self.network.load_state_dict(torch.load(model_file_path))
+        self.network.load_state_dict(torch.load(model_file_path, torch.device(self.platform)))
         self.network.eval()
         print(f"Loaded former model from {model_file_path}")
         test_data_loader = DataLoader(self.dataset, batch_size=1, shuffle=shuffle)

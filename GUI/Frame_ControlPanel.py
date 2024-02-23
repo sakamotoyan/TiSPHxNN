@@ -13,12 +13,12 @@ from matplotlib.gridspec import GridSpec
 import math
 import torch
 
-from ctypes import windll
-windll.shcore.SetProcessDpiAwareness(1)
+# from ctypes import windll
+# windll.shcore.SetProcessDpiAwareness(1)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-lable_width = 25
-status_width = 12
+lable_width = 20
+status_width = 8
 warp_length = status_width*10
 
 class Scrollable_frame:
@@ -82,13 +82,13 @@ class Frame_ControlPanel:
         self.widgets_init_find_n_closest(self.subframe_find_n_closest)
         self.widgets_init_customize_bottleneck(self.subframe_customize_bottleneck)
 
-        self.subframe_load.grid(row=0, column=0, sticky="nsew")
-        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=1, column=0, sticky="w")
-        self.subframe_similarity.grid(row=2, column=0, sticky="nsew")
-        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=3, column=0, sticky="w")
-        self.subframe_customize_bottleneck.grid(row=4, column=0, sticky="nsew")
-        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').grid(row=5, column=0, sticky="w")
-        self.subframe_find_n_closest.grid(row=6, column=0, sticky="nsew")
+        self.subframe_load.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').pack(side=ttk.TOP, fill=ttk.X, expand=1)
+        self.subframe_similarity.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').pack(side=ttk.TOP, fill=ttk.X, expand=1)
+        self.subframe_customize_bottleneck.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
+        ttk.Label(self.frame_control, text=" ", width=lable_width, anchor='w').pack(side=ttk.TOP, fill=ttk.X, expand=1)
+        self.subframe_find_n_closest.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
         
         self.widgets_init_similarity_matrix(self.subframe_similarity_matrix)
         self.widgets_init_distance_plot(self.subframe_distance_plot)
@@ -176,8 +176,8 @@ class Frame_ControlPanel:
         self.button_refresh_bottleneck.grid(      row=0, column=0, sticky="w")
         self.button_select_all_bottleneck.grid(   row=0, column=1, sticky="w")
         self.button_deselect_all_bottleneck.grid( row=0, column=2, sticky="w")
-        self.subsubframe_bottleneck_button.grid(  row=0, column=0, columnspan=2, sticky="w")
-        self.subsubframe_bottleneck_checkbox.grid(row=1, column=0, columnspan=2, sticky="w")
+        self.subsubframe_bottleneck_button.pack(  side=ttk.TOP, fill=ttk.BOTH, expand=1)
+        self.subsubframe_bottleneck_checkbox.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
 
     def widgets_init_find_n_closest(self, frame):
         self.label_frame_number =               ttk.Label(frame, text="Selected Frame:",            anchor='w', width=lable_width)
