@@ -10,19 +10,23 @@ main_folder_path_list = ['../dataset_train', '../dataset_test2']
 
 submodule_type = 1
 bottleneck_type = 0
-model_epoch = 3649
 
 main_folder_path = main_folder_path_list[1]
 if_crop = False
 number_of_frames = 477 #186 659
 
-network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size=32)
+network = ConvAutoencoder(submodule_type=submodule_type, bottleneck_type=bottleneck_type, type='test', feature_vector_size= 512)
+model_epoch =                                                                                                               512
+main_path =                                                                                          os.path.join('../output512')
 
+test_result_vel_path  = main_path
+vis_path              = main_path
 
-model_folder_path = os.path.join('./model')
+if not os.path.exists(main_path):
+    os.makedirs(main_path)
+
+model_folder_path =     os.path.join('./model')
 vel_model_file_path   = os.path.join(model_folder_path,  f'epochs_{model_epoch}.pth')
-test_result_vel_path  = os.path.join('../output')
-vis_path              = os.path.join('../output')
 
 clear_folder(test_result_vel_path)
 clear_folder(vis_path)

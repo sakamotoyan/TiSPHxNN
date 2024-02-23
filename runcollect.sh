@@ -20,10 +20,18 @@ cd "$model_dir"
 
 # Find the epoch file with the largest number
 latest_epoch_file=$(ls epochs_*.pth | sort -V | tail -n 1)
+latest_loss_fig=$(ls loss_*.png | sort -V | tail -n 1)
 
 # Delete all epoch files except the latest
 for file in epochs_*.pth; do
     if [ "$file" != "$latest_epoch_file" ]; then
+        rm -f "$file"
+    fi
+done
+
+# Delete all loss figures except the latest
+for file in loss_*.png; do
+    if [ "$file" != "$latest_loss_fig" ]; then
         rm -f "$file"
     fi
 done

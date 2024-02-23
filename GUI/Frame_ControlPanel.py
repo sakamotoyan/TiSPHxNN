@@ -295,6 +295,8 @@ class Frame_ControlPanel:
         return similarity_matrix
 
     def load(self, _=None):
+        self.activate_mask = None
+
         self.lable_load.config(text="Load Status: Loading...")
         self.main_path = os.path.join(self.entry_mainDir.get())
         self.attr_bottleneck = self.entry_bottleneck_name.get()
