@@ -15,33 +15,67 @@ def augment(a, steepness = 5, mildrange = 0.2):
 augment_vectorized = np.vectorize(augment)
 
 
-def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name, stride=1):
+# def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name, stride=1):
+#     data = []
+#     for i in range(start_index, end_index):
+#         data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
+#     np_data = np.array(data)
+#     min_data = np_data.min()
+#     max_data = np_data.max()
+
+#     print(min_data, max_data)
+#     rgb = np.zeros((np_data.shape[1],np_data.shape[2],3))
+
+#     for i in range(end_index-start_index):
+#         if i % stride != 0:
+#             continue
+#         val = np_data[i,...]
+#         rgb.fill(0)
+
+#         normalised_val_positive = augment_vectorized(np.clip(val, 0, None) / max_data)
+#         normalised_val_negative = augment_vectorized(np.clip(val, None, 0) / min_data)
+#         rgb[:,:,0] = np.where(val > 0, 1, 1 - normalised_val_negative)
+#         rgb[:,:,1] = 1 - np.where(val > 0, normalised_val_positive, normalised_val_negative)
+#         rgb[:,:,2] = np.where(val > 0, 1 - normalised_val_positive, 1)
+
+#         output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
+#         image.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), output_rgb)
+
+def scivis_R2toR1(input_path, output_path, start_index, end_index, attr_name, stride=1, shift=0):
     data = []
     for i in range(start_index, end_index):
         data.append(np.load(os.path.join(input_path, f'{attr_name}_{i}.npy')))
     np_data = np.array(data)
-    min_data = np_data.min()
-    max_data = np_data.max()
 
-    print(min_data, max_data)
-    rgb = np.zeros((np_data.shape[1],np_data.shape[2],3))
+    rgb = np.zeros((np_data.shape[1], np_data.shape[2], 3))  # Initialize RGB array
 
-    for i in range(end_index-start_index):
-        if i % stride != 0:
+    for i in range(end_index - start_index):
+        if i % stride != shift:
             continue
-        val = np_data[i,...]
-        rgb.fill(0)
+        val = np_data[i, ...]
+        min_data = val.min()
+        max_data = val.max()
+        rgb.fill(0)  # Reset RGB array for each slice
 
-        normalised_val_positive = augment_vectorized(np.clip(val, 0, None) / max_data)
-        normalised_val_negative = augment_vectorized(np.clip(val, None, 0) / min_data)
-        rgb[:,:,0] = np.where(val > 0, 1, 1 - normalised_val_negative)
-        rgb[:,:,1] = 1 - np.where(val > 0, normalised_val_positive, normalised_val_negative)
-        rgb[:,:,2] = np.where(val > 0, 1 - normalised_val_positive, 1)
+        # Normalize positive values between 0 and 1
+        normalised_val_positive = np.clip(val, 0, None) / max_data if max_data != 0 else val
+        
+        # Normalize negative values between 0 and -1
+        normalised_val_negative = np.clip(val, None, 0) / min_data if min_data != 0 else val
 
-        output_rgb = np.flip(np.transpose(rgb,(1,0,2)),0)
-        image.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), output_rgb)
+        # Set red channel for positive values
+        rgb[:, :, 0] = np.where(val > 0, normalised_val_positive, 0)
+        
+        # Set blue channel for negative values
+        rgb[:, :, 2] = np.where(val < 0, normalised_val_negative, 0)
 
-def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name, channel_at_end=False):
+        # Zero values remain black as the RGB components are all set to 0
+
+        output_rgb = np.flip(np.transpose(rgb, (1, 0, 2)), 0)
+        plt.imsave(os.path.join(output_path, f'sci_{attr_name}_{i}.png'), output_rgb)
+        plt.close()  # Close the plot to prevent memory leaks
+
+def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name, channel_at_end=False, stride=1, shift=0):
     data = []
     for i in range(start_index, end_index):
         frame_data = np.load(os.path.join(input_path, f'{attr_name}_{i}.npy'))
@@ -50,17 +84,21 @@ def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name, ch
         data.append(frame_data)
     np_data = np.array(data)
 
-    g_speed = np.sqrt(np_data[:,0,:,:]**2 + np_data[:,1,:,:]**2)
-    g_speed_min = g_speed.min()
-    g_speed_max = g_speed.max()
+    # g_speed = np.sqrt(np_data[:,0,:,:]**2 + np_data[:,1,:,:]**2)
+    # g_speed_min = g_speed.min()
+    # g_speed_max = g_speed.max()
 
     for i in range(end_index-start_index):
+        if i % stride != shift:
+            continue
         v = np_data[i]
         v_x=np.flipud(np.transpose(v[0,:,:]))
         v_y=np.flipud(np.transpose(v[1,:,:]))
         # Step 1
         # Calculate speed and direction (angle) from x and y components of the velocity
         speed = np.sqrt(v_x**2 + v_y**2)
+        speed_min = speed.min()
+        speed_max = speed.max()
         angle = (np.arctan2(v_x, v_y) + np.pi) / (2. * np.pi)
         # Step 2
         # Create HSV representation
@@ -68,7 +106,7 @@ def scivis_R2toR2(input_path, output_path, start_index, end_index, attr_name, ch
         hsv[..., 0] = angle
         hsv[..., 1] = 1.0  # Set saturation to maximum
         # hsv[..., 2] = (speed - speed.min()) / (speed.max() - speed.min())  # SINGLE_FRAME Normalize speed to range [0,1]
-        hsv[..., 2] = (speed - g_speed_min) / (g_speed_max - g_speed_min)  # GLOBAL Normalize speed to range [0,1]
+        hsv[..., 2] = (speed - speed_min) / (speed_max - speed_min)  # GLOBAL Normalize speed to range [0,1]
         # Step 3
         # Convert HSV to RGB
         rgb = colors.hsv_to_rgb(hsv)

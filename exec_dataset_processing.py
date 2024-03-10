@@ -2,11 +2,11 @@ from Dataset_processing import *
 
 ti.init(arch=ti.gpu)
 
-
+print('Start 12kemio12e0iejw5')
 '''
 Training dataset generation
 '''
-main_path = '../dataset_test2'
+main_path = '../dataset_test'
 rawdata_folder = 'rawdata'
 dataset_folder = 'dataset'
 datavis_folder = 'datavis'
@@ -22,14 +22,14 @@ length = len(operation_list)+1
 number_of_frames = concatDataset('../',
                 [
                     # 'raw_t1', 
-                    # 'raw_t2', 
+                    'raw_t2', 
                     'raw_t3', 
-                    # 'raw_t4', 
+                    'raw_t4', 
                     # 'raw_t5', 
                     # 'raw_t6',
                     # 'raw_t7',
                     # 'raw_t8',
-                    'raw_t9',
+                    # 'raw_t9',
                     # 'raw_t10',
                     # 'raw_t11',
                     # 'raw_t12',
@@ -43,11 +43,20 @@ gridExport_strainRate(    os.path.join(main_path, rawdata_folder), os.path.join(
 process_strainRate_to(    os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, to='vorticity', use_density_mask=True)
 process_vel_to_strainRate(os.path.join(main_path, dataset_folder), os.path.join(main_path, dataset_folder), 0, number_of_frames*length, 7.0/258, True, further_to='vorticity')
 
+def inspect(path, attr_name):
+    files = os.listdir(path)
+    relevant_files = [f for f in files if f.startswith(attr_name) and f.endswith(".npy")]
+    indices = [int(f.split('_')[-1].split('.')[0]) for f in relevant_files]
+    indices.sort()
+    start_number = min(indices) if indices else None
+    end_number = max(indices) if indices else None
+    return len(relevant_files)
 
-# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density', stride=1)
-# scivis_R2toR2(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'velocity', channel_at_end=True)
-# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity')
-# scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity')
+number_of_frames = inspect(os.path.join(main_path, dataset_folder), 'density')
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'density', stride=1)
+scivis_R2toR2(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'velocity', channel_at_end=True, stride=1)
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'strainRate2vorticity', stride=1)
+scivis_R2toR1(os.path.join(main_path, dataset_folder), os.path.join(main_path, datavis_folder), 0, number_of_frames*length, 'vel2vorticity',stride=1)
 
 '''
 Testing dataset generation

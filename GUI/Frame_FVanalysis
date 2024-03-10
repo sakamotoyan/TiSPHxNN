@@ -1,0 +1,35 @@
+from tkinter import *
+from tkinter import Tk
+from tkinter import ttk
+
+import numpy as np
+import os
+import matplotlib.pyplot as plt
+from PIL import Image, ImageTk
+from tkinter import font
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.gridspec import GridSpec
+import math
+import torch
+
+from .Frame_ControlPanel import Frame_ControlPanel
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+lable_width = 20
+status_width = 8
+warp_length = status_width*10
+
+class Frame_FVanalysis:
+    
+    def __init__(self, root, frame_control_panel:Frame_ControlPanel) -> None:
+        self.root = root
+        self.frame_control_panel = frame_control_panel
+
+        self.frame_control = ttk.LabelFrame(self.root, text='FV Analysis')
+        self.subframe_checkFeature = ttk.LabelFrame(self.frame_control, text='Entry Selection')
+
+    def widgets_init_checkFeature(self, frame):
+        self.subsubframe_checkFeature_buttons = ttk.Frame(frame)
+        self.subsubframe_checkFeature_checkboxes = ttk.Frame(frame)

@@ -1,2 +1,1 @@
 from GUI import GUI
-from Frame_SimilaritySearch import Frame_SimilaritySearchLoad, Frame_SimilaritySearchCompute

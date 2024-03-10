@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 # Define a custom colormap that goes from blue (-1.0) to white (0.0) to red (1.0)
-colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]
+colors = [(0, 0, 1), (0, 0, 0), (1, 0, 0)]
 cmap = LinearSegmentedColormap.from_list('my_colormap', colors, N=256)
 
 # Create a sample gradient for the color map bar from -1.0 to 1.0

@@ -1,41 +1,35 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import tkinter as ttk
-from tkinter import scrolledtext
-from tkinter import Toplevel, Label
+from tkinter import *
+from tkinter import Tk
+from tkinter import ttk
+import tkinter as tk
 from PIL import Image, ImageTk
 
-from Frame_SimilaritySearch import Frame_SimilaritySearchLoad, \
-    Frame_SimilaritySearchCompute, Frame_SimilaritySearchNClosest, Frame_SimilaritySearchBottleneckCustomize
 from Frame_ControlPanel import Frame_ControlPanel
+
+from ctypes import windll
+windll.shcore.SetProcessDpiAwareness(1)
 
 class GUI:
     def __init__(self):
-        self.root = ttk.Tk()
+        self.root = Tk()
         self.root.title("GUI")
 
-        self.frame_control_panel = Frame_ControlPanel(self.root)
-        self.frame_control_panel.frame_control.grid(row=0, column=0, sticky="nsew")
-        self.frame_control_panel.frame_datavis.grid(row=0, column=1, sticky="nsew")
-        self.frame_control_panel.frame_scivis.grid(row=0, column=2, sticky="nsew")
+        self.notebook = ttk.Notebook(self.root)
+        self.tagframe1 = ttk.Frame(self.notebook)
+        self.tagframe2 = ttk.Frame(self.notebook)
 
-        # self.frame_load = Frame_SimilaritySearchLoad(self.root)
-        # self.frame_load.frame.grid(row=0, column=0, sticky="nsew")
+        self.frame_control_panel = Frame_ControlPanel(self.tagframe1)
+        self.frame_control_panel.frame_control.pack(side="left", fill="both", expand=True)
+        self.frame_control_panel.frame_datavis.pack(side="left", fill="both", expand=True)
+        self.frame_control_panel.frame_scivis.pack(side="left", fill="both", expand=True)
 
-        # self.frame_compute = Frame_SimilaritySearchCompute(self.root, self.frame_load)
-        # self.frame_compute.frame.grid(row=1, column=0, sticky="nsew")
 
-        # self.frame_n_closest = Frame_SimilaritySearchNClosest(self.root, self.frame_load, self.frame_compute)
-        # self.frame_n_closest.frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
-
-        # self.frame_bottleneck_customize = Frame_SimilaritySearchBottleneckCustomize(self.root, self.frame_load, self.frame_compute, self.frame_n_closest)
-        # self.frame_bottleneck_customize.frame.grid(row=0, column=2, rowspan=2, sticky="nsew")
-
-        # self.root.grid_rowconfigure(0, weight=1)
-        # self.root.grid_rowconfigure(1, weight=1)
-        # self.root.grid_columnconfigure(1, weight=1)
-        # self.root.grid_columnconfigure(0, weight=1)
+        self.notebook.add(self.tagframe1, text="Control Panel")
+        self.notebook.add(self.tagframe2, text="Feature Vector Analysis")
+        self.notebook.pack(fill="both", expand=True)
 
         self.root.mainloop()
 
