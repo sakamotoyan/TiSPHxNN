@@ -8,6 +8,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from Frame_ControlPanel import Frame_ControlPanel
+from Frame_FVanalysis import Frame_FVanalysis
 
 from ctypes import windll
 windll.shcore.SetProcessDpiAwareness(1)
@@ -22,9 +23,7 @@ class GUI:
         self.tagframe2 = ttk.Frame(self.notebook)
 
         self.frame_control_panel = Frame_ControlPanel(self.tagframe1)
-        self.frame_control_panel.frame_control.pack(side="left", fill="both", expand=True)
-        self.frame_control_panel.frame_datavis.pack(side="left", fill="both", expand=True)
-        self.frame_control_panel.frame_scivis.pack(side="left", fill="both", expand=True)
+        self.frame_FVanalysis = Frame_FVanalysis(self.tagframe2, self.frame_control_panel)
 
 
         self.notebook.add(self.tagframe1, text="Control Panel")

@@ -1,11 +1,13 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+
 import tkinter as ttk
 from tkinter import scrolledtext
 from tkinter import Toplevel, Label
-from PIL import Image, ImageTk
 from tkinter import font
+
+from PIL import Image, ImageTk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -100,6 +102,10 @@ class Frame_ControlPanel:
         self.subframe_selected.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
         self.subframe_closest.pack(side=ttk.TOP, fill=ttk.BOTH, expand=1)
 
+        self.frame_control.pack(side="left", fill="both", expand=True)
+        self.frame_datavis.pack(side="left", fill="both", expand=True)
+        self.frame_scivis.pack(side="left", fill="both", expand=True)
+
     def widgets_init_load(self, frame):
         self.flag_load = False
         self.flag_success = True
@@ -145,7 +151,7 @@ class Frame_ControlPanel:
         self.button_load.grid                   (row=7, column=0, sticky="w")
         self.lable_load.grid                    (row=7, column=1, sticky="w", columnspan=2)
 
-        self.entry_mainDir.insert(0, "../output/")
+        self.entry_mainDir.insert(0, "../output032/")
         self.entry_bottleneck_name.insert(0, "bottleneck")
         self.entry_input_velocity_name.insert(0, "sci_input_velocity")
         self.entry_input_vorticity_name.insert(0, "sci_input_vorticity")
