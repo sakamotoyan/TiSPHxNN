@@ -10,8 +10,8 @@ from PIL import Image, ImageTk
 from Frame_ControlPanel import Frame_ControlPanel
 from Frame_FVanalysis import Frame_FVanalysis
 
-from ctypes import windll
-windll.shcore.SetProcessDpiAwareness(1)
+# from ctypes import windll
+# windll.shcore.SetProcessDpiAwareness(1)
 
 class GUI:
     def __init__(self):

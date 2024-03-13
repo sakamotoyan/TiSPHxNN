@@ -16,6 +16,7 @@ import torch
 from Frame_ControlPanel import Frame_ControlPanel, Scrollable_frame
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
 lable_width = 20
 status_width = 8
 warp_length = status_width*10
@@ -40,6 +41,8 @@ class Frame_FVanalysis:
         self.feature_vector_size = None                                                             # [Attr] Frame 1 -> Subframe 1: Store feature vector size
         self.bottleneck_checkbox_vars = []                                                          # [Attr] Frame 1 -> Subframe 1: Store bottleneck checkbox variables 
         self.activate_mask = None                                                                   # [Attr] Frame 1 -> Subframe 1: Store activate mask for bottleneck checkbox variables
+        ''' Attributes of Frame 1 -> Subframe 2'''
+        
 
         ''' Frame 2 '''
         self.frame_vis = ttk.LabelFrame(self.root, text='Visualization')                            # Frame 2: Visualization
@@ -61,10 +64,25 @@ class Frame_FVanalysis:
         self.button_deselect_all_bottleneck     .grid(row=0, column=2, sticky='nsew')
         self.subsubframe_checkFeature_buttons   .pack(side='top', fill='x', expand=True)
         self.subsubframe_checkFeature_checkboxes.pack(side='top', fill='both', expand=True)
-        frame                                   .pack(side='left', fill='both', expand=True)
+        frame                                   .pack(side='top', fill='both', expand=True)
 
     def widgets_init_selectFrame(self, frame:ttk.Frame):
-        pass
+        self.label_frame_number =               ttk.Label(frame, text="Selected Frame:",            anchor='w', width=lable_width)
+        self.entry_frame_number =               ttk.Entry(frame)
+        self.button_selected_frame =            ttk.Button(frame, text="Find", command=self.find)
+        self.button_select_next_frame =         ttk.Button(frame, text="Next", command=self.find_next)
+        self.button_select_previous_frame =     ttk.Button(frame, text="Previous", command=self.find_prev)
+
+
+        self.label_frame_number.grid(           row=0, column=0, sticky="w")
+        self.entry_frame_number.grid(           row=0, column=1, sticky="w")
+        self.button_selected_frame.grid(        row=0, column=2, sticky="w")
+        self.button_select_next_frame.grid(     row=0, column=3, sticky="w")
+        self.button_select_previous_frame.grid( row=0, column=4, sticky="w")
+
+
+        self.entry_frame_number.insert(0, "50")
+        frame.pack(side='top', fill='both', expand=True)
         
     def widgets_init_FVplot(self, frame:ttk.Frame):
         self.fig_FVplot = Figure(figsize=(5, 3), dpi=100)
@@ -128,5 +146,26 @@ class Frame_FVanalysis:
         FVcpu = self.frame_control_panel.arr_bottleneck.cpu()
         for i in range(self.feature_vector_size):
             if self.activate_mask[i]:
-                self.ax_FVplot.plot(FVcpu[:, 0, i], label=f"Feature {i}")
+                self.ax_FVplot.plot(FVcpu[:, 0, i], label=f"Feature {i}", zorder=2)
         self.canvas_FVplot.draw()
+
+    def find(self, _=None):
+        frame_number = int(self.entry_frame_number.get())
+        self.draw_FVplot()
+        FVcpu = self.frame_control_panel.arr_bottleneck.cpu()
+        for i in range(self.feature_vector_size):
+            if self.activate_mask[i]:
+                self.ax_FVplot.scatter(frame_number, FVcpu[frame_number, 0, i], s=10, color='r', zorder=3)
+        self.canvas_FVplot.draw()
+    
+    def find_next(self, _=None):
+        next_number = int(self.entry_frame_number.get()) + 1
+        self.entry_frame_number.delete(0, Tk.END)
+        self.entry_frame_number.insert(0, str(next_number))
+        self.find()
+    
+    def find_prev(self, _=None):
+        previous_number = int(self.entry_frame_number.get()) - 1
+        self.entry_frame_number.delete(0, Tk.END)
+        self.entry_frame_number.insert(0, str(previous_number))
+        self.find()

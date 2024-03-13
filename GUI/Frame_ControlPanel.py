@@ -19,6 +19,7 @@ import torch
 # windll.shcore.SetProcessDpiAwareness(1)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
 lable_width = 20
 status_width = 8
 warp_length = status_width*10
@@ -404,7 +405,7 @@ class Frame_ControlPanel:
     def draw_selected(self, selected_frame, _=None):
         selected_frame_number = selected_frame
         selected_img_path_list = [os.path.join(self.main_path, f"{attr_name}_{selected_frame_number}.png") for attr_name in self.attr_list]
-        img_list = [Image.open(path).resize((self.selected_img_size, self.selected_img_size), Image.ANTIALIAS) for path in selected_img_path_list]
+        img_list = [Image.open(path).resize((self.selected_img_size, self.selected_img_size)) for path in selected_img_path_list]
         self.selected_img_list.clear()
         for img in img_list:
             img_tk = ImageTk.PhotoImage(img)

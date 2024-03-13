@@ -1,6 +1,6 @@
 from Dataset_processing import *
 
-ti.init(arch=ti.gpu)
+ti.init(arch=ti.cpu)
 
 print('Start 12kemio12e0iejw5')
 '''
@@ -22,9 +22,9 @@ length = len(operation_list)+1
 number_of_frames = concatDataset('../',
                 [
                     # 'raw_t1', 
-                    'raw_t2', 
-                    'raw_t3', 
-                    'raw_t4', 
+                    # 'raw_t2', 
+                    # 'raw_t3', 
+                    # 'raw_t4', 
                     # 'raw_t5', 
                     # 'raw_t6',
                     # 'raw_t7',
@@ -34,6 +34,8 @@ number_of_frames = concatDataset('../',
                     # 'raw_t11',
                     # 'raw_t12',
                     # 'raw_t13',
+                    't2r',
+                    't3r',
                  ],
                 ['node_index', 'vel', 'pos', 'sensed_density', 'strainRate'], 
                 os.path.join(main_path, rawdata_folder))
