@@ -66,7 +66,7 @@ def ker_negative2zero_and_normalize(
 def ker_normalize(
     arr: ti.template()
 ):
-    max_val = 0
+    max_val = 0.0
     for I in ti.grouped(arr):
         ti.atomic_max(max_val, arr[I])
     for I in ti.grouped(arr):

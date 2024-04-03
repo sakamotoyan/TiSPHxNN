@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 import os
+import math
 import taichi as ti
 import numpy as np
 
@@ -63,37 +64,49 @@ class TrainConvAutoencoder:
         for epoch in range(num_epochs):
             running_loss = 0.0
             for batch_inputs in self.data_loader:
-                batch_inputs = batch_inputs.to(self.platform)
-                loss = 0.0
+
+                ### Zero the parameter gradients
+                loss_vorticity = 0.0
                 self.optimizer.zero_grad()
+
+                ### Data augmentation
+                batch_inputs = batch_inputs.to(self.platform)
                 if crop is not False: 
-                    crop_size = torch.randint(64, 256, (1,)).item()
-                    # crop_size = 128
+                    crop_size = torch.randint(64, 256, (1,)).item() # [Hard Code] Randomly choose the crop size
                     batch_inputs = self.func_random_crop_and_upsample(batch_inputs, crop_size=(crop_size,crop_size), exclude_threshold=exclude_threshold)
                 
-                inputs  = (batch_inputs + 1) / 2
-                batch_outputs = (self.network(inputs)) * 2 - 1
-
+                ### Input Deriviation: vorticity from input velocity
                 input_dv_dx = torch.diff(batch_inputs[:, 1, :, :], dim=1, prepend=batch_inputs[:, 1, :, -1].unsqueeze(1))
                 input_du_dy = torch.diff(batch_inputs[:, 0, :, :], dim=2, prepend=batch_inputs[:, 0, :, -1].unsqueeze(2))
                 input_vorticity = (input_dv_dx - input_du_dy)
                 input_vorticity = input_vorticity.unsqueeze(1)
                 
+                ### Forward pass
+                batch_outputs = (self.network((batch_inputs + 1) / 2)) * 2 - 1
+                ### Forward pass Optional: get feature vector
+                batch_feature_vector = self.network.bottleneck.feature_vector
 
+                ### Output Deriviation: vorticity from output velocity
                 output_dv_dx = torch.diff(batch_outputs[:, 1, :, :], dim=1, prepend=batch_outputs[:, 1, :, -1].unsqueeze(1))
                 output_du_dy = torch.diff(batch_outputs[:, 0, :, :], dim=2, prepend=batch_outputs[:, 0, :, -1].unsqueeze(2))
                 output_vorticity = (output_dv_dx - output_du_dy)
                 output_vorticity = output_vorticity.unsqueeze(1)
 
+                ### Post processing for input and output vorticity
                 if crop_boundary:
                     input_vorticity  = input_vorticity [:, :, 3:-3, 3:-3]
                     output_vorticity = output_vorticity[:, :, 3:-3, 3:-3]
+                input_vorticity_mean = torch.mean(input_vorticity, dim=(1,2,3))
+                input_vorticity_variance = torch.var(input_vorticity, dim=(1,2,3)) / math.sqrt(256)
 
-                loss = self.criterion(output_vorticity, input_vorticity)
+                ### Compute loss
+                loss_vorticity = self.criterion(input_vorticity_mean, batch_feature_vector[:,0])
+                loss_mean = self.criterion(input_vorticity_variance, batch_feature_vector[:,1])
+                loss = loss_vorticity
                 loss.backward()
                 self.optimizer.step()
 
-                running_loss += loss.item()
+                running_loss += loss_vorticity.item()
 
             average_loss = running_loss / len(self.data_loader)
             self.loss_list.append(average_loss)
@@ -272,7 +285,7 @@ class TrainConvAutoencoder:
                 counter += 1
 
     def Conv2D(self, input_data, kernel_size, stride):
-        if len(input_data.shape) is not 2:
+        if len(input_data.shape) != 2:
             raise ValueError("Input data must be 2D")
         padded_input = F.pad(input_data, (kernel_size, kernel_size, kernel_size, kernel_size), mode='constant', value=0)
         conv_counter = torch.zeros(input_data.shape, dtype=torch.uint8)

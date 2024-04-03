@@ -40,7 +40,8 @@ def clear_folder(folder_path):
     folder_path (str): The path to the folder to clear.
     """
     if not os.path.exists(folder_path):
-        print(f"Folder {folder_path} does not exist.")
+        print(f"Folder {folder_path} does not exist. Now creating it.")
+        os.makedirs(folder_path)
         return
 
     for filename in os.listdir(folder_path):

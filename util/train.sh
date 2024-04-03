@@ -42,7 +42,6 @@ done
 # Set CUDA_VISIBLE_DEVICES
 export CUDA_VISIBLE_DEVICES=$gpu
 
-# Conditional handling of dataset_train.zip based on the have_dataset flag
 if [[ $have_dataset -eq 1 ]]; then
     # Step 1: Check for dataset.zip in /root and unzip if not present
     if [ ! -f /root/dataset_train.zip ]; then
@@ -57,19 +56,26 @@ if [[ $have_dataset -eq 1 ]]; then
 fi
 
 # Step 2: Copy code.zip to /root, remove existing specified folder, and unzip
+if [ -f /root/code.zip ]; then
+    rm -f /root/code.zip
+fi
 cp /workspace/code.zip /root
 if [ -d /root/$folder ]; then
     rm -rf /root/$folder
 fi
 unzip -qq /root/code.zip -d /root/$folder
+cp -r /root/$folder/code/* /root/$folder/
+chmod -R 777 /root/$folder
 
 # Ensure model folder exists in /root/$folder
 if [ ! -d /root/$folder/model ]; then
     mkdir -p /root/$folder/model
+    chmod -R 777 /root/$folder
 fi
 
 if [ ! -d /root/$folder/output ]; then
     mkdir -p /root/$folder/output
+    chmod -R 777 /root/$folder
 fi
 
 # Step 3: Run the specified Python script with additional arguments and log output

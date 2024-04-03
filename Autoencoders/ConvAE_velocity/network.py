@@ -44,7 +44,7 @@ class ConvAutoencoder(nn.Module):
         elif bottleneck_type == 1:
             self.bottleneck_class = Bottleneck_sanwichLayers
 
-        # Encoder
+        ### Encoder
         self.encoder = nn.ModuleList(
             [self.encoder_class(self.output_channel_list[i], self.output_channel_list[i+1], 
                                 kernel_size=3, stride=2, padding=1, leakiness=leakiness, 
@@ -52,25 +52,11 @@ class ConvAutoencoder(nn.Module):
                                 for i in range(self.depth-1)]
         )
 
+        ### Bottleneck
         self.bottleneck = self.bottleneck_class(input_shape=(self.output_channel_list[-1], bottom_res, bottom_res),
                                                 neck_size=feature_vector_size, leakiness=leakiness, dropout_probability=dropout_probability)
 
-        # self.bottleneck = nn.Sequential(
-        #     nn.Flatten(),
-        #     nn.Linear(self.output_channel_list[-1] * bottom_res * bottom_res, feature_vector_size), 
-        #     nn.BatchNorm1d(feature_vector_size),
-        #     nn.LeakyReLU(leakiness), 
-        #     nn.Dropout(dropout_probability),
-        #     nn.Linear(feature_vector_size, self.output_channel_list[-1] * bottom_res * bottom_res),
-
-        #     nn.BatchNorm1d(self.output_channel_list[-1] * bottom_res * bottom_res),
-        #     nn.LeakyReLU(leakiness), 
-        #     nn.Dropout(dropout_probability),
-
-        #     nn.Unflatten(1, (int(self.output_channel_list[-1]), bottom_res, bottom_res)),
-        # )
-
-        # Decoder
+        ### Decoder
         self.decoder = nn.ModuleList(
             [self.decoder_class(self.inverse_output_channel_list[i], self.inverse_output_channel_list[i+1], 
                                 kernel_size=3, stride=2, padding=1, output_padding=1, leakiness=leakiness, 
@@ -85,8 +71,8 @@ class ConvAutoencoder(nn.Module):
         x = self.bottleneck(x)
         for i in range(self.depth-1):
             x = self.decoder[i](x)
-        return x   
-
+        return x 
+    
 # leakiness = 0.01
 
 # input_res = 256

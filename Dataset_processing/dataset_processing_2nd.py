@@ -24,11 +24,11 @@ def process_strainRate_to(input_path, output_path, start_index, end_index, attr_
         np_strainRate_data = dm_strainRate.read_single_frame_data(i)[1:-1,1:-1]
         if to == 'vorticity':
             np_vorticity_data = np_strainRate_data[...,1,0] - np_strainRate_data[...,0,1]
-            ti_vorticity.from_numpy(np_vorticity_data)
+            ti_vorticity.from_numpy(np_vorticity_data.astype(np.float32))
 
             if use_density_mask:
                 np_density_data = dm_density.read_single_frame_data(i)
-                ti_density_data.from_numpy(np_density_data)
+                ti_density_data.from_numpy(np_density_data.astype(np.float32))
                 dm_density.Sobel_conv_ti(1, ti_density_data, ti_density_grad_px, ts.Grid_Data.PARTIAL_X)
                 dm_density.Sobel_conv_ti(1, ti_density_data, ti_density_grad_py, ts.Grid_Data.PARTIAL_Y)
                 ts.ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_map)
@@ -37,7 +37,7 @@ def process_strainRate_to(input_path, output_path, start_index, end_index, attr_
                 ts.ker_invBinary(ti_density_grad_map, 0.2)        
                 ts.ker_entry_wise_productEqual(ti_density_grad_map, ti_vorticity)
 
-                ti_density_map.from_numpy(np_density_data[1:-1,1:-1])
+                ti_density_map.from_numpy(np_density_data[1:-1,1:-1].astype(np.float32))
                 ts.ker_normalize(ti_density_map)
                 ts.ker_binary(ti_density_map, 0.5)
                 ts.ker_entry_wise_productEqual(ti_density_map, ti_vorticity)
@@ -76,16 +76,16 @@ def process_vel_to_strainRate(input_path, output_path, start_index, end_index, c
 
         np_conv_val = np.zeros((dm_vel.shape_x-2, dm_vel.shape_y-2,2,2))
         
-        ti_conved_val.from_numpy(np_vel_data[...,ts.Grid_Data.VAL_X])
+        ti_conved_val.from_numpy(np_vel_data[...,ts.Grid_Data.VAL_X].astype(np.float32))
         dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pupx, ts.Grid_Data.PARTIAL_X)
         dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pupy, ts.Grid_Data.PARTIAL_Y)
-        ti_conved_val.from_numpy(np_vel_data[...,ts.Grid_Data.VAL_Y])
+        ti_conved_val.from_numpy(np_vel_data[...,ts.Grid_Data.VAL_Y].astype(np.float32))
         dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pvpx, ts.Grid_Data.PARTIAL_X)
         dm_vel.Sobel_conv_ti(cell_size, ti_conved_val, ti_conv_val_pvpy, ts.Grid_Data.PARTIAL_Y)
 
         if use_density_mask:
             np_density_data = dm_density.read_single_frame_data(i)
-            ti_density_data.from_numpy(np_density_data)
+            ti_density_data.from_numpy(np_density_data.astype(np.float32))
             dm_density.Sobel_conv_ti(cell_size, ti_density_data, ti_density_grad_px, ts.Grid_Data.PARTIAL_X)
             dm_density.Sobel_conv_ti(cell_size, ti_density_data, ti_density_grad_py, ts.Grid_Data.PARTIAL_Y)
             ts.ker_entry_wise_grad_mag(ti_density_grad_px, ti_density_grad_py, ti_density_grad_map)
@@ -98,7 +98,7 @@ def process_vel_to_strainRate(input_path, output_path, start_index, end_index, c
             ts.ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pvpx)
             ts.ker_entry_wise_productEqual(ti_density_grad_map, ti_conv_val_pvpy)
 
-            ti_density_map.from_numpy(np_density_data[1:-1,1:-1])
+            ti_density_map.from_numpy(np_density_data[1:-1,1:-1].astype(np.float32))
             ts.ker_normalize(ti_density_map)
             ts.ker_binary(ti_density_map, 0.5)
             ts.ker_entry_wise_productEqual(ti_density_map, ti_conv_val_pupx)

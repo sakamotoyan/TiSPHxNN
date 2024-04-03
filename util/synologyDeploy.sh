@@ -3,6 +3,27 @@
 export http_proxy=http://router4.ustb-ai3d.cn:3128
 export https_proxy=http://router4.ustb-ai3d.cn:3128
 
+######## COPY DATASET ########
+cd /root/
+cp /workspace/dataset/dataset.zip /root/
+nohup unzip /root/dataset.zip &
+
+######## COPY CODE ########
+cd /root/
+cp /workspace/code.zip /root/
+rm -rf /root/code
+nohup unzip /root/code.zip &
+chmod -R 777 /root/code/
+
+######## DATASET PROCESSING ########
+cd /root
+nohup python3 ./code/exec_dataset_processing.py &
+
+######## TRAINING ########
+/workspace/train.sh -gpu 0 -exe exec_train.py -arg -f 016 -folder train_feature016 -have_dataset 1
+./code/util/train.sh -gpu 1 -exe exec_train.py -arg -f 008 -folder train_feature008 -have_dataset 1
+./code/util/train.sh -gpu 2 -exe exec_train.py -arg -f 004 -folder train_feature004 -have_dataset 1
+
 # GENERATING DATASET
 # cd /root/
 # cp /workspace/TiSPHxNN.zip /root/
@@ -24,8 +45,6 @@ export https_proxy=http://router4.ustb-ai3d.cn:3128
 # export CUDA_VISIBLE_DEVICES=2
 # cd /root/t15
 # nohup ti trainScene_15_harmonicMove6c3.py &
-
-
 
 
 
