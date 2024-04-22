@@ -210,39 +210,45 @@ class Bottleneck_sanwichLayers(nn.Module):
     def __init__(self, input_shape, neck_size, leakiness, dropout_probability):
         outerlayer_neck_size = neck_size * 2 
         super(Bottleneck_sanwichLayers, self).__init__()
-        self.bottleneck = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(input_shape[0]*input_shape[1]*input_shape[2], outerlayer_neck_size),
-            nn.BatchNorm1d(outerlayer_neck_size),
-            nn.LeakyReLU(leakiness),
-            nn.Dropout(dropout_probability),
-            nn.Linear(outerlayer_neck_size, neck_size),
-            nn.BatchNorm1d(neck_size),
-            nn.LeakyReLU(leakiness),
-            nn.Dropout(dropout_probability),
-            nn.Linear(neck_size, input_shape[0]*input_shape[1]*input_shape[2]),
-            nn.BatchNorm1d(input_shape[0]*input_shape[1]*input_shape[2]),
-            nn.LeakyReLU(leakiness),
-            nn.Dropout(dropout_probability),
-            nn.Unflatten(1, (int(input_shape[0]), int(input_shape[1]), int(input_shape[2]))),
-        )
+
+        self.flt1 = nn.Flatten()
+        self.ln1 = nn.Linear(input_shape[0]*input_shape[1]*input_shape[2], outerlayer_neck_size)
+        self.bn1 = nn.BatchNorm1d(outerlayer_neck_size)
+        self.act1 = nn.LeakyReLU(leakiness)
+        self.drop1 = nn.Dropout(dropout_probability)
+        self.ln2 = nn.Linear(outerlayer_neck_size, neck_size)
+        self.bn2 = nn.BatchNorm1d(neck_size)
+        self.act2 = nn.LeakyReLU(leakiness)
+        self.drop2 = nn.Dropout(dropout_probability)
+        self.ln3 = nn.Linear(neck_size, input_shape[0]*input_shape[1]*input_shape[2])
+        self.bn3 = nn.BatchNorm1d(input_shape[0]*input_shape[1]*input_shape[2])
+        self.act3 = nn.LeakyReLU(leakiness)
+        self.drop3 = nn.Dropout(dropout_probability)
+        self.unflt1 = nn.Unflatten(1, (int(input_shape[0]), int(input_shape[1]), int(input_shape[2])))
 
         self.feature_vector = None
-        self.feature_maps = {}
 
         ### Register hooks
-        self.bottleneck[5].register_forward_hook(self.get_feature_vector())
+        self.ln2.register_forward_hook(self.get_feature_vector())
 
-    def get_activation(self, name):
-        def hook(model, input, output):
-            self.feature_maps[name] = output.detach()
-        return hook
-    
     def get_feature_vector(self):
         def hook(model, input, output):
             self.feature_vector = output
         return hook
-    
+
     def forward(self, x):
-        x = self.bottleneck(x)
+        x = self.flt1(x)
+        x = self.ln1(x)
+        x = self.bn1(x)
+        x = self.act1(x)
+        x = self.drop1(x)
+        x = self.ln2(x)
+        x = self.bn2(x)
+        x = self.act2(x)
+        x = self.drop2(x)
+        x = self.ln3(x)
+        x = self.bn3(x)
+        x = self.act3(x)
+        x = self.drop3(x)
+        x = self.unflt1(x)
         return x

@@ -152,8 +152,8 @@ class Frame_ControlPanel:
         self.button_load.grid                   (row=7, column=0, sticky="w")
         self.lable_load.grid                    (row=7, column=1, sticky="w", columnspan=2)
 
-        self.entry_mainDir.insert(0, "../output032/")
-        self.entry_bottleneck_name.insert(0, "bottleneck")
+        self.entry_mainDir.insert(0, "../output/")
+        self.entry_bottleneck_name.insert(0, "feature_vector")
         self.entry_input_velocity_name.insert(0, "sci_input_velocity")
         self.entry_input_vorticity_name.insert(0, "sci_input_vorticity")
         self.entry_output_velocity_name.insert(0, "sci_output_velocity")

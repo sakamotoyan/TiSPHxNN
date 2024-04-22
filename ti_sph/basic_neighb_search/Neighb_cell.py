@@ -29,14 +29,14 @@ class Neighb_cell(Solver):
         self.parameter_cehck()
 
         # 计算网格数量(cell_num_vec, cell_num) 并准备好网格编码器(cell_coder)
-        self.cell_num = val_u(0)
+        self.cell_num = val_i(0)
         self.cell_num_vec = vecx_i(self.dim[None])
         self.cell_coder = vecx_i(self.dim[None])
         self.calculate_cell_param()
 
         print("cell_num: ", self.cell_num[None])
         
-        self.part_num_in_cell = ti.field(ti.u8, (self.cell_num[None]))
+        self.part_num_in_cell = ti.field(ti.u32, (self.cell_num[None]))
         self.cell_begin_pointer = ti.field(ti.u32, (self.cell_num[None]))
 
         # self.part_num_in_cell = ti.field(ti.i32)

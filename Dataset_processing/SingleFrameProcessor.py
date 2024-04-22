@@ -108,14 +108,14 @@ class SingleFrameProcessor:
                 raise ValueError("Only translation is supported at the moment")
 
 
-main_path = os.path.join('../dataset_test2','dataset_old')
-output_path = os.path.join('../dataset_test2','dataset')
+main_path = os.path.join('../output', 'organized')
+output_path = os.path.join(main_path, 'vis')
 if not os.path.exists(output_path): os.makedirs(output_path)
 for file in os.listdir(output_path): print(f"Removing {file}"); os.remove(os.path.join(output_path, file))
 
 attrs=['density', 'strainRate', 'strainRate2vorticity', 'vel2StrainRate', 'vel2vorticity', 'velocity']
 attr_shapes = [(1), (2,2), (1), (2,2), (1), (2)]
-frame_number = 400
+frame_number = 6
 
 singleFrameProcessor = SingleFrameProcessor(frame_number, attrs, main_path)
 singleFrameProcessor.generateMaskedSerialFrames2D(100, 100, 128, 128, output_path, motion='rotation', degree=5)

@@ -1,32 +1,54 @@
 import numpy as np
 import pyvista as pv
 
-input_path = '../organized_output'
+def demo_read_and_display():
+    # Create a PyVista UniformGrid object
+    field = np.load('../output/organized/density_0.npz')['arr_0']
+    grid = pv.ImageData()
 
-# Create a PyVista UniformGrid object
-grid = pv.ImageData()
+    # Set the dimensions, spacing, and origin of the grid
+    grid.dimensions = np.array(field.shape) + 1
+    grid.spacing = (1, 1, 1)  # Assuming the spacing between your points is 1 in all directions
+    grid.origin = (0, 0, 0)  # Assuming the origin is at (0, 0, 0)
 
-field = np.load('../organized_output/density_0.npz')['arr_0']
+    # Assign the density field to the grid
+    grid.cell_data["values"] = field.flatten(order="F")  # Flatten the array in Fortran order
 
-# Set the dimensions, spacing, and origin of the grid
-grid.dimensions = np.array(field.shape) + 1
-grid.spacing = (1, 1, 1)  # Assuming the spacing between your points is 1 in all directions
-grid.origin = (0, 0, 0)  # Assuming the origin is at (0, 0, 0)
+    # Create the volume plot
+    plotter = pv.Plotter()
+    plotter.camera_position = 'zy'
+    plotter.camera.elevation = 30
+    plotter.add_volume(grid, scalars="values")
 
-# Assign the density field to the grid
-grid.cell_data["values"] = field.flatten(order="F")  # Flatten the array in Fortran order
-
-# Create the volume plot
-plotter = pv.Plotter()
-# plotter.camera_position = 'zy'
-# plotter.camera.elevation = 30
-plotter.add_volume(grid, scalars="values")
-
-# Display the plot
-plotter.show()
+    # Display the plot
+    plotter.show()
 
 
+def demo_density_gif():
+    input_path = '../output/organized'
+    plotter_density = pv.Plotter(off_screen=True)
+    plotter_density.open_gif("animation_density.gif")
 
+    for i in range(0, 6):
+        grid_density = pv.ImageData()
+
+        field_density = np.load(f'{input_path}/density_{i}.npz')['arr_0']
+
+        grid_density.dimensions = np.array(field_density.shape) + 1
+        grid_density.spacing = (1, 1, 1)  # Assuming the spacing between your points is 1 in all directions
+        grid_density.origin = (0, 0, 0)  # Assuming the origin is at (0, 0, 0)
+        grid_density.cell_data["values"] = field_density.flatten(order="F")  # Flatten the array in Fortran order
+        plotter_density.clear()
+        plotter_density.add_volume(grid_density, scalars="values")
+        outline = grid_density.outline_corners()
+        plotter_density.add_mesh(outline, color="black", show_edges=True)
+        plotter_density.camera_position = 'zy'
+        plotter_density.camera.elevation = 30
+        plotter_density.write_frame()  
+
+    plotter_density.close()
+
+demo_density_gif()
 
 # plotter_vel = pv.Plotter(off_screen=True)
 # plotter_vel.open_gif("animation_vel.gif")

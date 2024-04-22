@@ -1,10 +1,15 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 import taichi as ti
 # from ti_sph import *
 import ti_sph as tsph
 from template_part import part_template
 from template_grid import grid_template
 import time
-import sys
 import numpy as np
 import csv
 np.set_printoptions(threshold=sys.maxsize)
@@ -22,12 +27,12 @@ fps = 60
 output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
-scaling_factor = 2
+scaling_factor = 1
 # size of the particle
-part_size = 0.05 
+part_size = 0.1 
 # max time step size
 max_time_step = part_size/100
-sense_cell_size = part_size*2.5
+sense_cell_size = part_size*2.0
 # kinematic viscosity of fluid
 kinematic_viscosity_fluid = 1e-4
 
@@ -254,7 +259,7 @@ def run(loop):
 
 ''' RUN THE SIMULATION '''
 prep()
-run(loop_ism)
+vis_run(loop_ism)
 
 
 

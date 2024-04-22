@@ -20,7 +20,8 @@ cd /root
 nohup python3 ./code/exec_dataset_processing.py &
 
 ######## TRAINING ########
-/workspace/train.sh -gpu 0 -exe exec_train.py -arg -f 016 -folder train_feature016 -have_dataset 1
+/workspace/train.sh -gpu 0 -exe exec_train.py -arg -f 512 -folder pnloss -have_dataset 1
+/workspace/train.sh -gpu 1 -exe exec_train.py -arg -f 512 -folder triLoss -have_dataset 1
 ./code/util/train.sh -gpu 1 -exe exec_train.py -arg -f 008 -folder train_feature008 -have_dataset 1
 ./code/util/train.sh -gpu 2 -exe exec_train.py -arg -f 004 -folder train_feature004 -have_dataset 1
 

@@ -154,7 +154,7 @@ class Frame_FVanalysis:
         FVcpu = self.frame_control_panel.arr_bottleneck.cpu()
         max = FVcpu.max().item()
         min = FVcpu.min().item()
-        self.ax_FVplot.set_ylim(min, max)
+        # self.ax_FVplot.set_ylim(min, max)
         for i in range(self.feature_vector_size):
             if self.activate_mask[i]:
                 self.ax_FVplot.plot(FVcpu[:, 0, i], label=f"Feature {i}", zorder=2)

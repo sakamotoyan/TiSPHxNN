@@ -1,4 +1,5 @@
 import taichi as ti
+import numpy as np
 from .Mod_GetAndSet import Mod_GetAndSet
 
 @ti.data_oriented
@@ -29,7 +30,7 @@ class Mod_DataOp(Mod_GetAndSet):
             raise Exception("Data dimension not supported!")
             exit(0)
         
-        data_ti_container.from_numpy(data)
+        data_ti_container.from_numpy(data.astype(np.float32))
         self.fill_open_stack_with_arr(attr_, data_ti_container)
 
     @ti.kernel

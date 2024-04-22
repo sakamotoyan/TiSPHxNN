@@ -63,6 +63,9 @@ class TrainConvAutoencoder:
 
         for epoch in range(num_epochs):
             running_loss = 0.0
+            running_loss_vorticity = 0.0
+            running_loss_positive_vorticity = 0.0
+            running_loss_negative_vorticity = 0.0
             for batch_inputs in self.data_loader:
 
                 ### Zero the parameter gradients
@@ -94,23 +97,44 @@ class TrainConvAutoencoder:
 
                 ### Post processing for input and output vorticity
                 if crop_boundary:
-                    input_vorticity  = input_vorticity [:, :, 3:-3, 3:-3]
-                    output_vorticity = output_vorticity[:, :, 3:-3, 3:-3]
-                input_vorticity_mean = torch.mean(input_vorticity, dim=(1,2,3))
-                input_vorticity_variance = torch.var(input_vorticity, dim=(1,2,3)) / math.sqrt(256)
+                    # input_vorticity  = input_vorticity [:, :, 3:-3, 3:-3]
+                    # output_vorticity = output_vorticity[:, :, 3:-3, 3:-3]
+                    input_vorticity[:, :, 0:3, :] = 0
+                    input_vorticity[:, :, -3:, :] = 0
+                    input_vorticity[:, :, :, 0:3] = 0
+                    input_vorticity[:, :, :, -3:] = 0
 
                 ### Compute loss
-                loss_vorticity = self.criterion(input_vorticity_mean, batch_feature_vector[:,0])
-                loss_mean = self.criterion(input_vorticity_variance, batch_feature_vector[:,1])
-                loss = loss_vorticity
+                loss_vorticity = self.criterion(output_vorticity, input_vorticity)
+                sum_positive_vorticity = torch.sum(torch.relu(input_vorticity),dim=(1,2,3)) / (256*256) / input_vorticity.size(0)
+                sum_negative_vorticity = torch.sum(torch.relu(-input_vorticity),dim=(1,2,3)) / (256*256) / input_vorticity.size(0)
+                loss_positive_vorticity = self.criterion(sum_positive_vorticity, batch_feature_vector[:,0])
+                loss_negative_vorticity = self.criterion(sum_negative_vorticity, batch_feature_vector[:,1])
+                input_vorticity_mean = torch.mean(input_vorticity, dim=(1,2,3))
+                input_vorticity_variance = torch.var(input_vorticity, dim=(1,2,3)) / math.sqrt(256)
+                loss_mean = self.criterion(input_vorticity_mean, batch_feature_vector[:,0])
+                loss_variance = self.criterion(input_vorticity_variance, batch_feature_vector[:,1])
+                loss = loss_vorticity + loss_positive_vorticity + loss_negative_vorticity
                 loss.backward()
                 self.optimizer.step()
 
-                running_loss += loss_vorticity.item()
+                running_loss += loss.item()
+                running_loss_vorticity += loss_vorticity.item()
+                running_loss_positive_vorticity += loss_positive_vorticity.item()
+                running_loss_negative_vorticity += loss_negative_vorticity.item()
 
             average_loss = running_loss / len(self.data_loader)
+            average_loss_vorticity = running_loss_vorticity / len(self.data_loader)
+            average_loss_positive_vorticity = running_loss_positive_vorticity / len(self.data_loader)
+            average_loss_negative_vorticity = running_loss_negative_vorticity / len(self.data_loader)
+
             self.loss_list.append(average_loss)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {average_loss:.8f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}],",
+                  f"Loss: {average_loss:.8f},",
+                  f"Loss_vorticity: {average_loss_vorticity:.8f},",
+                  f"Loss_positive_vorticity: {average_loss_positive_vorticity:.8f},",
+                  f"Loss_negative_vorticity: {average_loss_negative_vorticity:.8f}",
+                  flush=True)
 
             if (epoch+1) % save_step == 0:    
                 torch.save(self.network.state_dict(), os.path.join(network_model_path,f'epochs_{epoch+current_epochs_num}.pth'))
@@ -139,7 +163,7 @@ class TrainConvAutoencoder:
         self.dataset = DatasetConvAutoencoder(attr_name_1, dataset_file_path_1, attr_name_2, dataset_file_path_2, attr_name_3, dataset_file_path_3)
         self.data_loader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
-    def test(self, model_file_path, output_path, crop=False, exclude_threshold=None, export_bottleneck_layer=None, shuffle=False):
+    def test(self, model_file_path, output_path, crop=False, exclude_threshold=None, export_feature_vector=False, shuffle=False):
             
         self.network.load_state_dict(torch.load(model_file_path, torch.device(self.platform)))
         self.network.eval()
@@ -149,9 +173,6 @@ class TrainConvAutoencoder:
         loss_vel = []
         loss_vort = []
         loss_hist = []
-
-        if export_bottleneck_layer is not None:
-            self.network.bottleneck.bottleneck[export_bottleneck_layer].register_forward_hook(self.network.bottleneck.get_activation('bottleneck'))
 
         with torch.no_grad():
             for batch_inputs in test_data_loader:
@@ -171,6 +192,17 @@ class TrainConvAutoencoder:
                 input_vorticity_hist = self.func_differentiable_histogram(input_vorticity, bins=128, min_value=-1, max_value=1)
                 output_vorticity_hist = self.func_differentiable_histogram(output_vorticity, bins=128, min_value=-1, max_value=1)
 
+                input_vorticity_mean = torch.mean(input_vorticity, dim=(1,2)).item()
+                input_vorticity_variance = torch.var(input_vorticity, dim=(1,2)).item() / math.sqrt(256)
+                input_vorticity_positive = torch.sum(torch.relu(input_vorticity), dim=(1,2)).item() / (256*256) / input_vorticity.size(0)
+                input_vorticity_negative = torch.sum(torch.relu(-input_vorticity), dim=(1,2)).item() / (256*256) / input_vorticity.size(0)
+                print(
+                    "input_vorticity_mean: ",     f"{input_vorticity_mean:.8f}", 
+                    "input_vorticity_variance: ", f"{input_vorticity_variance:.8f}",
+                    "input_vorticity_positive: ", f"{input_vorticity_positive:.8f}",
+                    "input_vorticity_negative: ", f"{input_vorticity_negative:.8f}",
+                    )
+
                 loss_vel.append(self.criterion(batch_outputs, batch_inputs).item())
                 loss_vort.append(self.criterion(output_vorticity, input_vorticity).item())
                 loss_hist.append(self.criterion(output_vorticity_hist, input_vorticity_hist).item())
@@ -181,6 +213,7 @@ class TrainConvAutoencoder:
                 output_vorticity = output_vorticity.cpu().numpy()
                 input_vorticity_hist  = input_vorticity_hist.cpu().numpy()
                 output_vorticity_hist = output_vorticity_hist.cpu().numpy()
+
                 for i in range(input_vorticity.shape[0]):
                     np.save(os.path.join(output_path,f'input_velocity_{counter}.npy'),  batch_inputs[i,...])
                     np.save(os.path.join(output_path,f'output_velocity_{counter}.npy'), batch_outputs[i,...])
@@ -191,9 +224,9 @@ class TrainConvAutoencoder:
                     np.save(os.path.join(output_path,f'input_vorticity_hist_{counter}.npy'),  input_vorticity_hist[i,...])
                     np.save(os.path.join(output_path,f'output_vorticity_hist_{counter}.npy'), output_vorticity_hist[i,...])
 
-                    if export_bottleneck_layer is not None:
-                        batch_bottleneck = self.network.bottleneck.feature_maps['bottleneck'].cpu().numpy()
-                        np.save(os.path.join(output_path,f'bottleneck_{counter}.npy'), batch_bottleneck)
+                    if export_feature_vector:
+                        batch_bottleneck = self.network.bottleneck.feature_vector.cpu().numpy()
+                        np.save(os.path.join(output_path,f'feature_vector_{counter}.npy'), batch_bottleneck)
 
                     counter += 1
             self.save_loss_fig(0, output_path, 'vel', loss_vel)

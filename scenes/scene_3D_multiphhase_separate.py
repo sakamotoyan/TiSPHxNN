@@ -1,9 +1,13 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 import taichi as ti
 # from ti_sph import *
 import ti_sph as tsph
 from template_part import part_template
 import time
-import sys
 import numpy as np
 import csv
 np.set_printoptions(threshold=sys.maxsize)
@@ -12,7 +16,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # Use GPU, comment the below command to run this programme on CPU
 # ti.init(arch=ti.cuda, device_memory_GB=13) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
-ti.init(arch=ti.cuda)
+ti.init(arch=ti.metal)
 # ti.init(arch=ti.cpu)
 
 ''' SOLVER SETTINGS '''
