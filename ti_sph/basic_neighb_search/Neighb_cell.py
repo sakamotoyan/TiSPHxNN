@@ -36,8 +36,8 @@ class Neighb_cell(Solver):
 
         print("cell_num: ", self.cell_num[None])
         
-        self.part_num_in_cell = ti.field(ti.u32, (self.cell_num[None]))
-        self.cell_begin_pointer = ti.field(ti.u32, (self.cell_num[None]))
+        self.part_num_in_cell = ti.field(ti.i32, (self.cell_num[None]))
+        self.cell_begin_pointer = ti.field(ti.i32, (self.cell_num[None]))
 
         # self.part_num_in_cell = ti.field(ti.i32)
         # ti.root.pointer(ti.i, self.cell_num[None]//4096+1).bitmasked(ti.i, 4096).place(self.part_num_in_cell)
@@ -74,15 +74,18 @@ class Neighb_cell(Solver):
     # 计算网格数量并准备好网格编码器
     @ti.kernel
     def calculate_cell_param(self):
-        dim = ti.static(self.cell_coder[None].n)
-        assign(self.cell_num_vec[None], ti.ceil(
-            (self.rt[None] - self.lb[None]) / self.cell_size[None]).cast(ti.i32))
-        for i in ti.static(range(dim)):
+        dim = ti.static(self.obj.getPosArr().n)
+
+        self.cell_num_vec[None] = ti.ceil((self.rt[None] - self.lb[None]) / self.cell_size[None]).cast(ti.i32)
+        print("cell_num_vec: ", self.cell_num_vec[None])
+            
+        for i in range(dim):
             self.cell_coder[None][i] = 1
         self.cell_num[None] = 1
         for i in ti.static(range(dim)):
             self.cell_coder[None][i] = self.cell_num[None]
             self.cell_num[None] *= int(self.cell_num_vec[None][i])
+            print("self.cell_num[None]: ", self.cell_num[None])
     
     @ti.func
     def encode_into_cell(
@@ -101,14 +104,14 @@ class Neighb_cell(Solver):
     @ti.func
     def encode_cell_vec(
         self,
-        cell_vec: ti.template(),
+        cell_vec,
     ):
         return cell_vec.dot(self.cell_coder[None])
     
     @ti.func
     def within_cell(
         self,
-        cell_vec: ti.template(),
+        cell_vec,
     ):
         ans = True
         for i in range(self.dim[None]):
@@ -125,8 +128,8 @@ class Neighb_cell(Solver):
     @ti.func
     def get_part_id_in_cell(
         self,
-        cell_id: ti.template(),
-        part_shift: ti.template(),
+        cell_id,
+        part_shift,
     ):
         return self.part_id_container[self.cell_begin_pointer[cell_id] + part_shift]
 

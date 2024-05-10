@@ -16,7 +16,7 @@ np.set_printoptions(threshold=sys.maxsize)
 # Use GPU, comment the below command to run this programme on CPU
 # ti.init(arch=ti.cuda, device_memory_GB=13) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
-ti.init(arch=ti.metal)
+ti.init(arch=ti.cuda)
 # ti.init(arch=ti.cpu)
 
 ''' SOLVER SETTINGS '''
@@ -164,7 +164,7 @@ def loop_ism():
     ''' [TIME START] DFSPH Part 2 '''
     world.step_vfsph_div(update_vel=False)
     ''' [TIME END] DFSPH Part 2 '''
-    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     ''' [ISM] distribute pressure acc to phase acc and update phase vel '''
     '''  [TIME START] ISM Part 1 '''
@@ -189,7 +189,7 @@ def loop_ism():
     '''  [TIME START] DFSPH Part 3 '''
     world.step_vfsph_incomp(update_vel=False)
     '''  [TIME START] DFSPH Part 3 '''
-    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    # print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     ''' distribute pressure acc to phase acc and update phase vel '''
     '''  [TIME START] ISM Part 3 '''
@@ -222,7 +222,7 @@ def loop_ism():
     '''  [TIME END] CFL '''
 
     ''' statistical info '''
-    print(' ')
+    # print(' ')
     # fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     # fluid_part.m_solver_ism.statistics_angular_momentum()
     # fluid_part.m_solver_ism.debug_check_val_frac()
@@ -308,15 +308,18 @@ def vis_run(loop):
     flag_write_img = False
 
     gui = tsph.Gui3d()
+    comp_time = time.time()
     while gui.window.running:
 
         gui.monitor_listen()
-
         if gui.op_system_run:
             loop()
             loop_count += 1
+            if loop_count % 100 == 0:
+                print("Time for one loop: ", time.time()-comp_time)
+                comp_time = time.time()
             sim_time += world.g_dt[None]
-            print("loop ", loop_count)
+            # print("loop ", loop_count)
             
             if(sim_time > timer*inv_fps):
                 if gui.op_write_file:

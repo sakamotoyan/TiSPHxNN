@@ -153,7 +153,7 @@ class Multiphase_solver(SPH_solver):
     @ti.kernel
     def update_rest_density_and_mass(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            rest_density = 0
+            rest_density = 0.0
             for phase_id in range(self.phase_num[None]):
                 rest_density += self.obj.phase.val_frac[part_id, phase_id] * self.world.g_phase_rest_density[None][phase_id]
             self.obj.rest_density[part_id] = rest_density
