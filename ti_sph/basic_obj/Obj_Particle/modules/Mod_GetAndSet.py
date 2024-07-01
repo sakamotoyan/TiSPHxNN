@@ -1,6 +1,4 @@
 import taichi as ti
-from ....basic_world import World
-
 
 @ti.data_oriented
 class Mod_GetAndSet:
@@ -29,7 +27,7 @@ class Mod_GetAndSet:
     def tiSetStackOpenNum(self, num: ti.i32):
         self.m_stack_open_num[None] = num
     @ti.func
-    def tiGetWorld(self)->World:
+    def tiGetWorld(self):
         return self.m_world
     @ti.func
     def tiSetWorld(self, world):
@@ -57,7 +55,7 @@ class Mod_GetAndSet:
         return self.m_stack_open_num[None]
     def setStackOpenNum(self, num: int):
         self.m_stack_open_num[None] = num
-    def getWorld(self)->World:
+    def getWorld(self):
         return self.m_world
     def setWorld(self, world):
         self.m_world = world
@@ -137,6 +135,11 @@ class Mod_GetAndSet:
     @ti.func
     def tiAddAcc(self, i, acc):
         self.acc[i] += acc
+    @ti.func
+    def tiGetAccArr(self):
+        return self.acc
+    def getAccArr(self):
+        return self.acc
 
     @ti.func
     def tiGetMass(self, i):

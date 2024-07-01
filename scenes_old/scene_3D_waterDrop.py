@@ -1,8 +1,18 @@
-import os
 import sys
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-from scenes.scene_import import *
+
+import taichi as ti
+# from ti_sph import *
+import ti_sph as tsph
+from template_part import part_template
+from template_grid import grid_template
+import time
+import numpy as np
+import csv
+np.set_printoptions(threshold=sys.maxsize)
 
 output_path = '../output'
 
@@ -249,8 +259,8 @@ def run(loop):
 
 ''' RUN THE SIMULATION '''
 prep()
-vis_run(loop_ism)
-# run(loop_ism)
+# vis_run(loop_ism)
+run(loop_ism)
 
 
 

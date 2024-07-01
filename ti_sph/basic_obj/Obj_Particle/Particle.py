@@ -65,7 +65,7 @@ class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod
 
     @ti.kernel
     def color_code_part(self: ti.template(), arr: ti.template(), lower: ti.f32, upper: ti.f32):
-        for i in range(self.tiGetObjStackTop()):
+        for i in range(self.tiGetStackTop()):
             val = ti.min(ti.max(ti.math.length(arr[i]) / (upper - lower), 0), 1)
             self.rgb[i][0] = val
             self.rgb[i][1] = val

@@ -10,6 +10,8 @@ vec3i = ti.types.vector(3, ti.i32)
 vec4f = ti.types.vector(4, ti.f32)
 vec4i = ti.types.vector(4, ti.i32)
 
+def matxf(n):
+    return ti.types.matrix(n,n,ti.f32)
 
 def vecxf(n):
     return ti.types.vector(n, ti.f32)

@@ -37,6 +37,8 @@ class Mod_Solvers:
 
     def getSolverSPH(self)->SPH_solver:
         return self.m_solver_sph
+    def getSolverWCSPH(self)->WCSPH_solver:
+        return self.m_solver_wcsph
     @ti.func
     def tiGetSolverSPH(self):
         return self.m_solver_sph
@@ -47,6 +49,8 @@ class Mod_Solvers:
         return self.m_solver_adv
     @ti.func
     def tiGetSolverDF(self):
+        return self.m_solver_df
+    def getSolverDF(self):
         return self.m_solver_df
     @ti.func
     def tiGetSolverWCSPH(self):

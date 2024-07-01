@@ -1,8 +1,10 @@
-import os
+import taichi as ti
+from ti_sph import *
+from template_part import part_template
+import time
 import sys
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
-from scenes.scene_import import *
+import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
@@ -14,7 +16,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+solver = SOLVER_ISM # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -43,45 +45,43 @@ kinematic_viscosity_fluid = 0.0
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
-world = tsph.World(dim=2) 
+world = World(dim=2) 
 # set the particle diameter
 world.setPartSize(part_size) 
 # set the max time step size
 world.setDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
-world.set_multiphase(phase_num,[tsph.vec3f(0.8,0.2,0),tsph.vec3f(0,0.8,0.2),tsph.vec3f(0,0,1)],[500,500,1000]) 
+world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],[500,500,1000]) 
 
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as two cubes. Should leave tiny space (1.001 of the part size) between particles to avoid SPH density error.
-fluid_cube_data_1 = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec2f(-1.5, -0.75), rt=tsph.vec2f(0,   0.75), span=world.g_part_size[None]*1.001)
-fluid_cube_data_2 = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec2f(0.1, -1.5),   rt=tsph.vec2f(4.1, 1.5 ), span=world.g_part_size[None]*1.001)
-fluid_part_num = tsph.val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
+fluid_cube_data_1 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(-1.5, -0.75), rt=vec2f(0, 0.75), span=world.g_part_size[None]*1.001)
+fluid_cube_data_2 = Cube_data(type=Cube_data.FIXED_CELL_SIZE, lb=vec2f(0.1, -1.5), rt=vec2f(4.1, 1.5), span=world.g_part_size[None]*1.001)
+fluid_part_num = val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
 # get the number of fluid particles required to be generated
 print("fluid_part_num", fluid_part_num)
 
 '''INIT AN FLUID PARTICLE OBJECT'''
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
-fluid_part = tsph.Particle(part_num=fluid_part_num[None], part_size=world.g_part_size, is_dynamic=True)
-world.attachPartObj(fluid_part)
+fluid_part = world.add_part_obj(part_num=fluid_part_num[None], size=world.g_part_size, is_dynamic=True)
 # set the particle data structure to the fluid particle object (see the file template_part.py)
-print(world.g_part_size[None])
 fluid_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
-fluid_part.open_stack(fluid_cube_data_1.num) # open the stack to feed data
+fluid_part.open_stack(val_i(fluid_cube_data_1.num)) # open the stack to feed data
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)  # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([1.0, 0.0])) # feed the initial velocity
+fluid_part.fill_open_stack_with_val(fluid_part.vel, vec2_f([1.0, 0.0])) # feed the initial velocity
 fluid_part.close_stack() # close the stack
-fluid_part.open_stack(fluid_cube_data_2.num) # open the stack to feed data for another cube
+fluid_part.open_stack(val_i(fluid_cube_data_2.num)) # open the stack to feed data for another cube
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
+fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None])) # feed the particle volume
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
 fluid_part.close_stack() # close the stack
 
@@ -106,7 +106,7 @@ elif solver == SOLVER_JL21:
 ''' INIT ALL SOLVERS '''
 world.init_modules()
 
-gui2d = tsph.Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=tsph.vec2f(-8,-6),rt=tsph.vec2f(8,6))
+gui2d = Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=vec2f(-8,-6),rt=vec2f(8,6))
 ''' DATA PREPERATIONs '''
 def prep_ism():
     world.neighb_search() # perform the neighbor search
@@ -198,7 +198,7 @@ def loop_ism():
     '''  [TIME END] CFL '''
 
     ''' statistical info '''
-    # print(' ')
+    print(' ')
     fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     fluid_part.m_solver_ism.statistics_angular_momentum()
     fluid_part.m_solver_ism.debug_check_val_frac()
@@ -246,7 +246,7 @@ def loop_JL21():
     ''' [TIME END] JL21 Part 2 '''
 
     ''' statistical info '''
-    # print(' ')
+    print(' ')
     # fluid_part.m_solver_JL21.statistics_linear_momentum_and_kinetic_energy()
     # fluid_part.m_solver_JL21.statistics_angular_momentum()
     # fluid_part.m_solver_JL21.debug_check_val_frac()
@@ -254,7 +254,7 @@ def loop_JL21():
     # world.cfl_dt(0.4, max_time_step) 
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.getStackTop()):
+    for part_id in range(fluid_part.getObjStackTop()):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
@@ -269,7 +269,7 @@ def vis_run(loop):
     loop_count = 0
     flag_write_img = False
 
-    gui = tsph.Gui3d()
+    gui = Gui3d()
     while gui.window.running:
 
         gui.monitor_listen()
@@ -287,12 +287,12 @@ def vis_run(loop):
         
         if gui.op_refresh_window:
             gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getStackTop(),size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop(),size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
                 # gui.window.save_image('output/'+str(timer)+'.png')
-                gui2d.save_img(path=os.path.join(parent_dir,'output/part_'+str(timer)+'.jpg'))
+                gui2d.save_img(path='output/'+str(timer)+'.png')
                 flag_write_img = False
 
             gui.window.show()

@@ -6,6 +6,7 @@ import matplotlib.colors as mcolors
 
 import taichi as ti
 from ..basic_op.type import *
+from ..basic_obj import Particle
 
 class Gui2d:
     def __init__(self, objs, radius:ti.f32, lb:ti.types.vector(2, ti.f32), rt:ti.types.vector(2, ti.f32), dpi=200):
@@ -32,7 +33,8 @@ class Gui2d:
         # plt.grid(True)
 
         for obj in self.objs:
-            positoins = obj.getPosArr().to_numpy()
+            obj: Particle
+            positoins = obj.pos.to_numpy()
             colors = obj.rgb.to_numpy()
 
             x = positoins[:, 0]

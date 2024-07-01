@@ -1,6 +1,6 @@
 import taichi as ti
 import taichi.math as tm
-
+from ....basic_obj.Obj_Particle import Particle
 from ....basic_solvers import sph_funcs
 
 def init_cfl(self):
@@ -19,6 +19,7 @@ def find_max_vec(self: ti.template(), data: ti.template(), loop_range: ti.i32)->
 def cfl_dt(self, cfl_factor: float, max_dt: float):
     max_vel = sph_funcs.INF_SMALL
     for part_obj in self.cfl_list:
+        part_obj: Particle
         max_vel = max(self.find_max_vec(part_obj.vel, part_obj.getStackTop()), max_vel)
     new_dt = min(max_dt, self.g_part_size[None] / max_vel * cfl_factor)
     self.setDt(new_dt)

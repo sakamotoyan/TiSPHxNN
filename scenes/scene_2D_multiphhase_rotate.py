@@ -1,15 +1,12 @@
-import taichi as ti
-from ti_sph import *
-from template_part import part_template
-import time
+import os
 import sys
-import numpy as np
-import csv
-np.set_printoptions(threshold=sys.maxsize)
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.cuda, device_memory_GB=3) 
+ti.init(arch=ti.vulkan) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.cpu) 
 
@@ -46,17 +43,17 @@ kinematic_viscosity_fluid = 0.0
 
 ''' INIT SIMULATION WORLD '''
 # create a 2D world
-world = World(dim=2) 
+world = tsph.World(dim=2) 
 # set the particle diameter
 world.setPartSize(part_size) 
 # set the max time step size
 world.setDt(max_time_step) 
 # set up the multiphase. The first argument is the number of phases. The second argument is the color of each phase (RGB). The third argument is the rest density of each phase.
-world.set_multiphase(phase_num,[vec3f(0.8,0.2,0),vec3f(0,0.8,0.2),vec3f(0,0,1)],[500,500,1000]) 
+world.set_multiphase(phase_num,[tsph.vec3f(0.8,0.2,0),tsph.vec3f(0,0.8,0.2),tsph.vec3f(0,0,1)],[500,500,1000]) 
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
 # generate the fluid particle data as a hollowed sphere, rotating irrotationally
-pool_data = Round_pool_2D_data(r_hollow=1, r_in=6, r_out=6.5, angular_vel=3.14159, span=world.g_part_size[None]*1.001)
+pool_data = tsph.Round_pool_2D_data(r_hollow=1, r_in=6, r_out=6.5, angular_vel=3.14159, span=world.g_part_size[None]*1.001)
 # particle number of fluid/boundary
 fluid_part_num = pool_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
@@ -69,31 +66,33 @@ fluid_part_vel = pool_data.fluid_part_vel
 
 '''INIT AN FLUID PARTICLE OBJECT'''
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
-fluid_part = world.add_part_obj(part_num=fluid_part_num, size=world.g_part_size, is_dynamic=True)
+fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=world.g_part_size, is_dynamic=True)
+world.attachPartObj(fluid_part)
 fluid_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
-fluid_part.open_stack(val_i(fluid_part_num)) # open the stack to feed data
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getObjPartSize()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, val_f(fluid_part.getObjPartSize()**world.g_dim[None])) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
-fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-fluid_part.fill_open_stack_with_nparr(fluid_part.vel, fluid_part_vel) # feed the initial velocity
+fluid_part.open_stack(fluid_part_num) # open the stack to feed data
+fluid_part.fill_open_stack_with_nparr(fluid_part.pos,             fluid_part_pos) # feed the position data
+fluid_part.fill_open_stack_with_val(  fluid_part.size,            fluid_part.getPartSize()) # feed the particle size
+fluid_part.fill_open_stack_with_val(  fluid_part.volume,          fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
+fluid_part.fill_open_stack_with_vals( fluid_part.phase.val_frac,  val_frac) # feed the volume fraction
+fluid_part.fill_open_stack_with_nparr(fluid_part.vel,             fluid_part_vel) # feed the initial velocity
 fluid_part.close_stack() # close the stack
 
 ''' INIT A BOUNDARY PARTICLE OBJECT '''
-bound_part = world.add_part_obj(part_num=bound_part_num, size=world.g_part_size, is_dynamic=False)
+bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
+world.attachPartObj(bound_part)
 bound_part.instantiate_from_template(part_template, world)
 
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
-bound_part.open_stack(val_i(bound_part_num))
-bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
-bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getObjPartSize())
-bound_part.fill_open_stack_with_val(bound_part.volume, val_f(bound_part.getObjPartSize()**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.mass, val_f(1000*bound_part.getObjPartSize()**world.g_dim[None]))
-bound_part.fill_open_stack_with_val(bound_part.rest_density, val_f(1000))
+bound_part.open_stack(bound_part_num)
+bound_part.fill_open_stack_with_nparr(bound_part.pos,             bound_part_pos)
+bound_part.fill_open_stack_with_val(  bound_part.size,            bound_part.getPartSize())
+bound_part.fill_open_stack_with_val(  bound_part.volume,          bound_part.getPartSize()**world.g_dim[None])
+bound_part.fill_open_stack_with_val(  bound_part.mass,            1000*bound_part.getPartSize()**world.g_dim[None])
+bound_part.fill_open_stack_with_val(  bound_part.rest_density,    1000)
 bound_part.close_stack()
 
 
@@ -282,14 +281,14 @@ def loop_JL21():
     world.setDt(dt)    
 
 def write_part_info_ply():
-    for part_id in range(fluid_part.getObjStackTop()):
+    for part_id in range(fluid_part.getStackTop()):
         fluid_part.pos[part_id]
         fluid_part.vel[part_id]
         for phase_id in range(phase_num):
             fluid_part.phase.val_frac[part_id, phase_id]
         fluid_part.rgb[part_id]
 
-    for bound_part_id in range(bound_part.getObjStackTop()):
+    for bound_part_id in range(bound_part.getStackTop()):
         bound_part.pos[bound_part_id]
 
 ''' Viusalization and run '''
@@ -301,7 +300,8 @@ def vis_run(loop):
     loop_count = 0
     flag_write_img = False
 
-    gui = Gui3d()
+    gui = tsph.Gui3d()
+    gui2d = tsph.Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=tsph.vec2f(-8,-6),rt=tsph.vec2f(8,6))
     while gui.window.running:
 
         gui.monitor_listen()
@@ -318,12 +318,12 @@ def vis_run(loop):
                 flag_write_img = True
         if gui.op_refresh_window:
             gui.scene_setup()
-            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getObjStackTop(),size=world.g_part_size[None])
-            gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getObjStackTop(),size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getStackTop(),size=world.g_part_size[None])
+            gui.scene_add_parts(obj_pos=bound_part.pos, obj_color=(0,0.5,1),index_count=bound_part.getStackTop(),size=world.g_part_size[None])
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
-                gui.window.save_image('output/'+str(timer)+'.png')
+                gui2d.save_img(path=os.path.join(parent_dir,'output/part_'+str(timer)+'.jpg'))
                 flag_write_img = False
 
             gui.window.show()
@@ -331,13 +331,29 @@ def vis_run(loop):
         if timer > output_frame_num:
             break
 
+def run(loop):
+    inv_fps = 1/fps
+    timer = 0
+    sim_time = 0
+    loop_count = 0
+    flag_write_img = False
+    gui2d = tsph.Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=tsph.vec2f(-8,-6),rt=tsph.vec2f(8,6))
+    while True:
+        loop()
+        loop_count += 1
+        sim_time += world.g_dt[None]
+        if(sim_time > timer*inv_fps):
+            timer += 1
+            gui2d.save_img(path=os.path.join(parent_dir,'output/part_'+str(timer)+'.jpg'))
+
+
 ''' RUN THE SIMULATION '''
 if solver == SOLVER_ISM:
     prep_ism()
-    vis_run(loop_ism)
+    run(loop_ism)
 elif solver == SOLVER_JL21:
     prep_JL21()
-    vis_run(loop_JL21)
+    run(loop_JL21)
 
 
 

@@ -9,13 +9,11 @@ class Adv_slover(Solver):
     def __init__(self, obj: Particle):
 
         Solver.__init__(self, obj)
-        self.clean_acc = vecxf(self.getObj().getWorld().getDim())(0)
         self.chche_1 = vecxf(self.getObj().getWorld().getDim())(0)
     
-    @ti.kernel
+    # @ti.kernel
     def clear_acc(self):
-        for i in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().tiSetAcc(i, self.clean_acc)
+        self.getObj().getAccArr().fill(0)
 
     @ti.kernel
     def add_gravity_acc(self):
@@ -79,6 +77,5 @@ class Adv_slover(Solver):
     def adv_step(self, in_vel: ti.template(), out_vel_adv: ti.template()):
         for i in range(self.tiGetObj().tiGetStackTop()):
             out_vel_adv[i] = in_vel[i]
-            self.tiGetObj().tiSetAcc(i, self.clean_acc)
-            self.tiGetObj().tiAddAcc(i, self.tiGetObj().tiGetWorld().tiGetGravity())
+            self.tiGetObj().tiSetAcc(i, self.tiGetObj().tiGetWorld().tiGetGravity())
             out_vel_adv[i] += self.tiGetObj().tiGetAcc(i) * self.tiGetObj().tiGetWorld().tiGetDt()
