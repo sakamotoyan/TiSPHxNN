@@ -2,7 +2,7 @@ import taichi as ti
 import math
 from .sph_funcs import *
 from .Solver_sph import SPH_solver
-from ..basic_op.type import *
+from ..basic_op import *
 from ..basic_obj.Obj_Particle import Particle
 from typing import List
 
@@ -276,8 +276,8 @@ class Multiphase_solver(SPH_solver):
             for phase_id in range(self.phase_num[None]):
                 self.obj.statistics_linear_momentum[None] += self.obj.phase.vel[part_id, phase_id] * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
                 self.obj.statistics_kinetic_energy[None] += 0.5 * self.obj.phase.vel[part_id, phase_id].dot(self.obj.phase.vel[part_id, phase_id]) * self.obj.phase.val_frac[part_id, phase_id] * self.obj.volume[part_id] * self.world.g_phase_rest_density[None][phase_id]
-        print('statistics linear momentum:', self.obj.statistics_linear_momentum[None])
-        print('statistics kinetic energy:', self.obj.statistics_kinetic_energy[None])
+        DEBUG('statistics linear momentum:', self.obj.statistics_linear_momentum[None])
+        DEBUG('statistics kinetic energy:', self.obj.statistics_kinetic_energy[None])
     
     def statistics_angular_momentum(self):
         self.clear_phase_acc()
@@ -383,9 +383,9 @@ class Multiphase_solver(SPH_solver):
             sum_phase_1 += self.obj.phase.val_frac[part_id, 0]
             sum_phase_2 += self.obj.phase.val_frac[part_id, 1]
             sum_phase_3 += self.obj.phase.val_frac[part_id, 2]
-        print('phase 1 total', sum_phase_1)
-        # print('phase 2 total', sum_phase_2)
-        print('phase 3 total', sum_phase_3)
+        DEBUG('phase 1 total', sum_phase_1)
+        DEBUG('phase 2 total', sum_phase_2)
+        DEBUG('phase 3 total', sum_phase_3)
 
     @ti.kernel
     def debug_check_negative_phase(self):

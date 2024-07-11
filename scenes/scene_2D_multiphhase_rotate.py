@@ -68,7 +68,7 @@ fluid_part_vel = pool_data.fluid_part_vel
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
 fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=world.g_part_size, is_dynamic=True)
 world.attachPartObj(fluid_part)
-fluid_part.instantiate_from_template(part_template, world)
+fluid_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
@@ -84,7 +84,7 @@ fluid_part.close_stack() # close the stack
 ''' INIT A BOUNDARY PARTICLE OBJECT '''
 bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
 world.attachPartObj(bound_part)
-bound_part.instantiate_from_template(part_template, world)
+bound_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(bound_part_num)

@@ -1,12 +1,8 @@
-import taichi as ti
-# from ti_sph import *
-import ti_sph as tsph
-from template_part import part_template
-import time
+import os
 import sys
-import numpy as np
-import csv
-np.set_printoptions(threshold=sys.maxsize)
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from scenes.scene_import import *
 
 @ti.kernel
 def clear_selected(fluid_part:ti.template()):
@@ -44,7 +40,7 @@ def color_selected(fluid_part:ti.template()):
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.cuda, device_memory_GB=13) 
+ti.init(arch=ti.vulkan) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.vulkan)
 # ti.init(arch=ti.cpu)
@@ -62,9 +58,9 @@ output_frame_num = 2000
 
 ''' SETTINGS SIMULATION '''
 # size of the particle
-part_size = 0.005 
+part_size = 0.05 
 # part_size = 0.01 
-dpi=1600
+dpi=200
 # number of phases
 phase_num = 3 
 # max time step size
@@ -110,7 +106,7 @@ bound_part_pos = pool_data.bound_part_pos
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
 fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=tsph.val_f(world.getPartSize()), is_dynamic=True)
 world.attachPartObj(fluid_part)
-fluid_part.instantiate_from_template(part_template, world)
+fluid_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(fluid_part_num) # open the stack to feed data
@@ -125,7 +121,7 @@ fluid_part.close_stack() # close the stack
 ''' INIT A BOUNDARY PARTICLE OBJECT '''
 bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
 world.attachPartObj(bound_part)
-bound_part.instantiate_from_template(part_template, world)
+bound_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(bound_part_num)

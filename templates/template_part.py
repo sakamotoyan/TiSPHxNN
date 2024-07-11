@@ -3,7 +3,7 @@ from ti_sph.basic_op import *
 from ti_sph import *
 import numpy as np
 
-def part_template(part_obj:Particle, world, verbose=False):
+def part_template(part_obj:Particle, verbose=False):
     sph = ti.types.struct(
         h=                              ti.f32,
         sig=                            ti.f32,
@@ -61,8 +61,8 @@ def part_template(part_obj:Particle, world, verbose=False):
     part_obj.add_struct("sph",          sph)
     part_obj.add_struct("sph_df",       sph_df)
     part_obj.add_struct("sph_wc",       sph_wc)
-    if hasattr(world, 'g_phase_num'):
-        part_obj.add_struct("phase",    phase, bundle=world.g_phase_num[None])
+    if hasattr(part_obj.getWorld(), 'g_phase_num'):
+        part_obj.add_struct("phase",    phase, bundle=part_obj.getWorld().g_phase_num[None])
         part_obj.add_struct("mixture",  mixture)
     
     part_obj.add_attr("statistics_linear_momentum",     vecx_f(part_obj.getWorld().g_dim[None]))

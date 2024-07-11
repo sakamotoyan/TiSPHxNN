@@ -1,7 +1,6 @@
 import taichi as ti
 
 from typing import List
-
 from .modules import neighb_search
 from .modules import solver_sph
 from .modules import solver_adv
@@ -10,12 +9,12 @@ from .modules import cfl
 from .modules import solver_wcsph
 
 from ...basic_op.type import *
+from ...basic_op import *
 
 @ti.data_oriented
 class World:
-    def __init__(self, dim=3, lb = -8, rt = 8, mode='single_phase'):
+    def __init__(self, dim=3, lb = -8, rt = 8):
         ''' GLOBAL CONFIGURATION '''
-        self.mode = mode
         self.g_dim = val_i(dim)
         self.g_space_lb = vecx_f(self.g_dim[None])
         self.g_space_rt = vecx_f(self.g_dim[None])
@@ -93,6 +92,9 @@ class World:
         return self.g_gravity[None]
     def getGravity(self):  
         return self.g_gravity[None]
+    
+    def setGravityMagnitude(self, gravity_val):
+        self.g_gravity[None][1] = gravity_val
     
     @ti.func
     def tiGetDt(self)->ti.f32:
@@ -206,9 +208,9 @@ class World:
         for i in range(phase_num):
             self.g_phase_color[i] = phase_color[i]
             self.g_phase_rest_density[None][i] = phase_rest_density[i]
-        print('world.g_phase_num\n', self.g_phase_num[None])
-        print('world.g_phase_color\n', self.g_phase_color.to_numpy())
-        print('world.g_phase_rest_density\n', self.g_phase_rest_density.to_numpy())
+        DEBUG('world.g_phase_num\n', self.g_phase_num[None])
+        DEBUG('world.g_phase_color\n', self.g_phase_color.to_numpy())
+        DEBUG('world.g_phase_rest_density\n', self.g_phase_rest_density.to_numpy())
         
     # def add_part_obj(self, part_num, is_dynamic, size: ti.template()):
     #     obj = Particle(part_num, size, is_dynamic)
@@ -218,9 +220,11 @@ class World:
     #     return obj
     
     def attachPartObj(self, partObj):
+        DEBUG("attaching Particle object to world ...")
         self.part_obj_list.append(partObj)
         partObj.setId(self.part_obj_list.index(partObj))
         partObj.setWorld(self)
+        DEBUG('Done! ' + 'object id: ' + str(partObj.getId()))
     
     def init_modules(self):
         neighb_search.init_neighb_search(self)

@@ -52,7 +52,7 @@ bound_part_pos = pool_data.bound_part_pos
 # create a fluid particle object. first argument is the number of particles. second argument is the size of the particle. third argument is whether the particle is dynamic or not.
 fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=tsph.val_f(world.getPartSize()), is_dynamic=True)
 world.attachPartObj(fluid_part)
-fluid_part.instantiate_from_template(part_template, world)
+fluid_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(pool_data.fluid_part_num) # open the stack to feed data
@@ -78,7 +78,7 @@ fluid_part.close_stack()
 ''' INIT A BOUNDARY PARTICLE OBJECT '''
 bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
 world.attachPartObj(bound_part)
-bound_part.instantiate_from_template(part_template, world)
+bound_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE BOUNDARY PARTICLE OBJECT '''
 bound_part.open_stack(bound_part_num)
@@ -93,7 +93,7 @@ bound_part.close_stack()
 
 sense_grid_part = tsph.Particle(part_num=sense_cube_data.num, part_size=tsph.val_f(sense_cell_size), is_dynamic=False)
 world.attachPartObj(sense_grid_part)
-sense_grid_part.instantiate_from_template(grid_template, world)
+sense_grid_part.instantiate_from_template(grid_template)
 sense_grid_part.open_stack(sense_cube_data.num)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.pos, sense_cube_data.pos)
 sense_grid_part.fill_open_stack_with_nparr(sense_grid_part.node_index, sense_cube_data.index)

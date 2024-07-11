@@ -7,7 +7,7 @@ from .modules import Mod_NeighbSearch
 from .modules import Mod_Solvers
 
 from ..Obj import Obj
-from ...basic_op.type import *
+from ...basic_op import *
 
 @ti.data_oriented
 class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod_GetAndSet):
@@ -17,6 +17,7 @@ class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod
         part_size: ti.template(),
         is_dynamic: bool = True,
     ):
+        DEBUG("creating Particle object ...")
 
         self.m_world = None
         self.m_id = val_i(-1)    
@@ -46,7 +47,7 @@ class Particle(Obj, Mod_Solvers, Mod_DataOp, Mod_AttrAllo, Mod_NeighbSearch, Mod
         # TODO
         self.m_delete_list = ti.field(ti.i32, self.m_part_num[None]+1)
 
-    
+        DEBUG('Done! ' + 'particle number: ' + str(self.m_part_num))
 
     # TODO
     def delete_outbounded_particles(self):

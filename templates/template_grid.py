@@ -3,7 +3,7 @@ from ti_sph.basic_op import *
 from ti_sph import *
 import numpy as np
 
-def grid_template(part_obj:Particle, world, verbose=False):
+def grid_template(part_obj:Particle, verbose=False):
     part_obj.add_array("pos", vecxf(part_obj.getWorld().getDim()).field())
     part_obj.add_array("size", ti.field(ti.f32))
     part_obj.add_array("volume", ti.field(ti.f32))

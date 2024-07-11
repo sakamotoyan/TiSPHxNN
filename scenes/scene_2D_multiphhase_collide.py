@@ -14,7 +14,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+solver = SOLVER_ISM # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -66,7 +66,7 @@ fluid_part = tsph.Particle(part_num=fluid_part_num[None], part_size=world.g_part
 world.attachPartObj(fluid_part)
 # set the particle data structure to the fluid particle object (see the file template_part.py)
 print(world.g_part_size[None])
-fluid_part.instantiate_from_template(part_template, world)
+fluid_part.instantiate_from_template(part_template)
 
 ''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
 fluid_part.open_stack(fluid_cube_data_1.num) # open the stack to feed data

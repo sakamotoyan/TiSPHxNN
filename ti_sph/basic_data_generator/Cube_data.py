@@ -2,6 +2,7 @@ import taichi as ti
 import numpy as np
 
 from .Data_generator import Data_generator
+from ..basic_op import *
 
 DEFAULT = None
 @ti.data_oriented
@@ -13,7 +14,7 @@ class Cube_data(Data_generator):
                  lb: ti.Vector = DEFAULT, rt: ti.Vector = DEFAULT, # These parameters are used for the type FIXED_CELL_SIZE
                  grid_res: ti.Vector = DEFAULT, grid_center: ti.Vector = DEFAULT, # These parameters are used for the type FIXED_GRID_RES
                  ):
-        print("creating Cube_data ...")
+        DEBUG("creating Cube_data ...")
 
         # Input parameters
         self.lb = lb
@@ -49,7 +50,7 @@ class Cube_data(Data_generator):
         self.index = np.array(np.meshgrid(*index_frac)).T.reshape(-1, self.dim) # the index array takes the form of (num, dim)
         self.num = self.pos.shape[0]
     
-        print('Done!')
+        DEBUG('Done! ' + 'particle number: ' + str(self.num))
 
     def translate(self, offset: ti.Vector):
         self.pos += offset.to_numpy()
