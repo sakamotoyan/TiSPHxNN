@@ -5,9 +5,9 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.vulkan) 
+ti.init(arch=ti.cuda, device_memory_GB=15) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.003          # Unit: m
+part_size                   = 0.005         # Unit: m
 max_time_step               = part_size/20  # Unit: s
 sim_time_limit              = 20.0          # Unit: s
 kinematic_viscosity_fluid   = 0.0           # Unit: Pa s^-1
