@@ -5,59 +5,77 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.cuda, device_memory_GB=15) 
+ti.init(arch=ti.cuda, device_memory_GB=21) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.005         # Unit: m
-max_time_step               = part_size/20  # Unit: s
-sim_time_limit              = 20.0          # Unit: s
-kinematic_viscosity_fluid   = 0.0           # Unit: Pa s^-1
-gravity_acc                 = 9.8           # Unit: m s^-2
+part_size                   = 0.002         # Unit: m
+max_time_step               = part_size/50  # Unit: s
+sim_time_limit              = 50.0          # Unit: s
+kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
+gravity_acc                 = -9.8          # Unit: m s^-2
 phase_num                   = 3
 fps                         = 60
 sim_dimension               = 2
 Cf                          = 0.0 
 Cd                          = 0.0 
+dpi                         = 200
 
 ''' INIT SIMULATION WORLD '''
-world = tsph.World(dim=sim_dimension, lb=-4, rt=4)
+world = tsph.World(dim=sim_dimension, lb=-5, rt=5)
 world.setPartSize(part_size) 
 world.setDt(max_time_step) 
-world.set_multiphase(phase_num,[tsph.vec3f(0.8,0.2,0),tsph.vec3f(0,0.2,0.8),tsph.vec3f(0,0,1)],[500,500,1000]) 
-world.setGravityMagnitude(0)
+world.set_multiphase(phase_num,[tsph.vec3f(0.2,0.0,0.8),tsph.vec3f(0.8,0,0.2),tsph.vec3f(0,0,1)],[500,1000,1000]) 
+world.setGravityMagnitude(gravity_acc)
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
-fluid_cube_data_1 = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec2f(-3.0, -1.0), rt=tsph.vec2f(-0.2, 1.0), span=world.getPartSize()*1.001)
-fluid_cube_data_2 = tsph.Cube_data(type=tsph.Cube_data.FIXED_CELL_SIZE, lb=tsph.vec2f( 0.2, -1.0), rt=tsph.vec2f( 3.0, 1.0), span=world.getPartSize()*1.001)
-fluid_part_num = tsph.val_i(fluid_cube_data_1.num + fluid_cube_data_2.num)
+pool_data = tsph.Squared_pool_2D_data(container_height=8, container_size=5, fluid_height=4, span=world.g_part_size[None]*1.0005, layer = 3)
+fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.6, pos=tsph.vec2f(0.0,0.6*1.0005), span=world.g_part_size[None]*1.0005)
+fluid_part_num = pool_data.fluid_part_num+fluid_part_sphere_data.fluid_part_num
+bound_part_num = pool_data.bound_part_num
+fluid_part_pos = pool_data.fluid_part_pos
+bound_part_pos = pool_data.bound_part_pos
 tsph.DEBUG("total fluid_part_num: "+str(fluid_part_num))
-fluid_part = tsph.Particle(part_num=fluid_part_num[None], part_size=world.g_part_size, is_dynamic=True)
+
+fluid_part = tsph.Particle(part_num=fluid_part_num, part_size=world.g_part_size, is_dynamic=True)
 world.attachPartObj(fluid_part)
 fluid_part.instantiate_from_template(part_template)
-
-''' FEED DATA TO THE FLUID PARTICLE OBJECT '''
-fluid_part.open_stack(fluid_cube_data_1.num) # open the stack to feed data
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_1.pos)  # feed the position data
+fluid_part.add_array("flag", ti.field(ti.i32))
+fluid_part.open_stack(pool_data.fluid_part_num) # open the stack to feed data
+fluid_part.fill_open_stack_with_val(fluid_part.flag, 0) # feed the flag data
+fluid_part.fill_open_stack_with_nparr(fluid_part.pos, pool_data.fluid_part_pos)  # feed the position data
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
 fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
 val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([1.0, 0.0])) # feed the initial velocity
+# fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([1.0, 0.0])) # feed the initial velocity
 fluid_part.close_stack() # close the stack
-fluid_part.open_stack(fluid_cube_data_2.num) # open the stack to feed data for another cube
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_cube_data_2.pos) # feed the position data
+fluid_part.open_stack(fluid_part_sphere_data.fluid_part_num) # open the stack to feed data for another cube
+fluid_part.fill_open_stack_with_val(fluid_part.flag, 1) # feed the flag data
+fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_sphere_data.fluid_part_pos) # feed the position data
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
 fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
 val_frac[0], val_frac[1], val_frac[2] = 0.0,1.0,0.0 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([-1.0, 0.0])) # feed the initial velocity
+# fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([-1.0, 0.0])) # feed the initial velocity
 fluid_part.close_stack() # close the stack
 
+bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
+world.attachPartObj(bound_part)
+bound_part.instantiate_from_template(part_template)
+bound_part.open_stack(bound_part_num)
+bound_part.fill_open_stack_with_nparr(bound_part.pos, bound_part_pos)
+bound_part.fill_open_stack_with_val(bound_part.size, bound_part.getPartSize())
+bound_part.fill_open_stack_with_val(bound_part.volume, bound_part.getPartSize()**world.getDim())
+bound_part.fill_open_stack_with_val(bound_part.mass, 1000*bound_part.getPartSize()**world.getDim())
+bound_part.fill_open_stack_with_val(bound_part.rest_density, 1000)
+bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
-neighb_list=[fluid_part]
+neighb_list=[fluid_part, bound_part]
 fluid_part.add_module_neighb_search()
+bound_part.add_module_neighb_search()
 fluid_part.add_neighb_objs(neighb_list)
+bound_part.add_neighb_objs(neighb_list)
 
 '''INIT SOLVER OBJECTS'''
 # the shared solver
@@ -65,9 +83,13 @@ fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
+
+bound_part.add_solver_sph()
+bound_part.add_solver_df(div_free_threshold=2e-4)
+
 world.init_modules()
 
-gui2d = tsph.Gui2d(objs=[fluid_part], radius=world.g_part_size[None]*0.5, lb=tsph.vec2f(-8,-6),rt=tsph.vec2f(8,6))
+gui2d = tsph.Gui2d(objs=[fluid_part, bound_part], radius=world.g_part_size[None]*0.5, lb=tsph.vec2f(-6,-6),rt=tsph.vec2f(6,6),dpi=dpi)
 ''' DATA PREPERATIONs '''
 def prep():
     world.neighb_search() # perform the neighbor search
@@ -79,7 +101,7 @@ def prep():
 def loop():
     ''' update color based on the volume fraction '''
     
-    fluid_part.m_solver_ism.update_color()
+    # fluid_part.m_solver_ism.update_color()
 
     world.neighb_search()
     world.step_sph_compute_compression_ratio()
@@ -102,6 +124,14 @@ def loop():
     # fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     # fluid_part.m_solver_ism.update_vel_from_phase_vel()
     '''  [TIME END] ISM Part 2 '''
+
+    ''' [TIME START] Advection process '''
+    world.clear_acc()
+    fluid_part.getSolverAdv().add_acc_gravity()
+    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    world.acc2vel()
+    ''' [TIME END] Advection process '''
 
     world.step_vfsph_incomp(update_vel=True)
     tsph.DEBUG('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
@@ -141,6 +171,14 @@ def write_part_info_ply():
         for phase_id in range(phase_num):
             fluid_part.phase.val_frac[part_id, phase_id]
         fluid_part.rgb[part_id]
+
+def export_pos_to_numpy(path):
+    np.save(path, fluid_part.pos.to_numpy())
+def export_flag_to_numpy(path):
+    np.save(path, fluid_part.flag.to_numpy())
+
+def export_pos_to_npz(path):
+    np.savez_compressed(path, pos=fluid_part.pos.to_numpy())
 
 ''' Viusalization and run '''
 def vis_run(loop):
@@ -195,7 +233,9 @@ def run(loop):
         if(sim_time > timer*inv_fps):
             # write_part_info_ply()
             timer += 1
-            gui2d.save_img(path=os.path.join(parent_dir,'output/part_'+str(timer)+'.jpg'))
+            gui2d.save_img(path=os.path.join(parent_dir,'output_vis/part_'+str(timer)+'.jpg'))
+            export_pos_to_numpy(os.path.join(parent_dir,'output_data/part_'+str(timer)+'.npy'))
+            export_flag_to_numpy(os.path.join(parent_dir,'output_data/flag_'+str(timer)+'.npy'))
 
 ''' RUN THE SIMULATION '''
 prep()
