@@ -27,8 +27,8 @@ world.set_multiphase(phase_num,[tsph.vec3f(0.2,0.0,0.8),tsph.vec3f(0.8,0,0.2),ts
 world.setGravityMagnitude(gravity_acc)
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
-pool_data = tsph.Squared_pool_2D_data(container_height=8, container_size=5, fluid_height=4, span=world.g_part_size[None]*1.0005, layer = 3)
-fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.6, pos=tsph.vec2f(0.0,0.6*1.0005), span=world.g_part_size[None]*1.0005)
+pool_data = tsph.Squared_pool_2D_data(container_height=9, container_size=5, fluid_height=4.5, span=world.g_part_size[None]*1.0005, layer = 3)
+fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.6, pos=tsph.vec2f(0.0,0.6*1.1), span=world.g_part_size[None]*1.0005)
 fluid_part_num = pool_data.fluid_part_num+fluid_part_sphere_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
 fluid_part_pos = pool_data.fluid_part_pos

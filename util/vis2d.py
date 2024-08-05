@@ -13,8 +13,9 @@ import matplotlib.pyplot as plt
 np.set_printoptions(threshold=sys.maxsize)
 
 class Vis2D:
-    def __init__(self, path, name, start_index, radius, lb, rt, dpi=200, end_index=None, flag_name=None, offset=0):
+    def __init__(self, path, output_path, name, start_index, radius, lb, rt, dpi=200, end_index=None, flag_name=None, offset=0):
         self.path = path
+        self.output_path = output_path
         self.name = name
         self.radius = radius
         self.lb = lb
@@ -33,7 +34,6 @@ class Vis2D:
         if self.flag_name is not None:
             self.load_flag_npy()
         
-        self.output_path = self.path
         self.output_name = 'vis2d'
         self.output_visualized_data(self.output_path, self.output_name)
     
@@ -69,7 +69,11 @@ class Vis2D:
             y = self.pos_data[index][:, 1]
             flag = self.flag_data[index]
             number_of_colors = len(np.unique(flag))
-            colors = plt.cm.viridis(np.linspace(0, 1, number_of_colors))
+            # colors = plt.cm.viridis(np.linspace(0, 1, number_of_colors))
+            colors = np.zeros((number_of_colors, 4))
+            colors[0, :] = np.array([1.0, 1.0, 1.0, 1.0])
+            colors[1, :] = np.array([0.0, 0.0, 0.0, 1.0])
+            print(colors)
             for i in range(number_of_colors):
                 x_i = x[flag == i]
                 y_i = y[flag == i]
@@ -84,15 +88,19 @@ class Vis2D:
         fig = plt.gcf()
         fig.set_facecolor('white')
 
-        plt.savefig(os.path.join(output_path, output_name + '_' + str(index+self.offset) + '.jpg'), dpi=self.dpi)
+        plt.savefig(os.path.join(output_path, output_name + '_' + str(index+self.offset) + '.png'), dpi=self.dpi)
+        # plt.savefig(os.path.join(output_path, output_name + '_' + str(index+self.offset) + '.eps'))
         plt.close()
 
-Vis2D(path=os.path.join(parent_dir, 'output'), 
-      name='part', 
-      start_index=1, 
-      radius=0.002, 
-      lb=np.array([-4.0, -4.0]), 
-      rt=np.array([ 4.0,  4.0]), 
-      dpi=2600, 
-      flag_name='flag',
-      offset=1)
+Vis2D(path=os.path.join(parent_dir, 'output2'), 
+      output_path=os.path.join(parent_dir, 'output_vis'),
+      name          ='part', 
+      start_index   =155, 
+      offset        =155,
+    #   end_index     =155,
+      radius        =0.002, 
+      lb            =np.array([-2.5, -4.0]), 
+      rt            =np.array([ 2.5,  1.0]), 
+      dpi           =3500, 
+      flag_name     ='flag',
+      )

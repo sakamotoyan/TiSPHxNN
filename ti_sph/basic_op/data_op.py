@@ -126,3 +126,8 @@ def ker_entry_wise_grad_mag(
 ):
     for I in ti.grouped(in_grad_x):
         out_grad_mag[I] = ti.sqrt(in_grad_x[I]**2 + in_grad_y[I]**2)
+
+@ti.kernel
+def naturalSeq(scalar: ti.template()):
+    for i in range(scalar.shape[0]):
+        scalar[i] = i
