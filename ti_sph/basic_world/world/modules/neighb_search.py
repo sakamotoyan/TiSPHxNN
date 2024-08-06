@@ -7,16 +7,18 @@ def init_neighb_search(self):
         part_obj: Particle
         if part_obj.m_neighb_search is not None:
             self.neighb_search_list.append(part_obj)
+    for part_obj in self.neighb_search_list:
+        part_obj.get_module_neighbSearch().init_module()
 
 def update_pos_in_neighb_search(self):
     for part_obj in self.neighb_search_list:
         part_obj: Particle
-        part_obj.m_neighb_search.update_self()
+        part_obj.get_module_neighbSearch().update()
 
 def update_neighbs(self):
     for part_obj in self.neighb_search_list:
         part_obj: Particle
-        part_obj.m_neighb_search.search_neighbors()
+        part_obj.get_module_neighbSearch().pool()
 
 def search_neighb(self):
     self.update_pos_in_neighb_search()

@@ -18,18 +18,33 @@ class SPH_solver(Solver):
         self.neg_inv_dt = obj.m_world.g_neg_inv_dt
         self.inv_dt2 = obj.m_world.g_inv_dt2
 
+    # @ti.kernel
+    # def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
+    #     for part_id in range(self.tiGetObj().tiGetStackTop()):
+    #         neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId())
+    #         neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+    #         for neighb_part_iter in range(neighbPart_num):
+    #             neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
+    #             ''' Code for Computation'''
+    #             func(part_id, neighbPart_id, neighbPool_pointer, neighb_pool, neighb_obj)
+    #             ''' End of Code for Computation'''
+    #             ''' DO NOT FORGET TO COPY/PASE THE FOLLOWING CODE WHEN REUSING THIS FUNCTION '''
+    #             neighbPool_pointer = neighb_pool.tiGet_nextPointer(neighbPool_pointer)
+    
     @ti.kernel
     def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
+        neighb_search_module = self.tiGetObj().tiGet_module_neighbSearch()
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            neighbPart_num = neighb_pool.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId())
-            neighbPool_pointer = neighb_pool.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+            neighbPart_num     = neighb_search_module.tiGet_partNeighbObjSize(part_id, neighb_obj.tiGetId())
+            neighbPool_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
             for neighb_part_iter in range(neighbPart_num):
-                neighbPart_id = neighb_pool.tiGet_neighbPartId(neighbPool_pointer)
+                neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
-                func(part_id, neighbPart_id, neighbPool_pointer, neighb_pool, neighb_obj)
+                func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
                 ''' End of Code for Computation'''
                 ''' DO NOT FORGET TO COPY/PASE THE FOLLOWING CODE WHEN REUSING THIS FUNCTION '''
-                neighbPool_pointer = neighb_pool.tiGet_nextPointer(neighbPool_pointer)
+                neighbPool_pointer = neighb_search_module.tiGet_nextPointer(neighbPool_pointer)
+            
     
     ''' [NOTICE] If sig_dim is decorated with @ti.func, and called in a kernel, 
     it will cause a computation error due to the use of math.pi. This bug is tested. '''
@@ -86,25 +101,25 @@ class SPH_solver(Solver):
 
     def sph_compute_density(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphDensityArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_density)
     
     def sph_compute_number_density(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphDensityArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Density '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_number_density)
     
     def sph_compute_compression_ratio(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphCompressionRatioArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Compression Ratio '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_compression_ratio)
     
     def sph_avg_velocity(self, neighb_pool):
         self.getObj().clear(self.getObj().getVelArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Average Velocity '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)
 
@@ -114,7 +129,7 @@ class SPH_solver(Solver):
     
     def sph_avg_strainRate(self, neighb_pool):
         self.getObj().clear(self.getObj().getStrainRateArr())
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Strain Rate '''
             self.loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_strainRate)
     

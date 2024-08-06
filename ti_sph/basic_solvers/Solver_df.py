@@ -224,7 +224,7 @@ class DF_solver(SPH_solver):
         self.getObj().clear(self.getObj().sph_df.alpha_1)
         self.getObj().clear(self.getObj().sph_df.alpha_2)
 
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Alpha_1, Alpha_2 ''' 
             if self.getObj().m_is_dynamic:
                 self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_alpha_1)
@@ -242,7 +242,7 @@ class DF_solver(SPH_solver):
         self.getObj().clear(self.getObj().sph_df.alpha_1)
         self.getObj().clear(self.getObj().sph_df.alpha_2)
 
-        for neighb_obj in neighb_pool.neighb_obj_list:
+        for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Alpha_1, Alpha_2 ''' 
             if self.getObj().m_is_dynamic:
                 self.loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_beta_1)

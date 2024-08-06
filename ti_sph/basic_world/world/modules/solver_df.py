@@ -41,7 +41,7 @@ def step_df_incomp(self):
 
             part_obj.getSolverDF().compute_delta_density()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_density_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_density()
             part_obj.getSolverDF().update_df_compressible_ratio()
@@ -52,7 +52,7 @@ def step_df_incomp(self):
 
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_vel_adv_from_alpha)
             
         if all(self.df_incompressible_states):
@@ -82,7 +82,7 @@ def step_df_div(self):
 
             part_obj.getSolverDF().compute_delta_density()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_density_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_density()
             part_obj.getSolverDF().update_df_compressible_ratio()
@@ -94,7 +94,7 @@ def step_df_div(self):
     
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_vel_adv_from_alpha)
         
         if all(self.df_divergence_free_states):
@@ -119,7 +119,7 @@ def step_dfsph_incomp(self):
     for part_obj in self.df_solver_list:
         if part_obj.m_is_dynamic and part_obj.getSolverDF().incomp_warm_start:
             part_obj.clear(part_obj.sph_df.alpha_2)
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_df_update_vel_adv_from_kappa_incomp)
 
     while True:
@@ -131,7 +131,7 @@ def step_dfsph_incomp(self):
 
             part_obj.getSolverDF().compute_delta_density()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_density_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_density()
             part_obj.getSolverDF().update_df_compressible_ratio()
@@ -146,7 +146,7 @@ def step_dfsph_incomp(self):
 
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_df_update_vel_adv_from_kappa_incomp)
             
         if all(self.df_incompressible_states):
@@ -175,7 +175,7 @@ def step_dfsph_div(self):
     for part_obj in self.df_solver_list:
         if part_obj.m_is_dynamic and part_obj.getSolverDF().div_warm_start:
             part_obj.clear(part_obj.sph_df.alpha_2)
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_df_update_vel_adv_from_kappa_div)
 
     while True:
@@ -187,7 +187,7 @@ def step_dfsph_div(self):
 
             part_obj.getSolverDF().compute_delta_density()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_density_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_density()
             part_obj.getSolverDF().update_df_compressible_ratio()
@@ -203,7 +203,7 @@ def step_dfsph_div(self):
         
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_df_update_vel_adv_from_kappa_div)
         
         if all(self.df_divergence_free_states):
@@ -232,7 +232,7 @@ def step_vfsph_incomp(self, update_vel=True):
     for part_obj in self.df_solver_list:
         if part_obj.m_is_dynamic and part_obj.getSolverDF().incomp_warm_start:
             part_obj.clear(part_obj.sph_df.alpha_2)
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_incomp)
 
     while True:
@@ -244,7 +244,7 @@ def step_vfsph_incomp(self, update_vel=True):
 
             part_obj.getSolverDF().compute_delta_compression_ratio()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_compression_ratio_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_compression_ratio()
             part_obj.getSolverDF().update_vf_compressible_ratio()
@@ -256,7 +256,7 @@ def step_vfsph_incomp(self, update_vel=True):
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
                 part_obj.getSolverDF().compute_kappa_incomp_from_delta_compression_ratio()
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_incomp)
             
         if all(self.df_incompressible_states):
@@ -286,7 +286,7 @@ def step_vfsph_div(self, update_vel=True):
     for part_obj in self.df_solver_list:
         if part_obj.m_is_dynamic and part_obj.getSolverDF().div_warm_start:
             part_obj.clear(part_obj.sph_df.alpha_2)
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_div)
 
     while True:
@@ -298,7 +298,7 @@ def step_vfsph_div(self, update_vel=True):
             
             part_obj.getSolverDF().compute_delta_compression_ratio()
 
-            for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+            for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                 part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_update_delta_compression_ratio_from_vel_adv)
             part_obj.getSolverDF().ReLU_delta_compression_ratio()
             part_obj.getSolverDF().update_vf_compressible_ratio()
@@ -310,7 +310,7 @@ def step_vfsph_div(self, update_vel=True):
         for part_obj in self.df_solver_list:
             if part_obj.m_is_dynamic:
                 part_obj.getSolverDF().compute_kappa_div_from_delta_compression_ratio()
-                for neighb_obj in part_obj.m_neighb_search.neighb_pool.neighb_obj_list:
+                for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.getSolverDF().loop_neighb(part_obj.m_neighb_search.neighb_pool, neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_div)
             
         if all(self.df_divergence_free_states):

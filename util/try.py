@@ -46,7 +46,7 @@ def computeStartPoint(hashed_part_id: ti.template(), start_point: ti.template())
 
 a_type = ti.types.struct(
     pos = ti.types.vector(2, dtype=ti.f32),
-    id = ti.u32,
+    id  = ti.u32,
 )
 
 a               = a_type.field(shape=10)
