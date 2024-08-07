@@ -5,10 +5,10 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-# ti.init(arch=ti.cpu) 
-ti.init(arch=ti.cuda, device_memory_GB=6) 
+ti.init(arch=ti.gpu) 
+# ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.02         # Unit: m
+part_size                   = 0.002         # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
@@ -105,6 +105,7 @@ def loop():
     world.neighb_search()
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
+    # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])
     world.step_vfsph_div(update_vel=True)
     tsph.DEBUG('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
@@ -154,13 +155,14 @@ def loop():
     '''  [TIME END] ISM Part 4 '''
 
 
-    world.cfl_dt(0.4, max_time_step)
+    # world.cfl_dt(0.4, max_time_step)
 
     ''' statistical info '''
     # print(' ')
     # fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     # fluid_part.m_solver_ism.statistics_angular_momentum()
     # fluid_part.m_solver_ism.debug_check_val_frac()
+
 
 
 def write_part_info_ply():
@@ -206,6 +208,7 @@ def vis_run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getStackTop(),size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=bound_part.pos, obj_color=bound_part.rgb,index_count=bound_part.getStackTop(),size=world.getPartSize())
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
