@@ -4,11 +4,11 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 from scenes.scene_import import *
 
-output_path = '../output'
+output_path = os.path.join(parent_dir, 'output')
 
 ''' TAICHI SETTINGS '''
 # ti.init(arch=ti.cuda, device_memory_GB=15)
-ti.init(arch=ti.vulkan)
+ti.init(arch=ti.gpu)
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -103,13 +103,12 @@ sense_grid_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
-sense_grid_part.add_module_neighb_search(max_neighb_num=tsph.val_i(fluid_part.getPartNum()*48))
-
-fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
-sense_grid_part.add_neighb_obj(neighb_obj=fluid_part, search_range=tsph.val_f(sense_cell_size*2))
+fluid_part.add_module_neighb_search(neighb_list)
+bound_part.add_module_neighb_search(neighb_list)
+sense_list = [fluid_part]
+sense_grid_part.add_module_neighb_search(sense_list, max_neighb_num=tsph.val_i(fluid_part.getPartNum()*48))
+sense_grid_part.get_module_neighbSearch().cell_size    = sense_cell_size
+sense_grid_part.get_module_neighbSearch().search_range = sense_cell_size*2.0
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
@@ -162,8 +161,8 @@ def loop_ism():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     world.acc2vel()
     ''' [TIME END] Advection process '''
 
@@ -242,14 +241,14 @@ def run(loop):
             sense_grid_part.copy_attr(from_attr=sense_grid_part.sph.density, to_attr=sense_grid_part.sensed_density)
             sense_grid_part.m_solver_sph.sph_avg_velocity(sense_grid_part.m_neighb_search.neighb_pool)
             sense_grid_part.m_solver_sph.sph_avg_strainRate(sense_grid_part.m_neighb_search.neighb_pool)
-            sense_output.export_to_numpy(index=timer,path=output_path, compressed=True)
+            sense_output.export_to_numpy(index=timer,path=output_path, compressed=False)
 
             timer += 1
 
 
 ''' RUN THE SIMULATION '''
 prep()
-vis_run(loop_ism)
+run(loop_ism)
 # run(loop_ism)
 
 

@@ -128,7 +128,7 @@ class Sense_grid(Particle):
         self.neighb_search.search_neighbors()
         self.clear(self.sph.density)
         for sensed_parts in self.m_sensed_parts_list:
-            self.df_solver.loop_neighb(self.neighb_search.neighb_pool, sensed_parts, self.df_solver.inloop_accumulate_density)
+            self.df_solver.loop_neighb(sensed_parts, self.df_solver.inloop_accumulate_density)
         self.density_lower_bound[None] = 0
         self.density_upper_bound[None] = 1000
         self.clamp_val(self.sph.density, self.density_lower_bound, self.density_upper_bound)

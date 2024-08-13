@@ -6,7 +6,7 @@ from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.vulkan) 
+ti.init(arch=ti.gpu) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.cpu) 
 
@@ -98,11 +98,8 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
-
-fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+fluid_part.add_module_neighb_search(neighb_list)
+bound_part.add_module_neighb_search(neighb_list)
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
@@ -173,7 +170,7 @@ def loop_ism():
     '''  [TIME START] ISM Part 2 '''
     fluid_part.m_solver_ism.clear_phase_acc()
     # fluid_part.m_solver_ism.add_phase_acc_gravity()
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
     '''  [TIME END] ISM Part 2 '''
@@ -241,14 +238,14 @@ def loop_JL21():
 
     ''' viscosity force '''
     fluid_part.m_solver_JL21.clear_vis_force()
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
+    fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.m_solver_JL21.inloop_add_force_vis)
 
     ''' pressure force '''
     fluid_part.m_solver_JL21.clear_pressure_force()
     world.step_wcsph_add_acc_number_density_pressure()
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
-    fluid_part.m_solver_JL21.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
+    fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.m_solver_JL21.inloop_add_force_pressure)
     ''' [TIME END] WCSPH Part 2 '''
 
     ''' update phase vel (from all accelerations) '''

@@ -60,12 +60,12 @@ class Multiphase_solver(SPH_solver):
 
     def update_val_frac(self):
         self.clear_val_frac_tmp()
-        self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_drift)
-        self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_diffuse)
+        self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_drift)
+        self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_diffuse)
         while self.check_negative() == 0:
             self.clear_val_frac_tmp()
-            self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_drift)
-            self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_diffuse)
+            self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_drift)
+            self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_diffuse)
         self.update_phase_change()
         self.release_unused_drift_vel()
         self.release_negative()
@@ -182,15 +182,15 @@ class Multiphase_solver(SPH_solver):
     def update_val_frac_lamb(self):
         self.reset_lambda()
         self.clear_val_frac_tmp()
-        self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_drift_lamb)
-        self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_diffuse_lamb)
+        self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_drift_lamb)
+        self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_diffuse_lamb)
         loop=0
         while self.check_negative_lamb() == 0:
             loop+=1
             # print('triggered!', loop)
             self.clear_val_frac_tmp()
-            self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_drift_lamb)
-            self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_update_phase_change_from_diffuse_lamb)
+            self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_drift_lamb)
+            self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_update_phase_change_from_diffuse_lamb)
         self.update_phase_change()
         self.regularize_val_frac_lamb()
         self.update_rest_density_and_mass()
@@ -282,7 +282,7 @@ class Multiphase_solver(SPH_solver):
     
     def statistics_angular_momentum(self):
         self.clear_phase_acc()
-        self.getObj().get_module_neighbSearch().loop_neighb(self.obj.m_neighb_search.neighb_pool, self.obj, self.inloop_compute_angular_momentum)
+        self.getObj().get_module_neighbSearch().loop_neighb(self.obj, self.inloop_compute_angular_momentum)
         self.compute_angular_momentum()
     
     @ti.func

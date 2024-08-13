@@ -76,25 +76,19 @@ class Neighb_search_hashed(Solver):
         self.neighb_obj_num  = len(neighb_obj_list)
         self.neighb_search_template_list = []
 
-        self.partNeighb_begin           = ti.field(ti.i32) # [part_id]
-        self.partNeighb_current         = ti.field(ti.i32) # [part_id]
         self.partNeighb_size            = ti.field(ti.i32) # [part_id]
         self.partNeighbObj_begin        = ti.field(ti.i32) # [part_id, neighb_obj_id]
         self.partNeighbObj_size         = ti.field(ti.i32) # [part_id, neighb_obj_id]
         self.neighb_pool_type           = ti.types.struct( # [begining + shift pointer]
             neighbPartId                = ti.i32,
             neighbObjId                 = ti.i32,
-            next                        = ti.i32,
             dist                        = ti.f32,
             W                           = ti.f32,
             xijNorm                     = ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
             gradW                       = ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
         )
 
-        ti.root.dense(ti.i, self.obj.getPartNum()).place(
-            self.partNeighb_begin,
-            self.partNeighb_current,
-            self.partNeighb_size)
+        ti.root.dense(ti.i,   self.obj.getPartNum()).place(self.partNeighb_size)
         ti.root.dense(ti.ij, (self.obj.getPartNum(), self.max_neighb_obj_num[None])).place(
             self.partNeighbObj_begin,
             self.partNeighbObj_size)
@@ -108,20 +102,19 @@ class Neighb_search_hashed(Solver):
             neighb_obj: Particle
             search_cell_range = int(ti.ceil(self.search_range / neighb_obj.get_module_neighbSearch().get_cellSize()))
             self.neighb_search_template_list.append(Neighb_search_template(self.dim, search_cell_range))
-
+    
     @ti.kernel
-    def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
+    def loop_neighb(self, neighb_obj:ti.template(), func:ti.template()):
         neighb_search_module = self.tiGetObj().tiGet_module_neighbSearch()
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            neighbPart_num     = neighb_search_module.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
-            neighbPool_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
-            for neighb_part_iter in range(neighbPart_num):
+            neighbPart_num              = neighb_search_module.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
+            neighbPool_begining_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+            for shift in range(neighbPart_num):
+                neighbPool_pointer = neighbPool_begining_pointer + shift
                 neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
                 func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
                 ''' End of Code for Computation'''
-                ''' DO NOT FORGET TO COPY/PASE THE FOLLOWING CODE WHEN REUSING THIS FUNCTION '''
-                neighbPool_pointer = neighb_search_module.tiGet_nextPointer(neighbPool_pointer)
 
     def update(self,):
         naturalSeq(self.part_id)
@@ -131,9 +124,9 @@ class Neighb_search_hashed(Solver):
         # print((self.start_point))
 
     def pool(self,):
-        self.clear_pool()
+        self.neighb_pool_used_space[None] = 0
         for i in range(self.neighb_obj_num):
-            self.pool_a_neighbor(self.neighb_obj_list[i], self.neighb_search_template_list[i])
+            self.pool_a_neighbObj(self.neighb_obj_list[i], self.neighb_search_template_list[i])
         if not self.neighb_pool_size[None] > self.neighb_pool_used_space[None]:
             raise Exception(f"neighb_pool overflow, need {self.neighb_pool_used_space[None]} but only {self.neighb_pool_size[None]}")
 
@@ -147,6 +140,56 @@ class Neighb_search_hashed(Solver):
                 self.tiSet_partNeighbObjBeginingPointer(part_id, obj_seq, -1)
                 self.tiSet_partNeighbObjSize(part_id, obj_seq, 0)
         self.neighb_pool_used_space[None] = 0
+
+    @ti.kernel
+    def pool_a_neighbObj(
+        self,
+        neighbObj: ti.template(),  # Particle class
+        neighb_search_template: ti.template(),  # Neighb_search_template class
+    ):
+        neighbObj_id = neighbObj.tiGetId()
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            self.tiSet_partNeighbSize(part_id, 0)
+        #
+        ti.sync()
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            part_pos         = self.tiGetObj().tiGetPos(part_id)
+            located_cell_vec = neighbObj.tiGet_module_neighbSearch().locate_part_to_cell(part_pos)
+            for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
+                cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
+                hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
+                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
+                if pointer == ti.u32(0xFFFFFFFF): continue
+                neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
+                for neighb_part_iter in range(neighb_part_num):
+                    neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
+                    neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
+                    dist            = (part_pos - neighb_part_pos).norm()
+                    if dist < self.search_range:
+                        self.tiAdd_partNeighbSize(part_id, 1)
+
+            self.tiSet_partNeighbObjBeginingPointer(part_id, neighbObj_id, ti.atomic_add(self.neighb_pool_used_space[None], self.tiGet_partNeighbSize(part_id)))
+            self.tiSet_partNeighbObjSize           (part_id, neighbObj_id, self.tiGet_partNeighbSize(part_id))
+
+            shift = 0
+            for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
+                cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
+                hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
+                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
+                if pointer == ti.u32(0xFFFFFFFF): continue
+                neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
+                for neighb_part_iter in range(neighb_part_num):
+                    neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
+                    neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
+                    dist            = (part_pos - neighb_part_pos).norm()
+                    if dist < self.search_range:
+                        pool_pointer = self.tiGet_partNeighbObjBeginingPointer(part_id, neighbObj_id) + ti.atomic_add(shift, 1)
+                        self.tiSet_neighbObjId  (pool_pointer, neighbObj_id)
+                        self.tiSet_neighbPartId (pool_pointer, neighb_part_id)
+                        self.tiSet_cachedDist   (pool_pointer, dist)
+                        self.tiSet_cachedXijNorm(pool_pointer, (part_pos - neighb_part_pos) / dist)
+                        self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
+                        self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
 
     @ti.kernel
     def pool_a_neighbor(
@@ -167,11 +210,6 @@ class Neighb_search_hashed(Solver):
                 neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
                 for neighb_part_iter in range(neighb_part_num):
                     neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
-                    # if part_id == 1000 and self.tiGetObj().tiGetId() == 1 and neighbObj.tiGetId() == 1:
-                    #     neighbObj.rgb[neighb_part_id] = [0,1,0]
-                    #     self.tiGetObj().rgb[part_id] = [0,0,1]
-                    # if part_id == 1000 and self.tiGetObj().tiGetId() == 1 and neighbObj.tiGetId() == 0:
-                    #     neighbObj.rgb[neighb_part_id] = [1,0,0]
                     neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
                     dist           = (part_pos - neighb_part_pos).norm()
                     if dist < self.search_range:
@@ -272,14 +310,8 @@ class Neighb_search_hashed(Solver):
     def tiGet_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32):
         return self.partNeighbObj_size[partId, neighbObj_id]
     @ti.func
-    def tiGet_partNeighbBeginingPointer(self, partId: ti.i32):
-        return self.partNeighb_begin[partId]
-    @ti.func
     def tiGet_partNeighbSize(self, partId: ti.i32):
         return self.partNeighb_size[partId]
-    @ti.func
-    def tiGet_partNeighbCurrnetPointer(self, partId: ti.i32):
-        return self.partNeighb_current[partId]
 
     @ti.func
     def tiSet_cachedDist(self, pointer: ti.i32, val: ti.f32):
@@ -309,17 +341,11 @@ class Neighb_search_hashed(Solver):
     def tiSet_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32, val: ti.i32):
         self.partNeighbObj_size[partId, neighbObj_id] = val
     @ti.func
-    def tiSet_partNeighbBeginingPointer(self, partId: ti.i32, val: ti.i32):
-        self.partNeighb_begin[partId] = val
-    @ti.func
     def tiSet_partNeighbSize(self, partId: ti.i32, val: ti.i32):
         self.partNeighb_size[partId] = val
     @ti.func
     def tiAdd_partNeighbSize(self, partId: ti.i32, val: ti.i32):
         ti.atomic_add(self.partNeighb_size[partId], val)    
-    @ti.func
-    def tiSet_partNeighbCurrnetPointer(self, partId: ti.i32, val: ti.i32):
-        self.partNeighb_current[partId] = val
 
     def get_cellSize(self):
         return self.cell_size

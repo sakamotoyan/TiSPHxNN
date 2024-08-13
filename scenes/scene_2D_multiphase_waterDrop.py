@@ -6,7 +6,7 @@ from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.vulkan) 
+ti.init(arch=ti.gpu) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.vulkan)
 # ti.init(arch=ti.cpu)
@@ -14,7 +14,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_JL21 # choose the solver
+solver = SOLVER_ISM # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -112,11 +112,8 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
-
-fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+fluid_part.add_module_neighb_search(neighb_list)
+bound_part.add_module_neighb_search(neighb_list)
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
@@ -174,7 +171,7 @@ def loop_ism():
     '''  [TIME START] ISM Part 2 '''
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.add_phase_acc_gravity()
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
     '''  [TIME END] ISM Part 2 '''

@@ -89,33 +89,33 @@ class SPH_solver(Solver):
         self.getObj().clear(self.getObj().getSphDensityArr())
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Density '''
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_density)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_density)
     
     def sph_compute_number_density(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphDensityArr())
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Density '''
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_number_density)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_number_density)
     
     def sph_compute_compression_ratio(self, neighb_pool):
         self.getObj().clear(self.getObj().getSphCompressionRatioArr())
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Compression Ratio '''
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_compression_ratio)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_compression_ratio)
     
     def sph_avg_velocity(self, neighb_pool):
         self.getObj().clear(self.getObj().getVelArr())
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Average Velocity '''
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_velocity)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_avg_velocity)
 
     def sph_compute_strainRate(self, neighb_obj, neighb_pool):
         self.getObj().clear(self.getObj().getStrainRateArr())
-        self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_accumulate_strainRate)
+        self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_strainRate)
     
     def sph_avg_strainRate(self, neighb_pool):
         self.getObj().clear(self.getObj().getStrainRateArr())
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Strain Rate '''
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_pool, neighb_obj, self.inloop_avg_strainRate)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_avg_strainRate)
     

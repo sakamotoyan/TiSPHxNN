@@ -40,7 +40,7 @@ def color_selected(fluid_part:ti.template()):
 
 ''' TAICHI SETTINGS '''
 # Use GPU, comment the below command to run this programme on CPU
-ti.init(arch=ti.vulkan) 
+ti.init(arch=ti.gpu) 
 # Use CPU, uncomment the below command to run this programme if you don't have GPU
 # ti.init(arch=ti.vulkan)
 # ti.init(arch=ti.cpu)
@@ -48,7 +48,7 @@ ti.init(arch=ti.vulkan)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_ISM # choose the solver
+solver = SOLVER_JL21 # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps
@@ -98,7 +98,9 @@ fluid_part_num = pool_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
 print("fluid_part_num", fluid_part_num)
 # position info of fluid/boundary (as numpy arrays)
-fluid_part_pos = pool_data.fluid_part_pos
+# only first half of the fluid part_pos
+fluid_part_pos = pool_data.fluid_part_pos[int(fluid_part_num/2):fluid_part_num]
+fluid_part_num = fluid_part_pos.shape[0]
 bound_part_pos = pool_data.bound_part_pos
 # initial velocity info of fluid
 
@@ -114,7 +116,7 @@ fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_pos) # feed the
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
 fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.getDim()) # feed the particle volume
 val_frac = ti.field(dtype=ti.f32, shape=phase_num) # create a field to store the volume fraction
-val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0 # set up the volume fraction
+val_frac[0], val_frac[1], val_frac[2] = 0.5,0.0,0.5 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
 fluid_part.close_stack() # close the stack
 
@@ -135,11 +137,8 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
-
-fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+fluid_part.add_module_neighb_search(neighb_list)
+bound_part.add_module_neighb_search(neighb_list)
 
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
@@ -197,7 +196,7 @@ def loop_ism():
     '''  [TIME START] ISM Part 2 '''
     fluid_part.m_solver_ism.clear_phase_acc()
     fluid_part.m_solver_ism.add_phase_acc_gravity()
-    fluid_part.m_solver_ism.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.m_solver_ism.inloop_add_phase_acc_vis)
     fluid_part.m_solver_ism.phase_acc_2_phase_vel() 
     fluid_part.m_solver_ism.update_vel_from_phase_vel()
     '''  [TIME END] ISM Part 2 '''

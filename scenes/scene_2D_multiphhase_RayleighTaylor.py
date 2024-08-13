@@ -5,9 +5,10 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.cuda, device_memory_GB=21) 
+ti.init(arch=ti.gpu) 
+# ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.002         # Unit: m
+part_size                   = 0.1           # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
@@ -72,10 +73,8 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search()
-bound_part.add_module_neighb_search()
-fluid_part.add_neighb_objs(neighb_list)
-bound_part.add_neighb_objs(neighb_list)
+fluid_part.add_module_neighb_search(neighb_list)
+bound_part.add_module_neighb_search(neighb_list)
 
 '''INIT SOLVER OBJECTS'''
 # the shared solver
@@ -106,6 +105,7 @@ def loop():
     world.neighb_search()
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
+    # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])
     world.step_vfsph_div(update_vel=True)
     tsph.DEBUG('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
@@ -128,7 +128,7 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     world.acc2vel()
     ''' [TIME END] Advection process '''
@@ -155,13 +155,14 @@ def loop():
     '''  [TIME END] ISM Part 4 '''
 
 
-    world.cfl_dt(0.4, max_time_step)
+    # world.cfl_dt(0.4, max_time_step)
 
     ''' statistical info '''
     # print(' ')
     # fluid_part.m_solver_ism.statistics_linear_momentum_and_kinetic_energy()
     # fluid_part.m_solver_ism.statistics_angular_momentum()
     # fluid_part.m_solver_ism.debug_check_val_frac()
+
 
 
 def write_part_info_ply():
@@ -207,6 +208,7 @@ def vis_run(loop):
         if gui.op_refresh_window:
             gui.scene_setup()
             gui.scene_add_parts_colorful(obj_pos=fluid_part.pos, obj_color=fluid_part.rgb,index_count=fluid_part.getStackTop(),size=world.g_part_size[None])
+            gui.scene_add_parts_colorful(obj_pos=bound_part.pos, obj_color=bound_part.rgb,index_count=bound_part.getStackTop(),size=world.getPartSize())
             gui.canvas.scene(gui.scene)  # Render the scene
 
             if gui.op_save_img and flag_write_img:
@@ -239,7 +241,7 @@ def run(loop):
 
 ''' RUN THE SIMULATION '''
 prep()
-run(loop)
+vis_run(loop)
 
 
 

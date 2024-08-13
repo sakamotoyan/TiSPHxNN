@@ -98,6 +98,17 @@ def prep():
 
 ''' SIMULATION LOOPS '''
 def loop():
+    world.neighb_search()
+    world.step_sph_compute_compression_ratio()
+    world.step_df_compute_beta()
+    world.step_vfsph_div(update_vel=True)
+    world.clear_acc()
+    fluid_part.getSolverAdv().add_acc_gravity()
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    world.acc2vel()
+    world.update_pos_from_vel()
+
+def loop2():
     ''' update color based on the volume fraction '''
     
     # fluid_part.m_solver_ism.update_color()
@@ -128,7 +139,7 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     world.acc2vel()
     ''' [TIME END] Advection process '''
