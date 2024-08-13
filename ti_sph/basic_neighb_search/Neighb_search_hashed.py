@@ -81,6 +81,15 @@ class Neighb_search_hashed(Solver):
         self.partNeighb_size            = ti.field(ti.i32) # [part_id]
         self.partNeighbObj_begin        = ti.field(ti.i32) # [part_id, neighb_obj_id]
         self.partNeighbObj_size         = ti.field(ti.i32) # [part_id, neighb_obj_id]
+        self.neighb_pool_type           = ti.types.struct( # [begining + shift pointer]
+            neighbPartId                = ti.i32,
+            neighbObjId                 = ti.i32,
+            next                        = ti.i32,
+            dist                        = ti.f32,
+            W                           = ti.f32,
+            xijNorm                     = ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
+            gradW                       = ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
+        )
 
         ti.root.dense(ti.i, self.obj.getPartNum()).place(
             self.partNeighb_begin,
@@ -90,15 +99,6 @@ class Neighb_search_hashed(Solver):
             self.partNeighbObj_begin,
             self.partNeighbObj_size)
 
-        self.neighb_pool_type = ti.types.struct(
-            neighbPartId    =ti.i32,
-            neighbObjId     =ti.i32,
-            next            =ti.i32,
-            dist            =ti.f32,
-            W               =ti.f32,
-            xijNorm         =ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
-            gradW           =ti.types.vector(self.getObj().getWorld().getDim(), ti.f32),
-        )
         self.neighb_pool            = self.neighb_pool_type.field(shape=self.max_neighb_part_num[None])
         self.neighb_pool_used_space = val_i(0)
         self.neighb_pool_size       = ti.static(self.max_neighb_part_num)
@@ -108,6 +108,20 @@ class Neighb_search_hashed(Solver):
             neighb_obj: Particle
             search_cell_range = int(ti.ceil(self.search_range / neighb_obj.get_module_neighbSearch().get_cellSize()))
             self.neighb_search_template_list.append(Neighb_search_template(self.dim, search_cell_range))
+
+    @ti.kernel
+    def loop_neighb(self, neighb_pool:ti.template(), neighb_obj:ti.template(), func:ti.template()):
+        neighb_search_module = self.tiGetObj().tiGet_module_neighbSearch()
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            neighbPart_num     = neighb_search_module.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
+            neighbPool_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+            for neighb_part_iter in range(neighbPart_num):
+                neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
+                ''' Code for Computation'''
+                func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
+                ''' End of Code for Computation'''
+                ''' DO NOT FORGET TO COPY/PASE THE FOLLOWING CODE WHEN REUSING THIS FUNCTION '''
+                neighbPool_pointer = neighb_search_module.tiGet_nextPointer(neighbPool_pointer)
 
     def update(self,):
         naturalSeq(self.part_id)

@@ -8,7 +8,7 @@ from scenes.scene_import import *
 ti.init(arch=ti.gpu) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.002         # Unit: m
+part_size                   = 0.1           # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
@@ -128,7 +128,7 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part.m_neighb_search.neighb_pool, fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     world.acc2vel()
     ''' [TIME END] Advection process '''
