@@ -1,7 +1,7 @@
 import taichi as ti
 import math
 from .sph_funcs import *
-from .Solver_sph import SPH_solver
+from .Solver import Solver
 from ..basic_op import *
 from ..basic_obj.Obj_Particle import Particle
 from typing import List
@@ -12,7 +12,7 @@ WHITE = ti.Vector([1.0, 1.0, 1.0])
 DARK = ti.Vector([0.0, 0.0, 0.0])
 
 @ti.data_oriented
-class Multiphase_solver(SPH_solver):
+class Multiphase_solver(Solver):
     def __init__(self, obj: Particle, Cf: ti.f32, world):
         
         super().__init__(obj)
@@ -46,7 +46,7 @@ class Multiphase_solver(SPH_solver):
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.val_frac_tmp[part_id, phase_id] -= self.dt[None] * neighb_obj.volume[neighb_part_id] * \
+                self.obj.phase.val_frac_tmp[part_id, phase_id] -= self.tiGetObj().tiGetWorld().tiGetDt() * neighb_obj.volume[neighb_part_id] * \
                 (self.obj.phase.val_frac[part_id, phase_id] * self.obj.phase.drift_vel[part_id, phase_id] + \
                  neighb_obj.phase.val_frac[neighb_part_id, phase_id] * neighb_obj.phase.drift_vel[neighb_part_id, phase_id]).dot(cached_grad_W)
     
@@ -85,7 +85,7 @@ class Multiphase_solver(SPH_solver):
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist) and (self.obj.mixture[part_id].flag_negative_val_frac == 0 and neighb_obj.mixture[neighb_part_id].flag_negative_val_frac == 0):
             for phase_id in range(self.phase_num[None]):
-                val_frac_change = -self.dt[None] * neighb_obj.volume[neighb_part_id] * \
+                val_frac_change = -self.tiGetObj().tiGetWorld().tiGetDt() * neighb_obj.volume[neighb_part_id] * \
                 (self.obj.phase.val_frac[part_id, phase_id] * self.obj.phase.drift_vel[part_id, phase_id] + \
                  neighb_obj.phase.val_frac[neighb_part_id, phase_id] * neighb_obj.phase.drift_vel[neighb_part_id, phase_id]).dot(cached_grad_W)
                 if val_frac_change < 0: # out
@@ -101,7 +101,7 @@ class Multiphase_solver(SPH_solver):
             for phase_id in range(self.phase_num[None]):
                 val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
                 x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
-                val_frac_change = self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
+                val_frac_change = self.tiGetObj().tiGetWorld().tiGetDt() * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
                 if val_frac_change < 0: # out
                     self.obj.phase.val_frac_out[part_id, phase_id] += val_frac_change
                 else: # in
@@ -207,7 +207,7 @@ class Multiphase_solver(SPH_solver):
         if bigger_than_zero(cached_dist):
             lamb_ij = ti.min(self.obj.mixture.lamb[part_id], neighb_obj.mixture.lamb[neighb_part_id])
             for phase_id in range(self.phase_num[None]):
-                val_frac_change = -self.dt[None] * neighb_obj.volume[neighb_part_id] * \
+                val_frac_change = -self.tiGetObj().tiGetWorld().tiGetDt() * neighb_obj.volume[neighb_part_id] * \
                 (self.obj.phase.val_frac[part_id, phase_id] * self.obj.phase.drift_vel[part_id, phase_id] + \
                  neighb_obj.phase.val_frac[neighb_part_id, phase_id] * neighb_obj.phase.drift_vel[neighb_part_id, phase_id]).dot(cached_grad_W)
                 if val_frac_change < 0: # out
@@ -224,7 +224,7 @@ class Multiphase_solver(SPH_solver):
             for phase_id in range(self.phase_num[None]):
                 val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
                 x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
-                val_frac_change = self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
+                val_frac_change = self.tiGetObj().tiGetWorld().tiGetDt() * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
                 if val_frac_change < 0: # out
                     self.obj.phase.val_frac_out[part_id, phase_id] += val_frac_change * lamb_ij
                 else: # in

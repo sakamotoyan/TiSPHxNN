@@ -1,6 +1,6 @@
 import taichi as ti
 from ....basic_op.type import *
-from ....basic_neighb_search.Neighb_search_hashed import Neighb_search_hashed as Neighb_search
+from ....basic_neighb_search import Neighb_search
 
 DEFAULT_VALUE = 0
 
@@ -12,6 +12,14 @@ class Mod_NeighbSearch:
                                  max_neighb_num:ti.template()=0,):
         self.m_neighb_search = Neighb_search(self, neighb_obj_list, max_neighb_num)
 
+    def add_unit_neighb_search(
+            self,
+            neighb_obj_list: list = [],
+            max_neighb_num:ti.template()=0,
+    ):
+        unit_neighb_search = Neighb_search(self, neighb_obj_list, max_neighb_num)
+        return unit_neighb_search
+    
     # def check_neighb_search(self):
     #     if self.m_neighb_search is None:
     #         raise Exception("neighb_search not added")

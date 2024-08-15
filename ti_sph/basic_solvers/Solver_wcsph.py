@@ -1,13 +1,13 @@
 import taichi as ti
 import math
 from .sph_funcs import *
-from .Solver_sph import SPH_solver
+from .Solver import Solver
 from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle
 from typing import List
 
 @ti.data_oriented
-class WCSPH_solver(SPH_solver):
+class WCSPH_solver(Solver):
     def __init__(self, obj: Particle, gamma, stiffness):
         
         super().__init__(obj)

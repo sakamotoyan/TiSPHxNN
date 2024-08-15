@@ -1,13 +1,13 @@
 import taichi as ti
 import math
 from .sph_funcs import *
-from .Solver_sph import SPH_solver
+from .Solver import Solver
 from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle
 from typing import List
 
 @ti.data_oriented
-class DF_solver(SPH_solver):
+class DF_solver(Solver):
     def __init__(self, obj: Particle, incompressible_threshold: ti.f32 = 1e-4, div_free_threshold: ti.f32 = 1e-3, incompressible_iter_max: ti.i32 = 100, div_free_iter_max: ti.i32 = 50, incomp_warm_start: bool = False, div_warm_start: bool = False):
         
         super().__init__(obj)
@@ -95,14 +95,14 @@ class DF_solver(SPH_solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].delta_density += cached_grad_W.dot(self.tiGetObj().sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.mass[neighb_part_id] * self.dt[None]
+            self.tiGetObj().sph_df[part_id].delta_density += cached_grad_W.dot(self.tiGetObj().sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.mass[neighb_part_id] * self.tiGetObj().tiGetWorld().tiGetDt()
 
     @ti.func
     def inloop_update_delta_compression_ratio_from_vel_adv(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].delta_compression_ratio += cached_grad_W.dot(self.tiGetObj().sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.volume[neighb_part_id] * self.dt[None]
+            self.tiGetObj().sph_df[part_id].delta_compression_ratio += cached_grad_W.dot(self.tiGetObj().sph_df[part_id].vel_adv-neighb_obj.sph_df[neighb_part_id].vel_adv) * neighb_obj.volume[neighb_part_id] * self.tiGetObj().tiGetWorld().tiGetDt()
 
     @ti.func
     def inloop_update_vel_adv_from_alpha(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
@@ -116,13 +116,13 @@ class DF_solver(SPH_solver):
     @ti.kernel
     def compute_kappa_incomp_from_delta_density(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().sph_df[part_id].kappa_incomp = self.tiGetObj().sph_df[part_id].delta_density / self.tiGetObj().sph_df[part_id].alpha * self.inv_dt2[None] / self.tiGetObj().volume[part_id]
+            self.tiGetObj().sph_df[part_id].kappa_incomp = self.tiGetObj().sph_df[part_id].delta_density / self.tiGetObj().sph_df[part_id].alpha * self.tiGetObj().tiGetSolverSPH().inv_dt2[None] / self.tiGetObj().volume[part_id]
             self.tiGetObj().sph_df[part_id].alpha_2 += self.tiGetObj().sph_df[part_id].kappa_incomp
     
     @ti.kernel
     def compute_kappa_incomp_from_delta_compression_ratio(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().sph_df[part_id].kappa_incomp = self.tiGetObj().sph_df[part_id].delta_compression_ratio / self.tiGetObj().sph_df[part_id].alpha * self.inv_dt2[None] / self.tiGetObj().volume[part_id]
+            self.tiGetObj().sph_df[part_id].kappa_incomp = self.tiGetObj().sph_df[part_id].delta_compression_ratio / self.tiGetObj().sph_df[part_id].alpha * self.tiGetObj().tiGetSolverSPH().inv_dt2[None] / self.tiGetObj().volume[part_id]
             self.tiGetObj().sph_df[part_id].alpha_2 += self.tiGetObj().sph_df[part_id].kappa_incomp
 
     @ti.kernel
@@ -133,13 +133,13 @@ class DF_solver(SPH_solver):
     @ti.kernel
     def compute_kappa_div_from_delta_density(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().sph_df[part_id].kappa_div = self.tiGetObj().sph_df[part_id].delta_density / self.tiGetObj().sph_df[part_id].alpha * self.inv_dt2[None] / self.tiGetObj().volume[part_id]
+            self.tiGetObj().sph_df[part_id].kappa_div = self.tiGetObj().sph_df[part_id].delta_density / self.tiGetObj().sph_df[part_id].alpha * self.tiGetObj().tiGetSolverSPH().inv_dt2[None] / self.tiGetObj().volume[part_id]
             self.tiGetObj().sph_df[part_id].alpha_2 += self.tiGetObj().sph_df[part_id].kappa_div
 
     @ti.kernel
     def compute_kappa_div_from_delta_compression_ratio(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().sph_df[part_id].kappa_div = self.tiGetObj().sph_df[part_id].delta_compression_ratio / self.tiGetObj().sph_df[part_id].alpha * self.inv_dt2[None] / self.tiGetObj().volume[part_id]
+            self.tiGetObj().sph_df[part_id].kappa_div = self.tiGetObj().sph_df[part_id].delta_compression_ratio / self.tiGetObj().sph_df[part_id].alpha * self.tiGetObj().tiGetSolverSPH().inv_dt2[None] / self.tiGetObj().volume[part_id]
             self.tiGetObj().sph_df[part_id].alpha_2 += self.tiGetObj().sph_df[part_id].kappa_div
 
     @ti.kernel
@@ -152,7 +152,7 @@ class DF_solver(SPH_solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].vel_adv -= self.dt[None] * \
+            self.tiGetObj().sph_df[part_id].vel_adv -= self.tiGetObj().tiGetWorld().tiGetDt() * \
                 (neighb_obj.mass[neighb_part_id] / self.tiGetObj().mass[part_id] * self.tiGetObj().volume[part_id] * self.tiGetObj().sph_df[part_id].kappa_incomp + 
                  neighb_obj.volume[neighb_part_id] * neighb_obj.sph_df[neighb_part_id].kappa_incomp) \
             * cached_grad_W
@@ -162,7 +162,7 @@ class DF_solver(SPH_solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].vel_adv -= self.dt[None] * \
+            self.tiGetObj().sph_df[part_id].vel_adv -= self.tiGetObj().tiGetWorld().tiGetDt() * \
                 (neighb_obj.mass[neighb_part_id] / self.tiGetObj().mass[part_id] * self.tiGetObj().volume[part_id] * self.tiGetObj().sph_df[part_id].kappa_div + 
                  neighb_obj.volume[neighb_part_id] * neighb_obj.sph_df[neighb_part_id].kappa_div) \
             * cached_grad_W
@@ -172,7 +172,7 @@ class DF_solver(SPH_solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].vel_adv -= self.dt[None] * self.tiGetObj().volume[part_id] * neighb_obj.volume[neighb_part_id] / self.tiGetObj().mass[part_id] * \
+            self.tiGetObj().sph_df[part_id].vel_adv -= self.tiGetObj().tiGetWorld().tiGetDt() * self.tiGetObj().volume[part_id] * neighb_obj.volume[neighb_part_id] / self.tiGetObj().mass[part_id] * \
             (self.tiGetObj().sph_df[part_id].kappa_incomp + neighb_obj.sph_df[neighb_part_id].kappa_incomp) * \
             cached_grad_W
 
@@ -181,7 +181,7 @@ class DF_solver(SPH_solver):
         cached_dist = neighb_pool.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W = neighb_pool.tiGet_cachedGradW(neighb_part_shift)
         if bigger_than_zero(cached_dist):
-            self.tiGetObj().sph_df[part_id].vel_adv -= self.dt[None] * self.tiGetObj().volume[part_id] * neighb_obj.volume[neighb_part_id] / self.tiGetObj().mass[part_id] * \
+            self.tiGetObj().sph_df[part_id].vel_adv -= self.tiGetObj().tiGetWorld().tiGetDt() * self.tiGetObj().volume[part_id] * neighb_obj.volume[neighb_part_id] / self.tiGetObj().mass[part_id] * \
             (self.tiGetObj().sph_df[part_id].kappa_div + neighb_obj.sph_df[neighb_part_id].kappa_div) * \
             cached_grad_W
 
@@ -217,7 +217,7 @@ class DF_solver(SPH_solver):
     @ti.kernel
     def get_acc_pressure(self):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            self.tiGetObj().mixture[part_id].acc_pressure = (self.tiGetObj().sph_df[part_id].vel_adv - self.tiGetObj().vel[part_id]) / self.dt[None]
+            self.tiGetObj().mixture[part_id].acc_pressure = (self.tiGetObj().sph_df[part_id].vel_adv - self.tiGetObj().vel[part_id]) / self.tiGetObj().tiGetWorld().tiGetDt()
 
     def compute_alpha(self, neighb_pool:ti.template()):
     

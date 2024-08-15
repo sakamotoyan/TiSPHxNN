@@ -116,6 +116,18 @@ class Neighb_search_hashed(Solver):
                 func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
                 ''' End of Code for Computation'''
 
+    @ti.kernel
+    def loop_neighb_ex(self, neighb_obj:ti.template(), neighb_search_module:ti.template(), func:ti.template()):
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            neighbPart_num              = neighb_search_module.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
+            neighbPool_begining_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+            for shift in range(neighbPart_num):
+                neighbPool_pointer = neighbPool_begining_pointer + shift
+                neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
+                ''' Code for Computation'''
+                func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
+                ''' End of Code for Computation'''
+
     def update(self,):
         naturalSeq(self.part_id)
         self.hash()

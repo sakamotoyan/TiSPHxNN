@@ -1,7 +1,6 @@
 import taichi as ti
 import math
 from .sph_funcs import *
-from .Solver_sph import SPH_solver
 from .Solver_multiphase import Multiphase_solver
 from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle

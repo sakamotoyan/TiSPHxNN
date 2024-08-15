@@ -7,6 +7,7 @@ from .modules import solver_adv
 from .modules import solver_df
 from .modules import cfl
 from .modules import solver_wcsph
+from .modules import solver_elastic
 
 from ...basic_op.type import *
 from ...basic_op import *
@@ -232,6 +233,7 @@ class World:
         solver_adv.init_solver_adv(self)
         solver_df.init_solver_df(self)
         solver_wcsph.init_solver_wcsph(self)
+        solver_elastic.init_solver_elastic(self)
         cfl.init_cfl(self)
 
     # Functions: neighbour search
@@ -265,6 +267,9 @@ class World:
     # Functions: WCSPH
     step_wcsph_add_acc_pressure = solver_wcsph.step_wcsph_add_acc_pressure
     step_wcsph_add_acc_number_density_pressure = solver_wcsph.step_wcsph_add_acc_number_density_pressure
+
+    # Functions: Elastic
+    step_elastic_clear_force = solver_elastic.step_elastic_clear_force
 
     # Functions: CFL time step
     find_max_vec = cfl.find_max_vec

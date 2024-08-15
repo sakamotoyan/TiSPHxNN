@@ -343,3 +343,73 @@ class Mod_GetAndSet:
         self.strainRate[i] += strainRate
     def getStrainRateArr(self):
         return self.strainRate
+    
+    @ti.func
+    def tiGetElasticForce(self, i):
+        return self.sph_elastic[i].force
+    @ti.func
+    def tiSetElasticForce(self, i, force):
+        self.sph_elastic[i].force = force
+    @ti.func
+    def tiGetElasticForceArr(self):
+        return self.sph_elastic.force
+    
+    # @ti.func
+    # def tiGetElasticPos0(self, i):
+    #     return self.sph_elastic[i].pos_0
+    # @ti.func
+    # def tiSetElasticPos0(self, i, pos_0):
+    #     self.sph_elastic[i].pos_0 = pos_0
+    # @ti.func
+    # def tiGetElasticPos0Arr(self):
+    #     self.sph_elastic.pos_0
+
+    @ti.func
+    def tiGetElasticDefGrad(self, i):
+        return self.sph_elastic[i].F
+    @ti.func
+    def tiSetElasticDefGrad(self, i, F):
+        self.sph_elastic[i].F = F
+    @ti.func
+    def tiGetElasticDefGradArr(self):
+        return self.sph_elastic.F
+    
+    @ti.func
+    def tiGetElasticCorMat(self, i):
+        return self.sph_elastic[i].L
+    @ti.func
+    def tiSetElasticCorMat(self, i, L):
+        self.sph_elastic[i].L = L
+    @ti.func
+    def tiGetElasticCorMatArr(self):
+        return self.sph_elastic.L
+
+    @ti.func
+    def tiGetElasticRotation(self, i):
+        return self.sph_elastic[i].R
+    @ti.func
+    def tiSetElasticRotation(self, i, R):
+        self.sph_elastic[i].R = R
+    @ti.func
+    def tiGetElasticRotationArr(self):
+        return self.sph_elastic.R
+
+    @ti.func
+    def tiGetElasticStrain(self, i):
+        return self.sph_elastic[i].eps
+    @ti.func
+    def tiSetElasticStrain(self, i, eps):
+        self.sph_elastic[i].eps = eps
+    @ti.func
+    def tiGetElasticStrainArr(self):
+        return self.sph_elastic.eps
+
+    @ti.func
+    def tiGetElasticStress(self, i):
+        return self.sph_elastic[i].P
+    @ti.func
+    def tiSetElasticStress(self, i, P):
+        self.sph_elastic[i].P = P
+    @ti.func
+    def tiGetElasticStressArr(self):
+        return self.sph_elastic.P

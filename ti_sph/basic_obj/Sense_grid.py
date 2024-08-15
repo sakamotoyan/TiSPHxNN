@@ -7,7 +7,7 @@ from .Obj import Obj
 from ..basic_op.type import *
 from ..basic_world import World
 from ..basic_data_generator.Cube_generator import Cube_generator
-from ..basic_neighb_search.Neighb_search import Neighb_search
+from ..basic_neighb_search import Neighb_search
 from ..basic_solvers.Solver_df import DF_solver
 
 DEFAULT = -1

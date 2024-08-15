@@ -18,3 +18,6 @@ from .Solver_wcsph import WCSPH_solver
 from .Solver_ism import Implicit_mixture_solver
 from .Solver_JL21 import JL21_mixture_solver
 from .Solver_multiphase import Multiphase_solver
+
+# elastic
+from .Solver_elastic import Elastic_solver

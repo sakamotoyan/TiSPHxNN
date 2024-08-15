@@ -1,7 +1,6 @@
 import taichi as ti
 import math
 from .sph_funcs import *
-from .Solver_sph import SPH_solver
 from .Solver_multiphase import Multiphase_solver
 from ..basic_op.type import *
 from ..basic_obj.Obj_Particle import Particle
@@ -56,7 +55,7 @@ class JL21_mixture_solver(Multiphase_solver):
         for part_id in range(self.obj.tiGetStackTop()):
             for phase_id in range(self.phase_num[None]):
                 phase_mass = self.world.g_phase_rest_density[None][phase_id] * self.obj.volume[part_id]
-                self.obj.phase.vel[part_id, phase_id] += self.dt[None] * (self.obj.acc[part_id] +\
+                self.obj.phase.vel[part_id, phase_id] += self.tiGetObj().tiGetWorld().tiGetDt() * (self.obj.acc[part_id] +\
                     (self.obj.sph.viscosity_force[part_id]+self.obj.sph.pressure_force[part_id])/phase_mass)
 
         for part_id in range(self.obj.tiGetStackTop()):
@@ -66,7 +65,7 @@ class JL21_mixture_solver(Multiphase_solver):
 
         for part_id in range(self.obj.tiGetStackTop()):
             for phase_id in range(self.phase_num[None]):
-                self.obj.phase.vel[part_id, phase_id] += - self.kd[None] * self.dt[None] * \
+                self.obj.phase.vel[part_id, phase_id] += - self.kd[None] * self.tiGetObj().tiGetWorld().tiGetDt() * \
                     (self.obj.rest_density[part_id]/self.world.g_phase_rest_density[None][phase_id]) *\
                     (self.obj.phase.vel[part_id, phase_id] - self.obj.vel[part_id])
         
@@ -90,7 +89,7 @@ class JL21_mixture_solver(Multiphase_solver):
     @ti.kernel
     def acc_2_vel(self):
         for part_id in range(self.obj.tiGetStackTop()):
-            self.obj.vel[part_id] += self.dt[None] * self.obj.acc[part_id]
+            self.obj.vel[part_id] += self.tiGetObj().tiGetWorld().tiGetDt() * self.obj.acc[part_id]
 
     # @ti.kernel
     # def ditribute_acc_pressure_2_phase(self):
@@ -113,8 +112,8 @@ class JL21_mixture_solver(Multiphase_solver):
     #         for phase_id in range(self.phase_num[None]):
     #             val_frac_ij = self.obj.phase.val_frac[part_id, phase_id] - neighb_obj.phase.val_frac[neighb_part_id, phase_id]
     #             x_ij = self.obj.pos[part_id] - neighb_obj.pos[neighb_part_id]
-    #             diffuse_val_change = self.dt[None] * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
-    #             drift_val_change = -self.dt[None] * neighb_obj.volume[neighb_part_id] * \
+    #             diffuse_val_change = self.tiGetObj().tiGetWorld().tiGetDt() * self.Cf * val_frac_ij * neighb_obj.volume[neighb_part_id] * cached_grad_W.dot(x_ij) / (cached_dist**2)
+    #             drift_val_change = -self.tiGetObj().tiGetWorld().tiGetDt() * neighb_obj.volume[neighb_part_id] * \
     #                 (self.obj.phase.val_frac[part_id, phase_id] * self.obj.phase.drift_vel[part_id, phase_id] + \
     #                 neighb_obj.phase.val_frac[neighb_part_id, phase_id] * neighb_obj.phase.drift_vel[neighb_part_id, phase_id]).dot(cached_grad_W)
     #             val_frac_change = diffuse_val_change + drift_val_change

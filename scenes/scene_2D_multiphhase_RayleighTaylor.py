@@ -80,6 +80,7 @@ bound_part.add_module_neighb_search(neighb_list)
 # the shared solver
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
+fluid_part.add_solver_elastic(lame_lambda=1000, lame_mu=1000)
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 
@@ -94,7 +95,7 @@ def prep():
     world.neighb_search() # perform the neighbor search
     fluid_part.m_solver_ism.update_rest_density_and_mass()
     fluid_part.m_solver_ism.update_color() # update the color
-    fluid_part.m_solver_ism.recover_phase_vel_from_mixture() # recover the phase velocity from the mixture velocity
+    fluid_part.m_solver_ism.recover_phase_vel_from_mixture() # recover the phase velocity from the mixture velocitye elastic force
 
 ''' SIMULATION LOOPS '''
 def loop():
@@ -106,8 +107,8 @@ def loop():
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
     # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])
-    world.step_vfsph_div(update_vel=True)
-    tsph.DEBUG('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    # world.step_vfsph_div(update_vel=True)
+    # tsph.DEBUG('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     '''  [TIME START] ISM Part 1 '''
     # fluid_part.m_solver_df.get_acc_pressure()

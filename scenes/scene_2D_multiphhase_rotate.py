@@ -13,7 +13,7 @@ ti.init(arch=ti.gpu)
 ''' SOLVER SETTINGS '''
 SOLVER_ISM = 0  # proposed method
 SOLVER_JL21 = 1 # baseline method
-solver = SOLVER_ISM # choose the solver
+solver = SOLVER_JL21 # choose the solver
 
 ''' SETTINGS OUTPUT DATA '''
 # output fps

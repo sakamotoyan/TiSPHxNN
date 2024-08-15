@@ -5,6 +5,7 @@ from ....basic_solvers.Solver_sph import SPH_solver
 from ....basic_solvers.Solver_wcsph import WCSPH_solver
 from ....basic_solvers.Solver_ism import Implicit_mixture_solver
 from ....basic_solvers.Solver_JL21 import JL21_mixture_solver
+from ....basic_solvers.Solver_elastic import Elastic_solver
 
 @ti.data_oriented
 class Mod_Solvers:
@@ -15,7 +16,7 @@ class Mod_Solvers:
         self.m_solver_wcsph = None
         self.m_solver_ism = None
         self.m_solver_JL21 = None
-
+        self.m_solver_elastic = None
 
     def add_solver_adv(self):
         self.m_solver_adv = Adv_slover(self)
@@ -35,29 +36,38 @@ class Mod_Solvers:
     def add_solver_JL21(self, kd, Cf, k_vis):
         self.m_solver_JL21 = JL21_mixture_solver(self, kd, Cf, k_vis, self.m_world)
 
+    def add_solver_elastic(self, lame_lambda, lame_mu):
+        self.m_solver_elastic = Elastic_solver(self, lame_lambda, lame_mu)
+
     def getSolverSPH(self)->SPH_solver:
         return self.m_solver_sph
     def getSolverWCSPH(self)->WCSPH_solver:
         return self.m_solver_wcsph
     @ti.func
-    def tiGetSolverSPH(self):
+    def tiGetSolverSPH(self)->SPH_solver:
         return self.m_solver_sph
     @ti.func
-    def tiGetSolverAdv(self):
+    def tiGetSolverAdv(self)->Adv_slover:
         return self.m_solver_adv
-    def getSolverAdv(self):
+    def getSolverAdv(self)->Adv_slover:
         return self.m_solver_adv
     @ti.func
-    def tiGetSolverDF(self):
+    def tiGetSolverDF(self)->DF_solver:
         return self.m_solver_df
-    def getSolverDF(self):
+    def getSolverDF(self)->DF_solver:
         return self.m_solver_df
     @ti.func
-    def tiGetSolverWCSPH(self):
+    def tiGetSolverWCSPH(self)->WCSPH_solver:
         return self.m_solver_wcsph
     @ti.func
-    def tiGetSolverISM(self):
+    def tiGetSolverISM(self)->Implicit_mixture_solver:
         return self.m_solver_ism
     @ti.func
-    def tiGetSolverJL21(self):
+    def tiGetSolverJL21(self)->JL21_mixture_solver:
         return self.m_solver_JL21
+    
+    def getSolverElastic(self)->Elastic_solver:
+        return self.m_solver_elastic
+    @ti.func
+    def tiGetSolverElastic(self)->Elastic_solver:
+        return self.m_solver_elastic
