@@ -28,10 +28,11 @@ class Elastic_solver(Solver):
         self.init_neighb_search()
 
     def step(self):
+        self.compute_modulous()
+
         self.clear_force()
         self.clear_defGrad()
         self.clear_corMatInv()
-        self.compute_modulous()
 
         self.pos0neighb_module.loop_self(self.inloop_compute_corMat_inv)
         self.compute_corMat()
@@ -43,6 +44,9 @@ class Elastic_solver(Solver):
         self.pos0neighb_module.loop_self(self.inloop_compute_corrected_defGrad)
         self.compute_corrected_defGrad()
         self.compute_strain()
+        self.compute_stress()
+        self.pos0neighb_module.loop_self(self.inloop_compute_force)
+        self.update_acc()
 
     @ti.kernel
     def init_pos(self):
@@ -101,9 +105,9 @@ class Elastic_solver(Solver):
         if bigger_than_zero(cached_dist_0):
             pos0_i              = self.tiGetPos0(part_id)
             pos0_j              = neighb_obj.tiGetSolverElastic().tiGetPos0(neighb_part_id)
-            x_ij_0              = pos0_i - pos0_j
+            x_ji_0              = pos0_j  - pos0_i
             V_j                 = neighb_obj.tiGetVolume(neighb_part_id)
-            L_inv[part_id] += V_j * (cached_grad_W_0 @ x_ij_0)
+            L_inv[part_id] += V_j * cached_grad_W_0.outer_product(x_ji_0)
 
     @ti.func
     def inloop_compute_defGrad(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):
@@ -117,7 +121,7 @@ class Elastic_solver(Solver):
             x_ji                = neighb_pos[neighb_part_id] - pos[part_id]
             corrected_grad_W    = L[part_id] @ cached_grad_W_0
             V_j                 = neighb_obj.tiGetVolume(neighb_part_id)
-            F[part_id]         += V_j * (x_ji @ corrected_grad_W)
+            F[part_id]         += V_j * x_ji.outer_product(corrected_grad_W)
 
     @ti.func
     def inloop_compute_corrected_defGrad(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):
@@ -130,7 +134,7 @@ class Elastic_solver(Solver):
             x_ji_0              = neighb_obj.tiGetSolverElastic().tiGetPos0(neighb_part_id) - self.tiGetPos0(part_id)
             x_ji                = neighb_obj.tiGetPos(neighb_part_id) - self.tiGetObj().tiGetPos(part_id)
             corrected_grad_W    = R[part_id] @ L[part_id] @ cached_grad_W_0   
-            F[part_id]         += neighb_obj.tiGetVolume(neighb_part_id) * ((x_ji - (R[part_id] @ x_ji_0)) @ corrected_grad_W)
+            F[part_id]         += neighb_obj.tiGetVolume(neighb_part_id) * (x_ji - (R[part_id] @ x_ji_0)).outer_product(corrected_grad_W)
 
     @ti.kernel
     def compute_corrected_defGrad(self):
@@ -155,19 +159,39 @@ class Elastic_solver(Solver):
         G   = ti.static(self.tiGetObj().tiGetElasticShearModulusArr())
         I   = ti.math.eye(eps.n)
         for i in range(self.tiGetObj().tiGetStackTop()):
-            P[i] = (2*G[i]*eps[i]) + ((K[i]-(2/3*G[i])) * ti.trace(eps[i]) * I)
+            P[i] = (2*G[i]*eps[i]) + ((K[i]-(2/3*G[i])) * eps[i].trace() * I)
     
     @ti.func
     def inloop_compute_force(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):
         cached_dist_0   = neighb_search_module.tiGet_cachedDist(neighb_part_shift)
         cached_grad_W_0 = neighb_search_module.tiGet_cachedGradW(neighb_part_shift)
         force           = ti.static(self.tiGetObj().tiGetElasticForceArr())
-        P               = ti.static(self.tiGetObj().tiGetElasticStressArr())
-        L               = ti.static(self.tiGetObj().tiGetElasticCorMatArr())
-        R               = ti.static(self.tiGetObj().tiGetElasticRotationArr())
-        colume          = ti.static(self.tiGetObj().tiGetVolumeArr())
+        Pi              = ti.static(self.tiGetObj().tiGetElasticStressArr())
+        Pj              = ti.static(neighb_obj.tiGetElasticStressArr())
+        Li              = ti.static(self.tiGetObj().tiGetElasticCorMatArr())
+        Ri              = ti.static(self.tiGetObj().tiGetElasticRotationArr())
+        Lj              = ti.static(neighb_obj.tiGetElasticCorMatArr())
+        Rj              = ti.static(neighb_obj.tiGetElasticRotationArr())
         if bigger_than_zero(cached_dist_0):
-            force[part_id] += -neighb_obj.tiGetVolume(neighb_part_id) * (P[part_id] @ R[part_id] @ L[part_id] @ cached_grad_W_0)
+            V_i             = self.tiGetObj().tiGetVolume(part_id)
+            V_j             = neighb_obj.tiGetVolume(neighb_part_id)
+            P_i             = Pi[part_id]
+            P_j             = Pj[neighb_part_id]
+            L_i             = Li[part_id]
+            L_j             = Lj[neighb_part_id]
+            R_i             = Ri[part_id]
+            R_j             = Rj[neighb_part_id]
+            W_star_i        = R_i @ L_i @ cached_grad_W_0
+            W_star_j        = R_j @ L_j @ cached_grad_W_0
+            force[part_id] += V_i*V_j*((P_i @ W_star_i) + (P_j @ W_star_j))
+
+    @ti.kernel
+    def update_acc(self):
+        acc     = ti.static(self.tiGetObj().tiGetAccArr())
+        force   = ti.static(self.tiGetObj().tiGetElasticForceArr())
+        for i in range(self.tiGetObj().tiGetStackTop()):
+            # print(force[i])
+            acc[i] += force[i] / self.tiGetObj().tiGetMass(i)
 
     @ti.func
     def tiGetPos0(self, i):
@@ -175,9 +199,9 @@ class Elastic_solver(Solver):
     
     @ti.kernel
     def clear_force(self):
-        elastic_force = ti.static(self.tiGetObj().tiGetElasticForceArr())
+        force = ti.static(self.tiGetObj().tiGetElasticForceArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
-            elastic_force[i] *= 0
+            force[i] *= 0
     
     @ti.kernel
     def clear_defGrad(self):

@@ -71,5 +71,6 @@ def iden(a: ti.template()):
     a[0] = ti.math.eye(a.n)
 
 a = ti.Matrix.field(2, 2, dtype=ti.f32, shape=10)
-iden(a)
-print(a)
+a[0] = [[1,2],[3,4]]
+b=ti.Vector([1,2])
+print(a[0]@b)

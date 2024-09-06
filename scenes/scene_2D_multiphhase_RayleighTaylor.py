@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.gpu) 
+ti.init(arch=ti.cuda) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
 part_size                   = 0.1           # Unit: m
@@ -80,7 +80,7 @@ bound_part.add_module_neighb_search(neighb_list)
 # the shared solver
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_elastic(lame_lambda=1000, lame_mu=1000)
+fluid_part.add_solver_elastic(lame_lambda=1e4, lame_mu=1e4)
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 
@@ -96,6 +96,7 @@ def prep():
     fluid_part.m_solver_ism.update_rest_density_and_mass()
     fluid_part.m_solver_ism.update_color() # update the color
     fluid_part.m_solver_ism.recover_phase_vel_from_mixture() # recover the phase velocity from the mixture velocitye elastic force
+    fluid_part.m_solver_elastic.init()
 
 ''' SIMULATION LOOPS '''
 def loop():
@@ -104,7 +105,6 @@ def loop():
     # fluid_part.m_solver_ism.update_color()
 
     world.neighb_search()
-    fluid_part.getSolverElastic().step()
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
     # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])
@@ -130,8 +130,9 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    # fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.getSolverElastic().step()
     world.acc2vel()
     ''' [TIME END] Advection process '''
 
