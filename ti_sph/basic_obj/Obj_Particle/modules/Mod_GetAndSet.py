@@ -148,6 +148,9 @@ class Mod_GetAndSet:
     def tiGetVolume(self, i):
         return self.volume[i]
     @ti.func
+    def tiGetVolumeArr(self):
+        return self.volume
+    @ti.func
     def tiGetRestDensity(self, i):
         return self.rest_density[i]
     @ti.func
@@ -375,6 +378,22 @@ class Mod_GetAndSet:
         return self.sph_elastic.F
     
     @ti.func
+    def tiGetElasticSvdUArr(self):
+        return self.sph_elastic.svd_U
+    @ti.func
+    def tiGetElasticSvdSigArr(self):
+        return self.sph_elastic.svd_SIG
+    @ti.func
+    def tiGetElasticSvdVTArr(self):
+        return self.sph_elastic.svd_V_T
+    @ti.func
+    def tiGetElasticShearModulusArr(self):
+        return self.sph_elastic.G
+    @ti.func
+    def tiGetElasticBulkModulusArr(self):
+        return self.sph_elastic.K
+
+    @ti.func
     def tiGetElasticCorMat(self, i):
         return self.sph_elastic[i].L
     @ti.func
@@ -383,6 +402,16 @@ class Mod_GetAndSet:
     @ti.func
     def tiGetElasticCorMatArr(self):
         return self.sph_elastic.L
+
+    @ti.func
+    def tiGetElasticCorMatInv(self, i):
+        return self.sph_elastic[i].L_inv
+    @ti.func
+    def tiSetElasticCorMatInv(self, i, L_inv):
+        self.sph_elastic[i].L_inv = L_inv
+    @ti.func
+    def tiGetElasticCorMatInvArr(self):
+        return self.sph_elastic.L_inv
 
     @ti.func
     def tiGetElasticRotation(self, i):

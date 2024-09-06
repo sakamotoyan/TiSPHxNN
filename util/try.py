@@ -44,39 +44,32 @@ def computeStartPoint(hashed_part_id: ti.template(), start_point: ti.template())
         if hashed_part_id[i] != hashed_part_id[i-1]:
             start_point[hashed_part_id[i]] = i
 
-a_type = ti.types.struct(
-    pos = ti.types.vector(2, dtype=ti.f32),
-    id  = ti.u32,
-)
+# a_type = ti.types.struct(
+#     pos = ti.types.vector(2, dtype=ti.f32),
+#     id  = ti.u32,
+# )
 
-a               = a_type.field(shape=10)
-hashed_a        = ti.field(dtype=ti.u32, shape=a.shape[0])
-start_point_a   = ti.field(dtype=ti.u32, shape=a.shape[0])
-naturalVec(a.pos)
-naturalSeq(a.id)
-a.pos[0].fill(99)
-a.pos[3].fill(99)
-hashVec(a.pos, hashed_a)
-hashMod(hashed_a)
-ti.algorithms.parallel_sort(hashed_a, a)
-computeStartPoint(hashed_a, start_point_a)
-print(a.pos)
-print(a.id)
-print(hashed_a)
-print(start_point_a)
-print(start_point_a[0] == 0xFFFFFFFF)
+# a               = a_type.field(shape=10)
+# hashed_a        = ti.field(dtype=ti.u32, shape=a.shape[0])
+# start_point_a   = ti.field(dtype=ti.u32, shape=a.shape[0])
+# naturalVec(a.pos)
+# naturalSeq(a.id)
+# a.pos[0].fill(99)
+# a.pos[3].fill(99)
+# hashVec(a.pos, hashed_a)
+# hashMod(hashed_a)
+# ti.algorithms.parallel_sort(hashed_a, a)
+# computeStartPoint(hashed_a, start_point_a)
+# print(a.pos)
+# print(a.id)
+# print(hashed_a)
+# print(start_point_a)
+# print(start_point_a[0] == 0xFFFFFFFF)
 
+@ti.kernel
+def iden(a: ti.template()):
+    a[0] = ti.math.eye(a.n)
 
-
-# b = ti.Vector.field(3, dtype=ti.i32, shape=10)
-# naturalVec(b)
-# hashed_b = ti.field(dtype=ti.u32, shape=10)
-# hashVec(b, hashed_b)
-# hashMod(hashed_b)
-# print(hashed_b)
-
-# c = ti.field(dtype=ti.u32, shape=10)
-# naturalSeq(c)
-# print(c)
-
-# print((0xFFFFFFFF))
+a = ti.Matrix.field(2, 2, dtype=ti.f32, shape=10)
+iden(a)
+print(a)

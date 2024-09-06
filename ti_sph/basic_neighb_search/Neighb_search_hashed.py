@@ -105,15 +105,15 @@ class Neighb_search_hashed(Solver):
     
     @ti.kernel
     def loop_neighb(self, neighb_obj:ti.template(), func:ti.template()):
-        neighb_search_module = self.tiGetObj().tiGet_module_neighbSearch()
+        # neighb_search_module = self.tiGetObj().tiGet_module_neighbSearch()
         for part_id in range(self.tiGetObj().tiGetStackTop()):
-            neighbPart_num              = neighb_search_module.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
-            neighbPool_begining_pointer = neighb_search_module.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
+            neighbPart_num              = self.tiGet_partNeighbObjSize           (part_id, neighb_obj.tiGetId())
+            neighbPool_begining_pointer = self.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj.tiGetId())
             for shift in range(neighbPart_num):
                 neighbPool_pointer = neighbPool_begining_pointer + shift
-                neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
+                neighbPart_id = self.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
-                func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
+                func(part_id, neighbPart_id, neighbPool_pointer, self, neighb_obj)
                 ''' End of Code for Computation'''
 
     @ti.kernel
@@ -126,6 +126,18 @@ class Neighb_search_hashed(Solver):
                 neighbPart_id = neighb_search_module.tiGet_neighbPartId(neighbPool_pointer)
                 ''' Code for Computation'''
                 func(part_id, neighbPart_id, neighbPool_pointer, neighb_search_module, neighb_obj)
+                ''' End of Code for Computation'''
+
+    @ti.kernel
+    def loop_self(self, func:ti.template()):
+        for part_id in range(self.tiGetObj().tiGetStackTop()):
+            neighbPart_num              = self.tiGet_partNeighbObjSize           (part_id, self.tiGetObj().tiGetId())
+            neighbPool_begining_pointer = self.tiGet_partNeighbObjBeginingPointer(part_id, self.tiGetObj().tiGetId())
+            for shift in range(neighbPart_num):
+                neighbPool_pointer = neighbPool_begining_pointer + shift
+                neighbPart_id = self.tiGet_neighbPartId(neighbPool_pointer)
+                ''' Code for Computation'''
+                func(part_id, neighbPart_id, neighbPool_pointer, self, self.tiGetObj())
                 ''' End of Code for Computation'''
 
     def update(self,):

@@ -104,6 +104,7 @@ def loop():
     # fluid_part.m_solver_ism.update_color()
 
     world.neighb_search()
+    fluid_part.getSolverElastic().step()
     world.step_sph_compute_compression_ratio()
     world.step_df_compute_beta()
     # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])

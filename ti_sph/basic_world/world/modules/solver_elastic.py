@@ -6,6 +6,7 @@ def init_solver_elastic(self):
         part_obj: Particle
         if part_obj.getSolverElastic() is not None:
             self.elastic_solver_list.append(part_obj)
+            part_obj.getSolverElastic().init()
 
 def step_elastic_clear_force(self):
     for part_obj in self.elastic_solver_list:
