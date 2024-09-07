@@ -205,7 +205,7 @@ class DF_solver(Solver):
             out_vel[part_id] = self.tiGetObj().sph_df[part_id].vel_adv
 
     @ti.kernel
-    def get_vel_adv(self, in_vel_adv: ti.template()):
+    def set_vel_adv(self, in_vel_adv: ti.template()):
         for part_id in range(self.tiGetObj().tiGetStackTop()):
             self.tiGetObj().sph_df[part_id].vel_adv = in_vel_adv[part_id]
 

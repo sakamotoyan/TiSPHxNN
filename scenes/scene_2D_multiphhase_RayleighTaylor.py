@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.cuda) 
+ti.init(arch=ti.gpu) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
 part_size                   = 0.1           # Unit: m

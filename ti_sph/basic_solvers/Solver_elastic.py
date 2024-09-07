@@ -27,17 +27,19 @@ class Elastic_solver(Solver):
         self.init_pos()
         self.init_neighb_search()
 
-    def step(self):
         self.compute_modulous()
+
+        self.clear_corMatInv()
+        self.pos0neighb_module.loop_self(self.inloop_compute_corMat_inv)
+        self.compute_corMat()
+
+    def step(self):
 
         self.clear_force()
         self.clear_defGrad()
-        self.clear_corMatInv()
-
-        self.pos0neighb_module.loop_self(self.inloop_compute_corMat_inv)
-        self.compute_corMat()
+        
         self.pos0neighb_module.loop_self(self.inloop_compute_defGrad)
-        self.compute_svd_defGrad()
+        # self.compute_svd_defGrad()
         self.compute_rotation()
 
         self.clear_defGrad()

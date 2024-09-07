@@ -27,7 +27,7 @@ def step_df_incomp(self):
         part_obj.getSolverDF().incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.vel)
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -68,7 +68,7 @@ def step_df_div(self):
         part_obj.getSolverDF().div_free_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.getVelArr())
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
@@ -110,7 +110,7 @@ def step_dfsph_incomp(self):
         part_obj.getSolverDF().incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.vel)
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -166,7 +166,7 @@ def step_dfsph_div(self):
         part_obj.getSolverDF().div_free_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.vel)
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
@@ -223,7 +223,7 @@ def step_vfsph_incomp(self, update_vel=True):
         part_obj.getSolverDF().incompressible_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.getVelArr())
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
@@ -277,7 +277,7 @@ def step_vfsph_div(self, update_vel=True):
         part_obj.getSolverDF().div_free_iter[None] = 0
 
         if part_obj.m_is_dynamic:
-            part_obj.getSolverDF().get_vel_adv(part_obj.vel)
+            part_obj.getSolverDF().set_vel_adv(part_obj.vel)
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = False
         else:
             self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
