@@ -24,6 +24,7 @@ class DF_solver(Solver):
 
         self.incompressible_iter = val_i(0)
         self.div_free_iter = val_i(0)
+        self.reduction_buffer = ti.field(dtype=ti.f32, shape=self.getObj().getPartNum())
     
     @ti.func
     def inloop_compute_u_alpha_1_2(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_pool:ti.template(), neighb_obj:ti.template()):
@@ -194,10 +195,23 @@ class DF_solver(Solver):
 
     @ti.kernel 
     def update_vf_compressible_ratio(self):
-        self.compressible_ratio[None] = 0
+
+        # for part_id in range(self.tiGetObj().tiGetStackTop()):
+        #     self.reduction_buffer[part_id] = self.tiGetObj().sph_df[part_id].delta_compression_ratio
+        # stride = 1
+        # while stride < self.tiGetObj().tiGetStackTop():
+        #     for i in range(0, self.tiGetObj().tiGetStackTop()//(stride*2)):
+        #         self.reduction_buffer[i * 2 * stride] += self.reduction_buffer[(i * 2 * stride) + stride]
+        #     stride *= 2
+        # self.compressible_ratio[None] = self.reduction_buffer[0] / self.tiGetObj().tiGetStackTop()
+        
         for part_id in range(self.tiGetObj().tiGetStackTop()):
             self.compressible_ratio[None] += self.tiGetObj().sph_df[part_id].delta_compression_ratio
         self.compressible_ratio[None] /= self.tiGetObj().tiGetStackTop()
+
+        # for part_id in range(self.tiGetObj().tiGetStackTop()):
+        #     if self.tiGetObj().sph_df[part_id].delta_compression_ratio > self.incompressible_threshold[None]:
+        #         self.compressible_ratio[None] = 1.0
 
     @ti.kernel
     def update_vel(self, out_vel: ti.template()):
@@ -244,13 +258,15 @@ class DF_solver(Solver):
 
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Alpha_1, Alpha_2 ''' 
-            if self.getObj().m_is_dynamic:
-                self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
-                if neighb_obj.m_is_dynamic:
-                    self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
-            else: 
-                if neighb_obj.m_is_dynamic:
-                    self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
+            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            # if self.getObj().m_is_dynamic:
+            #     self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
+            #     if neighb_obj.m_is_dynamic:
+            #         self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            # else: 
+            #     if neighb_obj.m_is_dynamic:
+            #         self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
 
         ''' Compute Alpha '''
         self.ker_compute_alpha()     

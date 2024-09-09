@@ -8,7 +8,7 @@ from scenes.scene_import import *
 ti.init(arch=ti.gpu) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.1           # Unit: m
+part_size                   = 0.01           # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
@@ -28,7 +28,7 @@ world.set_multiphase(phase_num,[tsph.vec3f(0.2,0.0,0.8),tsph.vec3f(0.8,0,0.2),ts
 world.setGravityMagnitude(gravity_acc)
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
-pool_data = tsph.Squared_pool_2D_data(container_height=9, container_size=5, fluid_height=4.5, span=world.g_part_size[None]*1.0005, layer = 3)
+pool_data = tsph.Squared_pool_2D_data(container_height=9, container_size=5, fluid_height=4.5, span=world.g_part_size[None]*1.0005, layer = 3, fluid_empty_width=0)
 fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.6, pos=tsph.vec2f(0.0,0.6*1.1), span=world.g_part_size[None]*1.0005)
 fluid_part_num = pool_data.fluid_part_num+fluid_part_sphere_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
@@ -81,7 +81,7 @@ bound_part.add_module_neighb_search(neighb_list)
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_elastic(lame_lambda=1e4, lame_mu=1e4)
-fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False)
+fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=True, incompressible_threshold=1e-3)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 
 bound_part.add_solver_sph()
@@ -132,12 +132,12 @@ def loop():
     fluid_part.getSolverAdv().add_acc_gravity()
     # fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
-    fluid_part.getSolverElastic().step()
+    # fluid_part.getSolverElastic().step()
     world.acc2vel()
     ''' [TIME END] Advection process '''
 
     world.step_vfsph_incomp(update_vel=True)
-    tsph.DEBUG('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
+    print('incomp iter:', fluid_part.m_solver_df.incompressible_iter[None])
 
     '''  [TIME START] ISM Part 3 '''
     # fluid_part.m_solver_df.get_acc_pressure()
@@ -244,7 +244,7 @@ def run(loop):
 
 ''' RUN THE SIMULATION '''
 prep()
-vis_run(loop)
+run(loop)
 
 
 
