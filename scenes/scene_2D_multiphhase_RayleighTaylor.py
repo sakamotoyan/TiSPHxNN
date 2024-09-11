@@ -8,7 +8,7 @@ from scenes.scene_import import *
 ti.init(arch=ti.gpu) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.01           # Unit: m
+part_size                   = 0.1           # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.001           # Unit: Pa s^-1
@@ -73,15 +73,15 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search(neighb_list)
-bound_part.add_module_neighb_search(neighb_list)
+fluid_part.add_module_neighb_search([fluid_part, bound_part])
+bound_part.add_module_neighb_search([fluid_part, bound_part])
 
 '''INIT SOLVER OBJECTS'''
 # the shared solver
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
 fluid_part.add_solver_elastic(lame_lambda=1e4, lame_mu=1e4)
-fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=True, incompressible_threshold=1e-3)
+fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=True, div_warm_start=True, incompressible_threshold=1e-4)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 
 bound_part.add_solver_sph()
@@ -109,7 +109,7 @@ def loop():
     world.step_df_compute_beta()
     # print('beta:', fluid_part.m_neighb_search.neighb_pool.xijNorm.to_numpy()[:1000])
     # world.step_vfsph_div(update_vel=True)
-    # tsph.DEBUG('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
+    print('div_free iter:', fluid_part.m_solver_df.div_free_iter[None])
 
     '''  [TIME START] ISM Part 1 '''
     # fluid_part.m_solver_df.get_acc_pressure()

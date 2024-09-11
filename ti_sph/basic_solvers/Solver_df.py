@@ -258,15 +258,15 @@ class DF_solver(Solver):
 
         for neighb_obj in self.getObj().get_module_neighbSearch().neighb_obj_list:
             ''' Compute Alpha_1, Alpha_2 ''' 
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
-            self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
-            # if self.getObj().m_is_dynamic:
-            #     self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
-            #     if neighb_obj.m_is_dynamic:
-            #         self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
-            # else: 
-            #     if neighb_obj.m_is_dynamic:
-            #         self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            # self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
+            # self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            if self.getObj().m_is_dynamic:
+                self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_1)
+                if neighb_obj.m_is_dynamic:
+                    self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
+            else: 
+                if neighb_obj.m_is_dynamic:
+                    self.getObj().get_module_neighbSearch().loop_neighb(neighb_obj, self.inloop_accumulate_beta_2)
 
         ''' Compute Alpha '''
         self.ker_compute_alpha()     

@@ -237,8 +237,8 @@ def step_vfsph_incomp(self, update_vel=True):
 
     while True:
         for part_obj in self.df_solver_list:
-            if not part_obj.m_is_dynamic:
-                continue
+            # if not part_obj.m_is_dynamic:
+            #     continue
             
             part_obj.getSolverDF().incompressible_iter[None] += 1
 
@@ -253,9 +253,9 @@ def step_vfsph_incomp(self, update_vel=True):
                 or part_obj.getSolverDF().incompressible_iter[None] > part_obj.getSolverDF().incompressible_iter_max[None]:
                 self.df_incompressible_states[self.df_solver_list.index(part_obj)] = True
 
-        for part_obj in self.df_solver_list:
+        # for part_obj in self.df_solver_list:
+            part_obj.getSolverDF().compute_kappa_incomp_from_delta_compression_ratio()
             if part_obj.m_is_dynamic:
-                part_obj.getSolverDF().compute_kappa_incomp_from_delta_compression_ratio()
                 for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.get_module_neighbSearch().loop_neighb(neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_incomp)
             
@@ -291,8 +291,8 @@ def step_vfsph_div(self, update_vel=True):
 
     while True:
         for part_obj in self.df_solver_list:
-            if not part_obj.m_is_dynamic:
-                continue
+            # if not part_obj.m_is_dynamic:
+            #     continue
             
             part_obj.getSolverDF().div_free_iter[None] += 1
             
@@ -307,9 +307,9 @@ def step_vfsph_div(self, update_vel=True):
                 or part_obj.getSolverDF().div_free_iter[None] > part_obj.getSolverDF().div_free_iter_max[None]:
                 self.df_divergence_free_states[self.df_solver_list.index(part_obj)] = True
 
-        for part_obj in self.df_solver_list:
+        # for part_obj in self.df_solver_list:
+            part_obj.getSolverDF().compute_kappa_div_from_delta_compression_ratio()
             if part_obj.m_is_dynamic:
-                part_obj.getSolverDF().compute_kappa_div_from_delta_compression_ratio()
                 for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.get_module_neighbSearch().loop_neighb(neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_div)
             
