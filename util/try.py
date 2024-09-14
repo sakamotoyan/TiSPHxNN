@@ -73,4 +73,4 @@ def iden(a: ti.template()):
 a = ti.Matrix.field(2, 2, dtype=ti.f32, shape=10)
 a[0] = [[1,2],[3,4]]
 b=ti.Vector([1,2])
-print(ti.max(a))
+print((a[0]*a[0]).sum())

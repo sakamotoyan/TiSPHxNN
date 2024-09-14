@@ -11,6 +11,8 @@ def part_template(part_obj:Particle, verbose=False):
     part_obj.add_array("rest_density",  ti.field(ti.f32))
     part_obj.add_array("pressure",      ti.field(ti.f32))
     part_obj.add_array("k_vis",         ti.field(ti.f32))
+    part_obj.add_array("vis_1",         ti.field(ti.f32))
+    part_obj.add_array("vis_2",         ti.field(ti.f32))
     part_obj.add_array("vel_adv",       vecxf(part_obj.getWorld().getDim()).field())
     part_obj.add_array("vel",           vecxf(part_obj.getWorld().getDim()).field())
     part_obj.add_array("pos",           vecxf(part_obj.getWorld().getDim()).field())
@@ -21,6 +23,7 @@ def part_template(part_obj:Particle, verbose=False):
     part_obj.add_attr("statistics_linear_momentum",     vecx_f(part_obj.getWorld().getDim()))
     part_obj.add_attr("statistics_angular_momentum",    vecx_f(3))
     part_obj.add_attr("statistics_kinetic_energy",      val_f(0))
+
 
     sph = ti.types.struct(
         h                               = ti.f32,

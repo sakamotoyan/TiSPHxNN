@@ -2,15 +2,15 @@ import cv2
 import os
 
 # Output MP4 file path
-output_path = '../output008'
+output_path = '../output_vis'
 input_path = output_path
 
 # Frame rate (frames per second) of the output video
 start_index_list = [0,   4855,6515,7755,9925, 10755,11785,12815]
 end_index_list =   [4850,6510,7750,9920,10750,11780,12810,13845]
-start_index_list = [0,  206,477]
-end_index_list =   [205,476,602]
-frame_rate = 24
+start_index_list = [0]
+end_index_list =   [3600]
+frame_rate = 60
 stride = 1
 
 
@@ -18,7 +18,7 @@ def process(file_name, seq):
     # Get the list of image files sorted numerically
     image_files = []
     for i in range(start_index,end_index,stride):
-        image_files.append(f'./{input_path}/{file_name}_{i}.png')
+        image_files.append(f'./{input_path}/{file_name}_{i}.jpg')
 
     # Get the first image to determine the frame size
     first_image = cv2.imread(image_files[0])
@@ -53,10 +53,10 @@ for start_index, end_index, i in zip(start_index_list, end_index_list, range(len
     start_index = start_index
     end_index = end_index
     i = i
-    process('sci_input_velocity',  i)
-    process('sci_output_velocity', i)
-    process('sci_input_vorticity', i)
-    process('sci_output_vorticity',i)
+    process('part',  i)
+    # process('sci_output_velocity', i)
+    # process('sci_input_vorticity', i)
+    # process('sci_output_vorticity',i)
 
 # process('frame_bottleneck')
 

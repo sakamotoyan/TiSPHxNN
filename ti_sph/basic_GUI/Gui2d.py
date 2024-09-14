@@ -40,7 +40,9 @@ class Gui2d:
             x = positoins[:, 0]
             y = positoins[:, 1]
 
-            plt.scatter(x, y, s=self.radius*10, c=colors, edgecolors='none') 
+            # plt.scatter(x, y, s=self.radius*10, c=colors, edgecolors='none') 
+            plt.scatter(x, y, s=self.radius*50, c=obj.vis_1.to_numpy(), edgecolors='none') 
+            plt.colorbar()
         
         ax = plt.gca()
         ax.set_facecolor('white')

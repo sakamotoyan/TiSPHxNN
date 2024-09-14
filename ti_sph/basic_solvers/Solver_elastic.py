@@ -23,18 +23,26 @@ class Elastic_solver(Solver):
         self.pos0               = ti.Vector.field(self.getObj().getWorld().getDim(), dtype=ti.f32, shape=self.getObj().getPartNum())
         self.pos0neighb_module  = self.getObj().add_unit_neighb_search([self.getObj()])
         
+        self.debug_flag         = val_i(0)
+
     def init(self):
         self.init_pos()
         self.init_neighb_search()
-
         self.compute_modulous()
+        self.clear_corMatInv()
+        self.pos0neighb_module.loop_self(self.inloop_compute_corMat_inv)
+        self.compute_corMat()
 
+    def update_rest(self):
+        self.init_pos()
+        self.pos0neighb_module.update()
+        self.pos0neighb_module.pool()
+        self.compute_modulous()
         self.clear_corMatInv()
         self.pos0neighb_module.loop_self(self.inloop_compute_corMat_inv)
         self.compute_corMat()
 
     def step(self):
-
         self.clear_force()
         self.clear_defGrad()
         
@@ -45,8 +53,8 @@ class Elastic_solver(Solver):
         self.clear_defGrad()
         self.pos0neighb_module.loop_self(self.inloop_compute_corrected_defGrad)
         self.compute_corrected_defGrad()
-        self.compute_strain()
-        self.compute_stress()
+        self.compute_strain_Green()
+        self.compute_stress_StVK()
         self.pos0neighb_module.loop_self(self.inloop_compute_force)
         self.update_acc()
 
@@ -60,7 +68,7 @@ class Elastic_solver(Solver):
         self.pos0neighb_module.init_module()
         self.pos0neighb_module.update()
         self.pos0neighb_module.pool()
-    
+
     @ti.kernel
     def compute_modulous(self):
         G   = ti.static(self.tiGetObj().tiGetElasticShearModulusArr())
@@ -74,7 +82,14 @@ class Elastic_solver(Solver):
         L      = ti.static(self.tiGetObj().tiGetElasticCorMatArr())
         L_inv  = ti.static(self.tiGetObj().tiGetElasticCorMatInvArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
+            # if ((L[i]*L[i]).sum() > 1e-8):
             L[i] = L_inv[i].inverse()
+            self.tiGetObj().vis_1[i] = (L[i]*L[i]).sum()
+            L[i] = ti.Matrix.identity(ti.f32, L[i].n)
+            # if ((L_inv[i]*L_inv[i]).sum() < 1e-8):
+            #     self.debug_flag[None] = 1
+                # print("singular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrix")
+            #     L[i] = ti.Matrix.identity(ti.f32, L[i].n)
 
     @ti.kernel
     def compute_svd_defGrad(self):
@@ -146,7 +161,7 @@ class Elastic_solver(Solver):
             F[i] += I
 
     @ti.kernel
-    def compute_strain(self):
+    def compute_strain_infinitesimal(self):
         F   = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
         I   = ti.math.eye(F.n)
         eps = ti.static(self.tiGetObj().tiGetElasticStrainArr())
@@ -154,7 +169,7 @@ class Elastic_solver(Solver):
             eps[i] = 0.5 * (F[i].transpose() + F[i]) - I
 
     @ti.kernel
-    def compute_stress(self):
+    def compute_stress_linear(self):
         eps = ti.static(self.tiGetObj().tiGetElasticStrainArr())
         P   = ti.static(self.tiGetObj().tiGetElasticStressArr())
         K   = ti.static(self.tiGetObj().tiGetElasticBulkModulusArr())
@@ -163,6 +178,23 @@ class Elastic_solver(Solver):
         for i in range(self.tiGetObj().tiGetStackTop()):
             P[i] = (2*G[i]*eps[i]) + ((K[i]-(2/3*G[i])) * eps[i].trace() * I)
     
+    @ti.kernel
+    def compute_strain_Green(self):
+        F   = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
+        I   = ti.math.eye(F.n)
+        eps = ti.static(self.tiGetObj().tiGetElasticStrainArr())
+        for i in range(self.tiGetObj().tiGetStackTop()):
+            eps[i] = 0.5 * (F[i].transpose() @ F[i] - I)
+    
+    @ti.kernel
+    def compute_stress_StVK(self):
+        eps = ti.static(self.tiGetObj().tiGetElasticStrainArr())
+        P   = ti.static(self.tiGetObj().tiGetElasticStressArr())
+        I   = ti.math.eye(eps.n)
+        F   = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
+        for i in range(self.tiGetObj().tiGetStackTop()):
+            P[i] = F[i] @ (2 * self.lame_mu[None] * eps[i] + self.lame_lambda[None] * eps[i].trace() * I)
+
     @ti.func
     def inloop_compute_force(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):
         cached_dist_0   = neighb_search_module.tiGet_cachedDist(neighb_part_shift)

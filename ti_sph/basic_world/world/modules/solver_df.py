@@ -259,7 +259,7 @@ def step_vfsph_incomp(self, update_vel=True):
                 for neighb_obj in part_obj.get_module_neighbSearch().neighb_obj_list:
                     part_obj.get_module_neighbSearch().loop_neighb(neighb_obj, part_obj.getSolverDF().inloop_vf_update_vel_adv_from_kappa_incomp)
             
-        if all(self.df_incompressible_states):
+        if all(self.df_incompressible_states) and part_obj.getSolverDF().incompressible_iter[None]>1:
             break
 
     for part_obj in self.df_solver_list:
