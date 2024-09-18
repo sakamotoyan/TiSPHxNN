@@ -82,14 +82,9 @@ class Elastic_solver(Solver):
         L      = ti.static(self.tiGetObj().tiGetElasticCorMatArr())
         L_inv  = ti.static(self.tiGetObj().tiGetElasticCorMatInvArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
-            # if ((L[i]*L[i]).sum() > 1e-8):
             L[i] = L_inv[i].inverse()
-            self.tiGetObj().vis_1[i] = (L[i]*L[i]).sum()
             L[i] = ti.Matrix.identity(ti.f32, L[i].n)
-            # if ((L_inv[i]*L_inv[i]).sum() < 1e-8):
-            #     self.debug_flag[None] = 1
-                # print("singular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrixsingular matrix")
-            #     L[i] = ti.Matrix.identity(ti.f32, L[i].n)
+
 
     @ti.kernel
     def compute_svd_defGrad(self):
@@ -106,13 +101,7 @@ class Elastic_solver(Solver):
         F = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
             R[i] = ti.polar_decompose(F[i])[0]
-
-    @ti.kernel
-    def compute_corrected_defGrad(self):
-        F = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
-        L = ti.static(self.tiGetObj().tiGetElasticCorMatArr())
-        for i in range(self.tiGetObj().tiGetStackTop()):
-            F[i] = L[i] @ F[i]
+            self.tiGetObj().vis_1[i] = ti.math.acos(R[i][0,0])
 
     @ti.func
     def inloop_compute_corMat_inv(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):

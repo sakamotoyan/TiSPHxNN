@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 from scenes.scene_import import *
 
 ''' TAICHI SETTINGS '''
-ti.init(arch=ti.cpu) 
+ti.init(arch=ti.cuda) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
 part_size                   = 0.1           # Unit: m
@@ -130,11 +130,11 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    # fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     fluid_part.getSolverElastic().step()
-    # fluid_part.getSolverElastic().update_rest()
+    fluid_part.getSolverElastic().update_rest()
     world.acc2vel()
     ''' [TIME END] Advection process '''
 

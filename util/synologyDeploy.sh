@@ -51,8 +51,16 @@ nohup python3 ./code/exec_dataset_processing.py &
 
 # TRAINING
 cd /root/
-cp /workspace/TiSPHxNN.zip /root/
-unzip /root/TiSPHxNN.zip
+rm -rf /root/*
+cp /workspace/code.zip /root/
+unzip -qq /root/code.zip
+
+nohup ti scenes/scene_2D_multiphhase_RayleighTaylor.py &
+
+cd /root/
+tar -czf output_vis.tar.gz output_vis
+cp /root/output_vis.tar.gz /workspace/
+
 
 cp -r /root/TiSPHxNN /root/train_128
 mv /root/train_128/Autoencoders/ConvAE_1/network128.py /root/train_128/Autoencoders/ConvAE_1/network.py 
