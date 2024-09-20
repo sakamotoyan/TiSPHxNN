@@ -11,7 +11,7 @@ ti.init(arch=ti.cuda)
 part_size                   = 0.1           # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
-kinematic_viscosity_fluid   = 0.01         # Unit: Pa s^-1
+kinematic_viscosity_fluid   = 0.01          # Unit: Pa s^-1
 gravity_acc                 = -9.8          # Unit: m s^-2
 phase_num                   = 3
 fps                         = 30
@@ -80,7 +80,7 @@ bound_part.add_module_neighb_search([fluid_part, bound_part])
 # the shared solver
 fluid_part.add_solver_adv()
 fluid_part.add_solver_sph()
-fluid_part.add_solver_elastic(lame_lambda=1e5, lame_mu=1e5)
+fluid_part.add_solver_elastic(lame_lambda=1e3, lame_mu=1e3)
 fluid_part.add_solver_df(div_free_threshold=1e-4, incomp_warm_start=False, div_warm_start=False, incompressible_threshold=1e-4)
 fluid_part.add_solver_ism(Cd=Cd, Cf=Cf, k_vis_inter=kinematic_viscosity_fluid, k_vis_inner=kinematic_viscosity_fluid)
 
@@ -134,7 +134,7 @@ def loop():
     # fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     fluid_part.getSolverElastic().step()
-    fluid_part.getSolverElastic().update_rest()
+    # fluid_part.getSolverElastic().update_rest()
     world.acc2vel()
     ''' [TIME END] Advection process '''
 

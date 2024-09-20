@@ -215,59 +215,59 @@ class Neighb_search_hashed(Solver):
                         self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
                         self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
 
-    @ti.kernel
-    def pool_a_neighbor(
-        self,
-        neighbObj: ti.template(),  # Particle class
-        neighb_search_template: ti.template(),  # Neighb_search_template class
-    ):
-        for part_id in range(self.tiGetObj().tiGetStackTop()):
-            size_before      = self.tiGet_partNeighbSize(part_id)
-            part_pos         = self.tiGetObj().tiGetPos(part_id)
-            located_cell_vec = neighbObj.tiGet_module_neighbSearch().locate_part_to_cell(part_pos)
-            for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
-                cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
-                hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
-                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
-                if pointer == ti.u32(0xFFFFFFFF): continue
-                # print("hash: ", hash)
-                neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
-                for neighb_part_iter in range(neighb_part_num):
-                    neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
-                    neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
-                    dist           = (part_pos - neighb_part_pos).norm()
-                    if dist < self.search_range:
-                        pool_pointer = self.insert_a_part(part_id, neighbObj.tiGetId(), neighb_part_id)
-                        self.tiSet_cachedDist   (pool_pointer, dist)
-                        self.tiSet_cachedXijNorm(pool_pointer, (part_pos - neighb_part_pos) / dist)
-                        self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
-                        self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
+    # @ti.kernel
+    # def pool_a_neighbor(
+    #     self,
+    #     neighbObj: ti.template(),  # Particle class
+    #     neighb_search_template: ti.template(),  # Neighb_search_template class
+    # ):
+    #     for part_id in range(self.tiGetObj().tiGetStackTop()):
+    #         size_before      = self.tiGet_partNeighbSize(part_id)
+    #         part_pos         = self.tiGetObj().tiGetPos(part_id)
+    #         located_cell_vec = neighbObj.tiGet_module_neighbSearch().locate_part_to_cell(part_pos)
+    #         for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
+    #             cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
+    #             hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
+    #             pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
+    #             if pointer == ti.u32(0xFFFFFFFF): continue
+    #             # print("hash: ", hash)
+    #             neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
+    #             for neighb_part_iter in range(neighb_part_num):
+    #                 neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
+    #                 neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
+    #                 dist           = (part_pos - neighb_part_pos).norm()
+    #                 if dist < self.search_range:
+    #                     pool_pointer = self.insert_a_part(part_id, neighbObj.tiGetId(), neighb_part_id)
+    #                     self.tiSet_cachedDist   (pool_pointer, dist)
+    #                     self.tiSet_cachedXijNorm(pool_pointer, (part_pos - neighb_part_pos) / dist)
+    #                     self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
+    #                     self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
             
-            self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetId(), self.tiGet_partNeighbSize(part_id) - size_before)
+    #         self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetId(), self.tiGet_partNeighbSize(part_id) - size_before)
 
-    @ti.func
-    def insert_a_part(
-        self,
-        part_id: ti.i32,
-        neighb_obj_id: ti.i32,
-        neighb_part_id: ti.i32,
-    ) -> ti.i32:
-        pointer = ti.atomic_add(self.neighb_pool_used_space[None], 1)
-        self.tiAdd_partNeighbSize(part_id, 1)
+    # @ti.func
+    # def insert_a_part(
+    #     self,
+    #     part_id: ti.i32,
+    #     neighb_obj_id: ti.i32,
+    #     neighb_part_id: ti.i32,
+    # ) -> ti.i32:
+    #     pointer = ti.atomic_add(self.neighb_pool_used_space[None], 1)
+    #     self.tiAdd_partNeighbSize(part_id, 1)
         
-        if self.tiGet_partNeighbBeginingPointer(part_id) == -1:
-            self.tiSet_partNeighbBeginingPointer(part_id, pointer)
-        else:
-            self.tiSet_nextPointer(self.tiGet_partNeighbCurrnetPointer(part_id), pointer)
+    #     if self.tiGet_partNeighbBeginingPointer(part_id) == -1:
+    #         self.tiSet_partNeighbBeginingPointer(part_id, pointer)
+    #     else:
+    #         self.tiSet_nextPointer(self.tiGet_partNeighbCurrnetPointer(part_id), pointer)
         
-        if self.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj_id) == -1:
-            self.tiSet_partNeighbObjBeginingPointer(part_id, neighb_obj_id, pointer)
+    #     if self.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj_id) == -1:
+    #         self.tiSet_partNeighbObjBeginingPointer(part_id, neighb_obj_id, pointer)
 
-        self.tiSet_partNeighbCurrnetPointer(part_id, pointer)
-        self.tiSet_neighbObjId(pointer, neighb_obj_id)
-        self.tiSet_neighbPartId(pointer, neighb_part_id)
+    #     self.tiSet_partNeighbCurrnetPointer(part_id, pointer)
+    #     self.tiSet_neighbObjId(pointer, neighb_obj_id)
+    #     self.tiSet_neighbPartId(pointer, neighb_part_id)
 
-        return pointer  
+    #     return pointer  
 
     @ti.kernel
     def hash(self):
