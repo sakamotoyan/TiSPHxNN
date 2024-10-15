@@ -67,10 +67,11 @@ class Neighb_search_hashed(Solver):
         self.lb           = obj.getWorld().getLb()
         self.rt           = obj.getWorld().getRt()
         
+        self.cell_num            = self.getObj().getPartNum() + 1000
         self.part_id             = ti.field(ti.u32, self.getObj().getPartNum())
         self.hashed_part_id      = ti.field(ti.u32, self.getObj().getPartNum())
-        self.cell_total_part_num = ti.field(ti.u32, self.getObj().getPartNum())
-        self.start_point         = ti.field(ti.u32, self.getObj().getPartNum())
+        self.cell_total_part_num = ti.field(ti.u32, self.cell_num)
+        self.start_point         = ti.field(ti.u32, self.cell_num)
 
         self.neighb_obj_list = neighb_obj_list
         self.neighb_obj_num  = len(neighb_obj_list)
@@ -115,6 +116,21 @@ class Neighb_search_hashed(Solver):
                 ''' Code for Computation'''
                 func(part_id, neighbPart_id, neighbPool_pointer, self, neighb_obj)
                 ''' End of Code for Computation'''
+
+    def check_neighb(self, pid:ti.i32):
+        neighbPart_num              = self.get_partNeighbObjSize           (pid, self.getObj().getId())
+        neighbPool_begining_pointer = self.get_partNeighbObjBeginingPointer(pid, self.getObj().getId())
+        print("part ", pid, " neighbPart_num:", neighbPart_num)
+        for shift in range(neighbPart_num):
+                neighbPool_pointer = neighbPool_begining_pointer + shift
+                neighbPart_id = self.get_neighbPartId(neighbPool_pointer)
+                ''' Code for Computation'''
+                dist = self.get_cachedDist(neighbPool_pointer)
+                print("neighbPart_id: ", neighbPart_id, "dist: ", dist)
+
+    def check_neighb_all(self):
+        for pid in range(self.getObj().getPartNum()):
+            self.check_neighb(pid)
 
     @ti.kernel
     def loop_neighb_ex(self, neighb_obj:ti.template(), neighb_search_module:ti.template(), func:ti.template()):
@@ -292,11 +308,11 @@ class Neighb_search_hashed(Solver):
 
     @ti.func
     def tiGet_hash(self, cell_vec) -> ti.u32:
-        seed = ti.static(124232,43351221,4623421)
+        seed = ti.static(124232,4335221,4623421)
         hash_val = ti.u32(0)
         for j in ti.static(range(self.dim)):
             hash_val += ti.u32(cell_vec[j]) * seed[j] & ti.u32(0xFFFFFFFF)
-        return ti.u32(hash_val % self.tiGetObj().tiGetPartNum())
+        return ti.u32(hash_val % self.cell_num)
         
 
     @ti.func
@@ -308,6 +324,8 @@ class Neighb_search_hashed(Solver):
 
     @ti.func
     def tiGet_cachedDist(self, pointer: ti.i32):
+        return self.neighb_pool.dist[pointer]
+    def get_cachedDist(self, pointer: ti.i32):
         return self.neighb_pool.dist[pointer]
     @ti.func
     def tiGet_cachedGradW(self, pointer: ti.i32):
@@ -321,6 +339,8 @@ class Neighb_search_hashed(Solver):
     @ti.func
     def tiGet_neighbPartId(self, pointer: ti.i32):
         return self.neighb_pool.neighbPartId[pointer]
+    def get_neighbPartId(self, pointer: ti.i32):
+        return self.neighb_pool.neighbPartId[pointer]
     @ti.func
     def tiGet_neighbObjId(self, pointer: ti.i32):
         return self.neighb_pool.neighbObjId[pointer]
@@ -330,8 +350,12 @@ class Neighb_search_hashed(Solver):
     @ti.func
     def tiGet_partNeighbObjBeginingPointer(self, partId: ti.i32, neighbObj_id: ti.i32):
         return self.partNeighbObj_begin[partId, neighbObj_id]
+    def get_partNeighbObjBeginingPointer(self, partId: ti.i32, neighbObj_id: ti.i32):
+        return self.partNeighbObj_begin[partId, neighbObj_id]
     @ti.func
     def tiGet_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32):
+        return self.partNeighbObj_size[partId, neighbObj_id]
+    def get_partNeighbObjSize(self, partId: ti.i32, neighbObj_id: ti.i32):
         return self.partNeighbObj_size[partId, neighbObj_id]
     @ti.func
     def tiGet_partNeighbSize(self, partId: ti.i32):
