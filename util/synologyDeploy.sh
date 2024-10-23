@@ -55,6 +55,8 @@ rm -rf /root/*
 cp /workspace/code.zip /root/
 unzip -qq /root/code.zip
 
+mkdir output_vis
+mkdir output_data
 nohup ti scenes/scene_2D_multiphhase_RayleighTaylor.py &
 
 cd /root/

@@ -56,6 +56,7 @@ class Elastic_solver(Solver):
         self.compute_strain_Green()
         self.compute_stress_StVK()
         self.pos0neighb_module.loop_self(self.inloop_compute_force)
+        self.pos0neighb_module.loop_self(self.getObj().getSolverAdv().inloop_accumulate_vis_acc)
         self.update_acc()
 
     @ti.kernel
@@ -83,7 +84,6 @@ class Elastic_solver(Solver):
         L_inv  = ti.static(self.tiGetObj().tiGetElasticCorMatInvArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
             L[i] = L_inv[i].inverse()
-            L[i] = ti.Matrix.identity(ti.f32, L[i].n)
 
 
     @ti.kernel
@@ -101,7 +101,7 @@ class Elastic_solver(Solver):
         F = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
             R[i] = ti.polar_decompose(F[i])[0]
-            self.tiGetObj().vis_1[i] = ti.math.acos(R[i][0,0])
+            # self.tiGetObj().vis_1[i] = ti.math.acos(R[i][0,0])
 
     @ti.func
     def inloop_compute_corMat_inv(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):
@@ -148,6 +148,7 @@ class Elastic_solver(Solver):
         I = ti.math.eye(F.n)
         for i in range(self.tiGetObj().tiGetStackTop()):
             F[i] += I
+            self.tiGetObj().vis_1[i] = F[i][0,0] + F[i][1,1] - 2
 
     @ti.kernel
     def compute_strain_infinitesimal(self):
@@ -183,6 +184,8 @@ class Elastic_solver(Solver):
         F   = ti.static(self.tiGetObj().tiGetElasticDefGradArr())
         for i in range(self.tiGetObj().tiGetStackTop()):
             P[i] = F[i] @ (2 * self.lame_mu[None] * eps[i] + self.lame_lambda[None] * eps[i].trace() * I)
+            # self.tiGetObj().vis_1[i] = ti.math.pow(eps[i].trace(),2) / self.tiGetObj().tiGetWorld().tiGetDt()
+            # self.tiGetObj().vis_1[i] = (eps[i] @ eps[i].transpose()).trace() - ((1/3)* ti.math.pow(eps[i].trace(),2))
 
     @ti.func
     def inloop_compute_force(self, part_id: ti.i32, neighb_part_id: ti.i32, neighb_part_shift: ti.i32, neighb_search_module:ti.template(), neighb_obj:ti.template()):

@@ -67,7 +67,7 @@ class Neighb_search_hashed(Solver):
         self.lb           = obj.getWorld().getLb()
         self.rt           = obj.getWorld().getRt()
         
-        self.cell_num            = self.getObj().getPartNum() + 1000
+        self.cell_num            = self.getObj().getPartNum() + 983
         self.part_id             = ti.field(ti.u32, self.getObj().getPartNum())
         self.hashed_part_id      = ti.field(ti.u32, self.getObj().getPartNum())
         self.cell_total_part_num = ti.field(ti.u32, self.cell_num)

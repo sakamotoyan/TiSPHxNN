@@ -8,7 +8,7 @@ from scenes.scene_import import *
 ti.init(arch=ti.cuda) 
 # ti.init(arch=ti.cuda, device_memory_GB=6) 
 ''' GLOBAL SETTINGS SIMULATION '''
-part_size                   = 0.1           # Unit: m
+part_size                   = 0.02          # Unit: m
 max_time_step               = part_size/50  # Unit: s
 sim_time_limit              = 50.0          # Unit: s
 kinematic_viscosity_fluid   = 0.01          # Unit: Pa s^-1
@@ -18,7 +18,7 @@ fps                         = 30
 sim_dimension               = 2
 Cf                          = 0.0 
 Cd                          = 0.0 
-dpi                         = 200
+dpi                         = 400
 
 ''' INIT SIMULATION WORLD '''
 world = tsph.World(dim=sim_dimension, lb=-5, rt=5)
@@ -28,9 +28,9 @@ world.set_multiphase(phase_num,[tsph.vec3f(0.2,0.0,0.8),tsph.vec3f(0.8,0,0.2),ts
 world.setGravityMagnitude(gravity_acc)
 
 ''' DATA SETTINGS FOR FLUID PARTICLE '''
-pool_data = tsph.Squared_pool_2D_data(container_height=9, container_size=5, fluid_height=4.5, span=world.g_part_size[None]*1.0005, layer = 3, fluid_empty_width=0.5)
+pool_data = tsph.Squared_pool_2D_data(container_height=9, container_size=5, fluid_height=2.5, span=world.g_part_size[None]*1.0005, layer = 3, fluid_empty_width=0.5)
 fluid_part_sphere_data = tsph.Sphere_2D_data(radius=0.6, pos=tsph.vec2f(0.0,0.6*1.1), span=world.g_part_size[None]*1.0005)
-fluid_part_num = pool_data.fluid_part_num+fluid_part_sphere_data.fluid_part_num
+fluid_part_num = pool_data.fluid_part_num + fluid_part_sphere_data.fluid_part_num
 bound_part_num = pool_data.bound_part_num
 fluid_part_pos = pool_data.fluid_part_pos
 bound_part_pos = pool_data.bound_part_pos
@@ -42,6 +42,7 @@ fluid_part.instantiate_from_template(part_template)
 fluid_part.add_array("flag", ti.field(ti.i32))
 fluid_part.open_stack(pool_data.fluid_part_num) # open the stack to feed data
 fluid_part.fill_open_stack_with_val(fluid_part.flag, 0) # feed the flag data
+fluid_part.fill_open_stack_with_val(fluid_part.k_vis, kinematic_viscosity_fluid)
 fluid_part.fill_open_stack_with_nparr(fluid_part.pos, pool_data.fluid_part_pos)  # feed the position data
 fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
 fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
@@ -50,15 +51,16 @@ val_frac[0], val_frac[1], val_frac[2] = 1.0,0.0,0.0 # set up the volume fraction
 fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
 # fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([1.0, 0.0])) # feed the initial velocity
 fluid_part.close_stack() # close the stack
-fluid_part.open_stack(fluid_part_sphere_data.fluid_part_num) # open the stack to feed data for another cube
-fluid_part.fill_open_stack_with_val(fluid_part.flag, 1) # feed the flag data
-fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_sphere_data.fluid_part_pos) # feed the position data
-fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
-fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
-val_frac[0], val_frac[1], val_frac[2] = 0.0,1.0,0.0 # set up the volume fraction
-fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
-# fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([-1.0, 0.0])) # feed the initial velocity
-fluid_part.close_stack() # close the stack
+
+# fluid_part.open_stack(fluid_part_sphere_data.fluid_part_num) # open the stack to feed data for another cube
+# fluid_part.fill_open_stack_with_val(fluid_part.flag, 1) # feed the flag data
+# fluid_part.fill_open_stack_with_nparr(fluid_part.pos, fluid_part_sphere_data.fluid_part_pos) # feed the position data
+# fluid_part.fill_open_stack_with_val(fluid_part.size, fluid_part.getPartSize()) # feed the particle size
+# fluid_part.fill_open_stack_with_val(fluid_part.volume, fluid_part.getPartSize()**world.g_dim[None]) # feed the particle volume
+# val_frac[0], val_frac[1], val_frac[2] = 0.0,1.0,0.0 # set up the volume fraction
+# fluid_part.fill_open_stack_with_vals(fluid_part.phase.val_frac, val_frac) # feed the volume fraction
+# # fluid_part.fill_open_stack_with_val(fluid_part.vel, tsph.vec2f([-1.0, 0.0])) # feed the initial velocity
+# fluid_part.close_stack() # close the stack
 
 bound_part = tsph.Particle(part_num=bound_part_num, part_size=world.g_part_size, is_dynamic=False)
 world.attachPartObj(bound_part)
@@ -73,7 +75,10 @@ bound_part.close_stack()
 
 '''INIT NEIGHBOR SEARCH OBJECTS'''
 neighb_list=[fluid_part, bound_part]
-fluid_part.add_module_neighb_search([fluid_part, bound_part])
+fluid_part.add_module_neighb_search([
+                                    fluid_part,
+                                    bound_part
+                                   ])
 bound_part.add_module_neighb_search([fluid_part, bound_part])
 
 '''INIT SOLVER OBJECTS'''
@@ -130,8 +135,8 @@ def loop():
     ''' [TIME START] Advection process '''
     world.clear_acc()
     fluid_part.getSolverAdv().add_acc_gravity()
-    fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
-    # fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    # fluid_part.get_module_neighbSearch().loop_neighb(fluid_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
+    fluid_part.get_module_neighbSearch().loop_neighb(bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     # fluid_part.m_solver_sph.loop_neighb(fluid_part.m_neighb_search.neighb_pool, bound_part, fluid_part.getSolverAdv().inloop_accumulate_vis_acc)
     fluid_part.getSolverElastic().step()
     # fluid_part.getSolverElastic().update_rest()
@@ -153,7 +158,7 @@ def loop():
 
     world.g_time[None] += world.g_dt[None]
     print('time:', world.g_time)
-    # if world.getTime() <0.5:
+    # if world.getTime() < 0.5:
     
     '''  [TIME START] ISM Part 4 '''
     # fluid_part.m_solver_ism.update_val_frac()
