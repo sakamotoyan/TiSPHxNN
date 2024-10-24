@@ -1,5 +1,6 @@
 import taichi as ti
 import numpy as np
+import time
 from ..basic_op import *
 from ..basic_solvers.sph_funcs import *
 from ..basic_obj.Obj_Particle import Particle
@@ -67,11 +68,12 @@ class Neighb_search_hashed(Solver):
         self.lb           = obj.getWorld().getLb()
         self.rt           = obj.getWorld().getRt()
         
-        self.cell_num            = self.getObj().getPartNum() + 983
+        self.cell_num            = ti.max(self.getObj().getPartNum() + 983, self.getObj().getPartNum()*2)
         self.part_id             = ti.field(ti.u32, self.getObj().getPartNum())
-        self.hashed_part_id      = ti.field(ti.u32, self.getObj().getPartNum())
+        self.hashed_part_cellId  = ti.field(ti.u32, self.getObj().getPartNum())
         self.cell_total_part_num = ti.field(ti.u32, self.cell_num)
-        self.start_point         = ti.field(ti.u32, self.cell_num)
+        self.ptr_start_point     = ti.field(ti.u32, self.cell_num)
+        self.ptr_inc             = ti.field(ti.u32, self.cell_num)
 
         self.neighb_obj_list = neighb_obj_list
         self.neighb_obj_num  = len(neighb_obj_list)
@@ -157,11 +159,41 @@ class Neighb_search_hashed(Solver):
                 ''' End of Code for Computation'''
 
     def update(self,):
-        naturalSeq(self.part_id)
-        self.hash()
-        self.sortPart()
-        self.computeStartPointAndPartNumInCell()
-        # print((self.start_point))
+        # start_time = time.time()  
+        # # Record the start time
+        # naturalSeq(self.part_id)
+        # # Record the end time
+        # end_time = time.time()  
+        # execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+        # print(f"    Execution time naturalSeq(): {execution_time:.2f} ms")
+
+        # start_time = time.time()
+        # # Record the start time
+        # self.hash()
+        # # Record the end time
+        # end_time = time.time()
+        # execution_time = (end_time - start_time) * 1000
+        # print(f"    Execution time hash(): {execution_time:.2f} ms")
+
+        # start_time = time.time()
+        # # Record the start time
+        # self.sortPart()
+        # # Record the end time
+        # end_time = time.time()
+        # execution_time = (end_time - start_time) * 1000
+        # print(f"    Execution time sortPart(): {execution_time:.2f} ms")
+
+        # start_time = time.time()
+        # # Record the start time
+        # self.computeStartPointAndPartNumInCell()
+        # # Record the end time
+        # end_time = time.time()
+        # execution_time = (end_time - start_time) * 1000
+        # print(f"    Execution time computeStartPointAndPartNumInCell(): {execution_time:.2f} ms")
+        
+        # NEW
+        self.hash8log()
+
 
     def pool(self,):
         self.neighb_pool_used_space[None] = 0
@@ -198,7 +230,7 @@ class Neighb_search_hashed(Solver):
             for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
                 cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
                 hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
-                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
+                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().ptr_start_point[hash])
                 if pointer == ti.u32(0xFFFFFFFF): continue
                 neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
                 for neighb_part_iter in range(neighb_part_num):
@@ -215,7 +247,7 @@ class Neighb_search_hashed(Solver):
             for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
                 cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
                 hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
-                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
+                pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().ptr_start_point[hash])
                 if pointer == ti.u32(0xFFFFFFFF): continue
                 neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
                 for neighb_part_iter in range(neighb_part_num):
@@ -231,80 +263,45 @@ class Neighb_search_hashed(Solver):
                         self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
                         self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
 
-    # @ti.kernel
-    # def pool_a_neighbor(
-    #     self,
-    #     neighbObj: ti.template(),  # Particle class
-    #     neighb_search_template: ti.template(),  # Neighb_search_template class
-    # ):
-    #     for part_id in range(self.tiGetObj().tiGetStackTop()):
-    #         size_before      = self.tiGet_partNeighbSize(part_id)
-    #         part_pos         = self.tiGetObj().tiGetPos(part_id)
-    #         located_cell_vec = neighbObj.tiGet_module_neighbSearch().locate_part_to_cell(part_pos)
-    #         for neighb_cell_iter in range(neighb_search_template.get_neighb_cell_num()):
-    #             cell_vec        = located_cell_vec + neighb_search_template.get_neighb_cell_vec(neighb_cell_iter)
-    #             hash            = ti.u32(neighbObj.tiGet_module_neighbSearch().tiGet_hash(cell_vec))
-    #             pointer         = ti.u32(neighbObj.tiGet_module_neighbSearch().start_point[hash])
-    #             if pointer == ti.u32(0xFFFFFFFF): continue
-    #             # print("hash: ", hash)
-    #             neighb_part_num = neighbObj.tiGet_module_neighbSearch().cell_total_part_num[hash]
-    #             for neighb_part_iter in range(neighb_part_num):
-    #                 neighb_part_id  = neighbObj.tiGet_module_neighbSearch().part_id[pointer+neighb_part_iter]
-    #                 neighb_part_pos = neighbObj.tiGetPos(neighb_part_id)
-    #                 dist           = (part_pos - neighb_part_pos).norm()
-    #                 if dist < self.search_range:
-    #                     pool_pointer = self.insert_a_part(part_id, neighbObj.tiGetId(), neighb_part_id)
-    #                     self.tiSet_cachedDist   (pool_pointer, dist)
-    #                     self.tiSet_cachedXijNorm(pool_pointer, (part_pos - neighb_part_pos) / dist)
-    #                     self.tiSet_cachedW      (pool_pointer, spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSig(part_id)))
-    #                     self.tiSet_cachedGradW  (pool_pointer, grad_spline_W(dist, self.tiGetObj().tiGetSphH(part_id), self.tiGetObj().tiGetSphSigInvH(part_id)) * self.tiGet_cachedXijNorm(pool_pointer))
-            
-    #         self.tiSet_partNeighbObjSize(part_id, neighbObj.tiGetId(), self.tiGet_partNeighbSize(part_id) - size_before)
-
-    # @ti.func
-    # def insert_a_part(
-    #     self,
-    #     part_id: ti.i32,
-    #     neighb_obj_id: ti.i32,
-    #     neighb_part_id: ti.i32,
-    # ) -> ti.i32:
-    #     pointer = ti.atomic_add(self.neighb_pool_used_space[None], 1)
-    #     self.tiAdd_partNeighbSize(part_id, 1)
-        
-    #     if self.tiGet_partNeighbBeginingPointer(part_id) == -1:
-    #         self.tiSet_partNeighbBeginingPointer(part_id, pointer)
-    #     else:
-    #         self.tiSet_nextPointer(self.tiGet_partNeighbCurrnetPointer(part_id), pointer)
-        
-    #     if self.tiGet_partNeighbObjBeginingPointer(part_id, neighb_obj_id) == -1:
-    #         self.tiSet_partNeighbObjBeginingPointer(part_id, neighb_obj_id, pointer)
-
-    #     self.tiSet_partNeighbCurrnetPointer(part_id, pointer)
-    #     self.tiSet_neighbObjId(pointer, neighb_obj_id)
-    #     self.tiSet_neighbPartId(pointer, neighb_part_id)
-
-    #     return pointer  
+    @ti.kernel
+    def hash8log(self):
+        self.hashed_part_cellId .fill(ti.u32(0xFFFFFFFF))
+        self.ptr_start_point    .fill(ti.u32(0xFFFFFFFF))
+        self.cell_total_part_num.fill(0)
+        increment = 0
+        for i in range(self.tiGetObj().tiGetStackTop()):
+            cell_vec                    = self.locate_part_to_cell(self.tiGetObj().tiGetPos(i))
+            self.hashed_part_cellId[i]  = self.tiGet_hash(cell_vec)
+            self.cell_total_part_num[self.hashed_part_cellId[i]] += 1
+        ti.sync()
+        for i in range(self.cell_num):
+            if self.cell_total_part_num[i] == 0: continue
+            self.ptr_start_point[i] = ti.atomic_add(increment, self.cell_total_part_num[i])
+            self.ptr_inc[i]         = self.ptr_start_point[i]
+        ti.sync()
+        for i in range(self.tiGetObj().tiGetStackTop()):
+            self.part_id[ti.atomic_add(self.ptr_inc[self.hashed_part_cellId[i]],1)] = i
 
     @ti.kernel
     def hash(self):
-        self.hashed_part_id.fill(ti.u32(0xFFFFFFFF))
+        self.hashed_part_cellId.fill(ti.u32(0xFFFFFFFF))
         for i in range(self.tiGetObj().tiGetStackTop()):
             cell_vec               = self.locate_part_to_cell(self.tiGetObj().tiGetPos(i))
-            self.hashed_part_id[i] = self.tiGet_hash(cell_vec)
+            self.hashed_part_cellId[i] = self.tiGet_hash(cell_vec)
     
     def sortPart(self):
-        ti.algorithms.parallel_sort(self.hashed_part_id, self.part_id)
+        ti.algorithms.parallel_sort(self.hashed_part_cellId, self.part_id)
 
     @ti.kernel
     def computeStartPointAndPartNumInCell(self):
-        self.start_point.fill(ti.u32(0xFFFFFFFF))
+        self.ptr_start_point.fill(ti.u32(0xFFFFFFFF))
         self.cell_total_part_num.fill(0)
-        self.start_point[self.hashed_part_id[0]] = 0
+        self.ptr_start_point[self.hashed_part_cellId[0]] = 0
         for i in range(1, self.tiGetObj().tiGetStackTop()):
-            if self.hashed_part_id[i] != self.hashed_part_id[i-1]:
-                self.start_point[self.hashed_part_id[i]] = i
+            if self.hashed_part_cellId[i] != self.hashed_part_cellId[i-1]:
+                self.ptr_start_point[self.hashed_part_cellId[i]] = i
         for i in range(self.tiGetObj().tiGetStackTop()):
-            self.cell_total_part_num[self.hashed_part_id[i]] += 1
+            self.cell_total_part_num[self.hashed_part_cellId[i]] += 1
 
     @ti.func
     def tiGet_hash(self, cell_vec) -> ti.u32:
